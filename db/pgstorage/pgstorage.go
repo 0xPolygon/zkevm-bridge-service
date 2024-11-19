@@ -181,7 +181,7 @@ func (p *PostgresStorage) GetPreviousBlock(ctx context.Context, networkID uint32
 }
 
 // GetNumberDeposits gets the number of  deposits.
-func (p *PostgresStorage) GetNumberDeposits(ctx context.Context, networkID uint, blockNumber uint64, dbTx pgx.Tx) (uint64, error) {
+func (p *PostgresStorage) GetNumberDeposits(ctx context.Context, networkID uint32, blockNumber uint64, dbTx pgx.Tx) (uint64, error) {
 	var nDeposits int64
 	const getNumDepositsSQL = "SELECT coalesce(MAX(deposit_cnt), -1) FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE d.network_id = $1 AND b.block_num <= $2"
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getNumDepositsSQL, networkID, blockNumber).Scan(&nDeposits)
@@ -239,7 +239,7 @@ func (p *PostgresStorage) GetClaim(ctx context.Context, depositCount, originNetw
 }
 
 // GetDeposit gets a specific deposit from the storage.
-func (p *PostgresStorage) GetDeposit(ctx context.Context, depositCounterUser uint, networkID uint, dbTx pgx.Tx) (*etherman.Deposit, error) {
+func (p *PostgresStorage) GetDeposit(ctx context.Context, depositCounterUser, networkID uint32, dbTx pgx.Tx) (*etherman.Deposit, error) {
 	var (
 		deposit etherman.Deposit
 		amount  string
@@ -364,7 +364,7 @@ func (p *PostgresStorage) GetDepositCountByRoot(ctx context.Context, root []byte
 }
 
 // CheckIfRootExists checks that the root exists on the db.
-func (p *PostgresStorage) CheckIfRootExists(ctx context.Context, root []byte, network uint8, dbTx pgx.Tx) (bool, error) {
+func (p *PostgresStorage) CheckIfRootExists(ctx context.Context, root []byte, network uint32, dbTx pgx.Tx) (bool, error) {
 	var count uint
 	const getDepositCountByRootSQL = "SELECT count(*) FROM mt.root WHERE root = $1 AND network = $2"
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getDepositCountByRootSQL, root, network).Scan(&count)
@@ -378,7 +378,7 @@ func (p *PostgresStorage) CheckIfRootExists(ctx context.Context, root []byte, ne
 }
 
 // GetRoot gets root by the deposit count from the merkle tree.
-func (p *PostgresStorage) GetRoot(ctx context.Context, depositCnt uint32, network uint32, dbTx pgx.Tx) ([]byte, error) {
+func (p *PostgresStorage) GetRoot(ctx context.Context, depositCnt, network uint32, dbTx pgx.Tx) ([]byte, error) {
 	var root []byte
 	const getRootByDepositCntSQL = "SELECT root FROM mt.root inner join sync.deposit on mt.root.deposit_id = sync.deposit.id WHERE sync.deposit.deposit_cnt = $1 AND network = $2"
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getRootByDepositCntSQL, depositCnt, network).Scan(&root)
@@ -519,7 +519,7 @@ func (p *PostgresStorage) GetClaimCount(ctx context.Context, destAddr string, db
 }
 
 // GetClaims gets the claim list which be smaller than index.
-func (p *PostgresStorage) GetClaims(ctx context.Context, destAddr string, limit uint32, offset uint32, dbTx pgx.Tx) ([]*etherman.Claim, error) {
+func (p *PostgresStorage) GetClaims(ctx context.Context, destAddr string, limit, offset uint32, dbTx pgx.Tx) ([]*etherman.Claim, error) {
 	const getClaimsSQL = "SELECT index, orig_net, orig_addr, amount, dest_addr, block_id, network_id, tx_hash, rollup_index, mainnet_flag FROM sync.claim WHERE dest_addr = $1 ORDER BY block_id DESC LIMIT $2 OFFSET $3"
 	rows, err := p.getExecQuerier(dbTx).Query(ctx, getClaimsSQL, common.FromHex(destAddr), limit, offset)
 	if err != nil {
@@ -543,7 +543,7 @@ func (p *PostgresStorage) GetClaims(ctx context.Context, destAddr string, limit 
 }
 
 // GetDeposits gets the deposit list which be smaller than depositCount.
-func (p *PostgresStorage) GetDeposits(ctx context.Context, destAddr string, limit uint, offset uint, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
+func (p *PostgresStorage) GetDeposits(ctx context.Context, destAddr string, limit, offset uint32, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
 	const getDepositsSQL = "SELECT d.id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE dest_addr = $1 ORDER BY d.block_id DESC, d.deposit_cnt DESC LIMIT $2 OFFSET $3"
 	rows, err := p.getExecQuerier(dbTx).Query(ctx, getDepositsSQL, common.FromHex(destAddr), limit, offset)
 	if err != nil {
@@ -676,7 +676,7 @@ func (p *PostgresStorage) GetClaimTxsByStatus(ctx context.Context, statuses []ct
 }
 
 // GetPendingDepositsToClaim gets the deposit list which is not claimed in the destination network.
-func (p *PostgresStorage) GetPendingDepositsToClaim(ctx context.Context, destAddress common.Address, destNetwork uint64, leafType, limit uint32, offset uint64, dbTx pgx.Tx) ([]*etherman.Deposit, uint64, error) {
+func (p *PostgresStorage) GetPendingDepositsToClaim(ctx context.Context, destAddress common.Address, destNetwork, leafType, limit, offset uint32, dbTx pgx.Tx) ([]*etherman.Deposit, uint64, error) {
 	desAddrSQL := ""
 	if destAddress != (common.Address{}) {
 		str := strings.TrimPrefix(destAddress.String(), "0x")

@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCLaimAlreadyClaimedDepositL2toL1(t *testing.T) {
+func TestClaimAlreadyClaimedDepositL2toL1(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -33,7 +33,7 @@ func TestCLaimAlreadyClaimedDepositL2toL1(t *testing.T) {
 	require.NoError(t, err)
 	fmt.Println("Deposit: ", deposit)
 
-	err = manualClaimDeposit(ctx, testData, deposit)
+	err = manualClaimDeposit(ctx, testData, deposit, true)
 	if !isAlreadyClaimedError(err) {
 		require.NoError(t, err)
 	}
@@ -93,8 +93,8 @@ func TestEthTransferL2toL1(t *testing.T) {
 	fmt.Println("ETH Balance ", ethInitialBalances.String())
 	amount := big.NewInt(12344321)
 	txAssetHash := assetEthL2ToL1(ctx, testData, t, amount)
-	deposit, err := waitDepositToBeReadyToClaim(ctx, testData, txAssetHash, maxTimeToClaimReady)
+	deposit, err := waitDepositToBeReadyToClaim(ctx, testData, txAssetHash, maxTimeToClaimReady, "")
 	require.NoError(t, err)
-	err = manualClaimDeposit(ctx, testData, deposit)
+	err = manualClaimDeposit(ctx, testData, deposit, true)
 	require.NoError(t, err)
 }

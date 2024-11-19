@@ -290,11 +290,11 @@ func TestMTStorage(t *testing.T) {
 
 	count, err := pg.GetLastDepositCount(ctx, 0, tx)
 	require.NoError(t, err)
-	require.Equal(t, uint(0), count)
+	require.Equal(t, uint32(0), count)
 
 	dCount, err := pg.GetDepositCountByRoot(ctx, root, 0, tx)
 	require.NoError(t, err)
-	require.Equal(t, uint(0), dCount)
+	require.Equal(t, uint32(0), dCount)
 
 	require.NoError(t, tx.Commit(ctx))
 }
