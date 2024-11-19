@@ -181,11 +181,11 @@ func (p *PostgresStorage) GetPreviousBlock(ctx context.Context, networkID uint32
 }
 
 // GetNumberDeposits gets the number of  deposits.
-func (p *PostgresStorage) GetNumberDeposits(ctx context.Context, networkID uint32, blockNumber uint64, dbTx pgx.Tx) (uint64, error) {
+func (p *PostgresStorage) GetNumberDeposits(ctx context.Context, networkID uint32, blockNumber uint64, dbTx pgx.Tx) (uint32, error) {
 	var nDeposits int64
 	const getNumDepositsSQL = "SELECT coalesce(MAX(deposit_cnt), -1) FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE d.network_id = $1 AND b.block_num <= $2"
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getNumDepositsSQL, networkID, blockNumber).Scan(&nDeposits)
-	return uint64(nDeposits + 1), err
+	return uint32(nDeposits + 1), err
 }
 
 // AddTrustedGlobalExitRoot adds new global exit root which comes from the trusted sequencer.

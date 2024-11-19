@@ -365,12 +365,12 @@ func TestBSStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, len(rDeposits), 1)
 
-	count, err = pg.GetNumberDeposits(ctx, 0, 0, tx)
+	count_nd, err := pg.GetNumberDeposits(ctx, 0, 0, tx)
 	require.NoError(t, err)
-	require.Equal(t, count, uint64(0))
-	count, err = pg.GetNumberDeposits(ctx, 0, 1, tx)
+	require.Equal(t, count_nd, uint32(0))
+	count_nd, err = pg.GetNumberDeposits(ctx, 0, 1, tx)
 	require.NoError(t, err)
-	require.Equal(t, count, uint64(2))
+	require.Equal(t, count_nd, uint32(2))
 
 	count, err = pg.GetClaimCount(ctx, claim.DestinationAddress.String(), tx)
 	require.NoError(t, err)
