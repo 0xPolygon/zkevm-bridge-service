@@ -19,13 +19,13 @@ const (
 type BridgeController struct {
 	exitTrees   []*MerkleTree
 	rollupsTree *MerkleTree
-	networkIDs  map[uint]uint8
+	networkIDs  map[uint32]uint8
 }
 
 // NewBridgeController creates new BridgeController.
-func NewBridgeController(ctx context.Context, cfg Config, networks []uint, mtStore interface{}) (*BridgeController, error) {
+func NewBridgeController(ctx context.Context, cfg Config, networks []uint32, mtStore interface{}) (*BridgeController, error) {
 	var (
-		networkIDs = make(map[uint]uint8)
+		networkIDs = make(map[uint32]uint8)
 		exitTrees  []*MerkleTree
 	)
 
@@ -50,7 +50,7 @@ func NewBridgeController(ctx context.Context, cfg Config, networks []uint, mtSto
 	}, nil
 }
 
-func (bt *BridgeController) GetNetworkID(networkID uint) (uint8, error) {
+func (bt *BridgeController) GetNetworkID(networkID uint32) (uint8, error) {
 	tID, found := bt.networkIDs[networkID]
 	if !found {
 		return 0, gerror.ErrNetworkNotRegister
@@ -69,7 +69,7 @@ func (bt *BridgeController) AddDeposit(ctx context.Context, deposit *etherman.De
 }
 
 // ReorgMT reorg the specific merkle tree.
-func (bt *BridgeController) ReorgMT(ctx context.Context, depositCount uint, networkID uint, dbTx pgx.Tx) error {
+func (bt *BridgeController) ReorgMT(ctx context.Context, depositCount uint32, networkID uint32, dbTx pgx.Tx) error {
 	tID, err := bt.GetNetworkID(networkID)
 	if err != nil {
 		return err
@@ -79,8 +79,8 @@ func (bt *BridgeController) ReorgMT(ctx context.Context, depositCount uint, netw
 
 // GetExitRoot returns the dedicated merkle tree's root.
 // only use for the test purpose
-func (bt *BridgeController) GetExitRoot(ctx context.Context, networkID int, dbTx pgx.Tx) ([]byte, error) {
-	return bt.exitTrees[networkID].getRoot(ctx, dbTx)
+func (bt *BridgeController) GetExitRoot(ctx context.Context, tID uint8, dbTx pgx.Tx) ([]byte, error) {
+	return bt.exitTrees[tID].getRoot(ctx, dbTx)
 }
 
 func (bt *BridgeController) AddRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx pgx.Tx) error {

@@ -50,7 +50,7 @@ func TestBridgeTree(t *testing.T) {
 	store, err := pgstorage.NewPostgresStorage(dbCfg)
 	require.NoError(t, err)
 	ctx := context.Background()
-	bt, err := NewBridgeController(ctx, cfg, []uint{0, 1000}, store)
+	bt, err := NewBridgeController(ctx, cfg, []uint32{0, 1000}, store)
 	require.NoError(t, err)
 
 	t.Run("Test adding deposit for the bridge tree", func(t *testing.T) {
@@ -71,7 +71,7 @@ func TestBridgeTree(t *testing.T) {
 				DestinationNetwork: testVector.DestinationNetwork,
 				DestinationAddress: common.HexToAddress(testVector.DestinationAddress),
 				BlockID:            blockID,
-				DepositCount:       uint(i),
+				DepositCount:       uint32(i),
 				Metadata:           common.FromHex(testVector.Metadata),
 			}
 			leafHash := hashDeposit(deposit)
@@ -82,10 +82,10 @@ func TestBridgeTree(t *testing.T) {
 			require.NoError(t, err)
 
 			// test reorg
-			orgRoot, err := bt.exitTrees[0].store.GetRoot(ctx, uint(i), 0, nil)
+			orgRoot, err := bt.exitTrees[0].store.GetRoot(ctx, uint32(i), 0, nil)
 			require.NoError(t, err)
 			require.NoError(t, store.Reset(ctx, uint64(i), deposit.NetworkID, nil))
-			err = bt.ReorgMT(ctx, uint(i), testVectors[i].OriginalNetwork, nil)
+			err = bt.ReorgMT(ctx, uint32(i), testVectors[i].OriginalNetwork, nil)
 			require.NoError(t, err)
 			blockID, err = store.AddBlock(context.TODO(), block, nil)
 			require.NoError(t, err)
@@ -94,7 +94,7 @@ func TestBridgeTree(t *testing.T) {
 			require.NoError(t, err)
 			err = bt.AddDeposit(ctx, deposit, depositID, nil)
 			require.NoError(t, err)
-			newRoot, err := bt.exitTrees[0].store.GetRoot(ctx, uint(i), 0, nil)
+			newRoot, err := bt.exitTrees[0].store.GetRoot(ctx, uint32(i), 0, nil)
 			require.NoError(t, err)
 			assert.Equal(t, orgRoot, newRoot)
 

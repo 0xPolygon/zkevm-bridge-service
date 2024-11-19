@@ -238,7 +238,7 @@ func (_c *StorageInterface_Commit_Call) RunAndReturn(run func(context.Context, p
 }
 
 // GetClaimTxsByStatus provides a mock function with given fields: ctx, statuses, rollupID, dbTx
-func (_m *StorageInterface) GetClaimTxsByStatus(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint, dbTx pgx.Tx) ([]types.MonitoredTx, error) {
+func (_m *StorageInterface) GetClaimTxsByStatus(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint32, dbTx pgx.Tx) ([]types.MonitoredTx, error) {
 	ret := _m.Called(ctx, statuses, rollupID, dbTx)
 
 	if len(ret) == 0 {
@@ -247,10 +247,10 @@ func (_m *StorageInterface) GetClaimTxsByStatus(ctx context.Context, statuses []
 
 	var r0 []types.MonitoredTx
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint, pgx.Tx) ([]types.MonitoredTx, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) ([]types.MonitoredTx, error)); ok {
 		return rf(ctx, statuses, rollupID, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint, pgx.Tx) []types.MonitoredTx); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) []types.MonitoredTx); ok {
 		r0 = rf(ctx, statuses, rollupID, dbTx)
 	} else {
 		if ret.Get(0) != nil {
@@ -258,7 +258,7 @@ func (_m *StorageInterface) GetClaimTxsByStatus(ctx context.Context, statuses []
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []types.MonitoredTxStatus, uint, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) error); ok {
 		r1 = rf(ctx, statuses, rollupID, dbTx)
 	} else {
 		r1 = ret.Error(1)
@@ -275,15 +275,15 @@ type StorageInterface_GetClaimTxsByStatus_Call struct {
 // GetClaimTxsByStatus is a helper method to define mock.On call
 //   - ctx context.Context
 //   - statuses []types.MonitoredTxStatus
-//   - rollupID uint
+//   - rollupID uint32
 //   - dbTx pgx.Tx
 func (_e *StorageInterface_Expecter) GetClaimTxsByStatus(ctx interface{}, statuses interface{}, rollupID interface{}, dbTx interface{}) *StorageInterface_GetClaimTxsByStatus_Call {
 	return &StorageInterface_GetClaimTxsByStatus_Call{Call: _e.mock.On("GetClaimTxsByStatus", ctx, statuses, rollupID, dbTx)}
 }
 
-func (_c *StorageInterface_GetClaimTxsByStatus_Call) Run(run func(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint, dbTx pgx.Tx)) *StorageInterface_GetClaimTxsByStatus_Call {
+func (_c *StorageInterface_GetClaimTxsByStatus_Call) Run(run func(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint32, dbTx pgx.Tx)) *StorageInterface_GetClaimTxsByStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]types.MonitoredTxStatus), args[2].(uint), args[3].(pgx.Tx))
+		run(args[0].(context.Context), args[1].([]types.MonitoredTxStatus), args[2].(uint32), args[3].(pgx.Tx))
 	})
 	return _c
 }
@@ -293,7 +293,7 @@ func (_c *StorageInterface_GetClaimTxsByStatus_Call) Return(_a0 []types.Monitore
 	return _c
 }
 
-func (_c *StorageInterface_GetClaimTxsByStatus_Call) RunAndReturn(run func(context.Context, []types.MonitoredTxStatus, uint, pgx.Tx) ([]types.MonitoredTx, error)) *StorageInterface_GetClaimTxsByStatus_Call {
+func (_c *StorageInterface_GetClaimTxsByStatus_Call) RunAndReturn(run func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) ([]types.MonitoredTx, error)) *StorageInterface_GetClaimTxsByStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -394,7 +394,7 @@ func (_c *StorageInterface_UpdateClaimTx_Call) RunAndReturn(run func(context.Con
 }
 
 // UpdateL1DepositsStatus provides a mock function with given fields: ctx, exitRoot, destinationNetwork, dbTx
-func (_m *StorageInterface) UpdateL1DepositsStatus(ctx context.Context, exitRoot []byte, destinationNetwork uint, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
+func (_m *StorageInterface) UpdateL1DepositsStatus(ctx context.Context, exitRoot []byte, destinationNetwork uint32, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
 	ret := _m.Called(ctx, exitRoot, destinationNetwork, dbTx)
 
 	if len(ret) == 0 {
@@ -403,10 +403,10 @@ func (_m *StorageInterface) UpdateL1DepositsStatus(ctx context.Context, exitRoot
 
 	var r0 []*etherman.Deposit
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint, pgx.Tx) ([]*etherman.Deposit, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint32, pgx.Tx) ([]*etherman.Deposit, error)); ok {
 		return rf(ctx, exitRoot, destinationNetwork, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint, pgx.Tx) []*etherman.Deposit); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint32, pgx.Tx) []*etherman.Deposit); ok {
 		r0 = rf(ctx, exitRoot, destinationNetwork, dbTx)
 	} else {
 		if ret.Get(0) != nil {
@@ -414,7 +414,7 @@ func (_m *StorageInterface) UpdateL1DepositsStatus(ctx context.Context, exitRoot
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []byte, uint, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []byte, uint32, pgx.Tx) error); ok {
 		r1 = rf(ctx, exitRoot, destinationNetwork, dbTx)
 	} else {
 		r1 = ret.Error(1)
@@ -431,15 +431,15 @@ type StorageInterface_UpdateL1DepositsStatus_Call struct {
 // UpdateL1DepositsStatus is a helper method to define mock.On call
 //   - ctx context.Context
 //   - exitRoot []byte
-//   - destinationNetwork uint
+//   - destinationNetwork uint32
 //   - dbTx pgx.Tx
 func (_e *StorageInterface_Expecter) UpdateL1DepositsStatus(ctx interface{}, exitRoot interface{}, destinationNetwork interface{}, dbTx interface{}) *StorageInterface_UpdateL1DepositsStatus_Call {
 	return &StorageInterface_UpdateL1DepositsStatus_Call{Call: _e.mock.On("UpdateL1DepositsStatus", ctx, exitRoot, destinationNetwork, dbTx)}
 }
 
-func (_c *StorageInterface_UpdateL1DepositsStatus_Call) Run(run func(ctx context.Context, exitRoot []byte, destinationNetwork uint, dbTx pgx.Tx)) *StorageInterface_UpdateL1DepositsStatus_Call {
+func (_c *StorageInterface_UpdateL1DepositsStatus_Call) Run(run func(ctx context.Context, exitRoot []byte, destinationNetwork uint32, dbTx pgx.Tx)) *StorageInterface_UpdateL1DepositsStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]byte), args[2].(uint), args[3].(pgx.Tx))
+		run(args[0].(context.Context), args[1].([]byte), args[2].(uint32), args[3].(pgx.Tx))
 	})
 	return _c
 }
@@ -449,13 +449,13 @@ func (_c *StorageInterface_UpdateL1DepositsStatus_Call) Return(_a0 []*etherman.D
 	return _c
 }
 
-func (_c *StorageInterface_UpdateL1DepositsStatus_Call) RunAndReturn(run func(context.Context, []byte, uint, pgx.Tx) ([]*etherman.Deposit, error)) *StorageInterface_UpdateL1DepositsStatus_Call {
+func (_c *StorageInterface_UpdateL1DepositsStatus_Call) RunAndReturn(run func(context.Context, []byte, uint32, pgx.Tx) ([]*etherman.Deposit, error)) *StorageInterface_UpdateL1DepositsStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateL2DepositsStatus provides a mock function with given fields: ctx, exitRoot, rollupID, networkID, dbTx
-func (_m *StorageInterface) UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID uint, networkID uint, dbTx pgx.Tx) error {
+func (_m *StorageInterface) UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID uint32, networkID uint32, dbTx pgx.Tx) error {
 	ret := _m.Called(ctx, exitRoot, rollupID, networkID, dbTx)
 
 	if len(ret) == 0 {
@@ -463,7 +463,7 @@ func (_m *StorageInterface) UpdateL2DepositsStatus(ctx context.Context, exitRoot
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint, uint, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint32, uint32, pgx.Tx) error); ok {
 		r0 = rf(ctx, exitRoot, rollupID, networkID, dbTx)
 	} else {
 		r0 = ret.Error(0)
@@ -480,16 +480,16 @@ type StorageInterface_UpdateL2DepositsStatus_Call struct {
 // UpdateL2DepositsStatus is a helper method to define mock.On call
 //   - ctx context.Context
 //   - exitRoot []byte
-//   - rollupID uint
-//   - networkID uint
+//   - rollupID uint32
+//   - networkID uint32
 //   - dbTx pgx.Tx
 func (_e *StorageInterface_Expecter) UpdateL2DepositsStatus(ctx interface{}, exitRoot interface{}, rollupID interface{}, networkID interface{}, dbTx interface{}) *StorageInterface_UpdateL2DepositsStatus_Call {
 	return &StorageInterface_UpdateL2DepositsStatus_Call{Call: _e.mock.On("UpdateL2DepositsStatus", ctx, exitRoot, rollupID, networkID, dbTx)}
 }
 
-func (_c *StorageInterface_UpdateL2DepositsStatus_Call) Run(run func(ctx context.Context, exitRoot []byte, rollupID uint, networkID uint, dbTx pgx.Tx)) *StorageInterface_UpdateL2DepositsStatus_Call {
+func (_c *StorageInterface_UpdateL2DepositsStatus_Call) Run(run func(ctx context.Context, exitRoot []byte, rollupID uint32, networkID uint32, dbTx pgx.Tx)) *StorageInterface_UpdateL2DepositsStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]byte), args[2].(uint), args[3].(uint), args[4].(pgx.Tx))
+		run(args[0].(context.Context), args[1].([]byte), args[2].(uint32), args[3].(uint32), args[4].(pgx.Tx))
 	})
 	return _c
 }
@@ -499,7 +499,7 @@ func (_c *StorageInterface_UpdateL2DepositsStatus_Call) Return(_a0 error) *Stora
 	return _c
 }
 
-func (_c *StorageInterface_UpdateL2DepositsStatus_Call) RunAndReturn(run func(context.Context, []byte, uint, uint, pgx.Tx) error) *StorageInterface_UpdateL2DepositsStatus_Call {
+func (_c *StorageInterface_UpdateL2DepositsStatus_Call) RunAndReturn(run func(context.Context, []byte, uint32, uint32, pgx.Tx) error) *StorageInterface_UpdateL2DepositsStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

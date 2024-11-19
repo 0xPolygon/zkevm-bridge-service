@@ -68,7 +68,7 @@ var accHexPrivateKeys = map[NetworkSID]string{
 type Config struct {
 	L1NetworkURL string
 	L2NetworkURL string
-	L2NetworkID  uint
+	L2NetworkID  uint32
 	Storage      db.Config
 	BT           bridgectrl.Config
 	BS           server.Config
@@ -110,7 +110,7 @@ func NewManager(ctx context.Context, cfg *Config) (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
-	bt, err := bridgectrl.NewBridgeController(ctx, cfg.BT, []uint{0, cfg.L2NetworkID}, pgst)
+	bt, err := bridgectrl.NewBridgeController(ctx, cfg.BT, []uint32{0, cfg.L2NetworkID}, pgst)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func NewManager(ctx context.Context, cfg *Config) (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
-	bService := server.NewBridgeService(cfg.BS, cfg.BT.Height, []uint{0, cfg.L2NetworkID}, pgst)
+	bService := server.NewBridgeService(cfg.BS, cfg.BT.Height, []uint32{0, cfg.L2NetworkID}, pgst)
 	opsman.storage = st.(StorageInterface)
 	opsman.bridgetree = bt
 	opsman.bridgeService = bService
@@ -209,7 +209,7 @@ func (m *Manager) CustomCheckClaim(ctx context.Context, deposit *pb.Deposit, int
 
 // GetNumberClaims get the number of claim events synced
 func (m *Manager) GetNumberClaims(ctx context.Context, destAddr string) (int, error) {
-	const limit = 100
+	const limit uint32 = 100
 	claims, err := m.storage.GetClaims(ctx, destAddr, limit, 0, nil)
 	if err != nil {
 		return 0, err
@@ -225,7 +225,7 @@ func (m *Manager) SendL1Deposit(ctx context.Context, tokenAddr common.Address, a
 		return err
 	}
 
-	orgExitRoot, err := m.storage.GetLatestExitRoot(ctx, 0, uint(destNetwork), nil)
+	orgExitRoot, err := m.storage.GetLatestExitRoot(ctx, 0, destNetwork, nil)
 	if err != nil && err != gerror.ErrStorageNotFound {
 		return err
 	}
@@ -236,7 +236,7 @@ func (m *Manager) SendL1Deposit(ctx context.Context, tokenAddr common.Address, a
 	}
 
 	// sync for new exit root
-	return m.WaitExitRootToBeSynced(ctx, orgExitRoot, 0, uint(destNetwork))
+	return m.WaitExitRootToBeSynced(ctx, orgExitRoot, 0, destNetwork)
 }
 
 // SendMultipleL1Deposit sends a deposit from l1 to l2.
@@ -275,7 +275,7 @@ func (m *Manager) SendL2Deposit(ctx context.Context, tokenAddr common.Address, a
 		log.Error("error getting networkID: ", networkID)
 		return err
 	}
-	orgExitRoot, err := m.storage.GetLatestExitRoot(ctx, uint(networkID), uint(destNetwork), nil)
+	orgExitRoot, err := m.storage.GetLatestExitRoot(ctx, networkID, destNetwork, nil)
 	if err != nil && err != gerror.ErrStorageNotFound {
 		return err
 	}
@@ -286,7 +286,7 @@ func (m *Manager) SendL2Deposit(ctx context.Context, tokenAddr common.Address, a
 	}
 
 	// sync for new exit root
-	return m.WaitExitRootToBeSynced(ctx, orgExitRoot, uint(networkID), uint(destNetwork))
+	return m.WaitExitRootToBeSynced(ctx, orgExitRoot, networkID, destNetwork)
 }
 
 // SendL1BridgeMessage bridges a message from l1 to l2.
@@ -303,7 +303,7 @@ func (m *Manager) SendL1BridgeMessage(ctx context.Context, destAddr common.Addre
 		}
 	}
 
-	orgExitRoot, err := m.storage.GetLatestExitRoot(ctx, 0, uint(destNetwork), nil)
+	orgExitRoot, err := m.storage.GetLatestExitRoot(ctx, 0, destNetwork, nil)
 	if err != nil && err != gerror.ErrStorageNotFound {
 		return err
 	}
@@ -315,7 +315,7 @@ func (m *Manager) SendL1BridgeMessage(ctx context.Context, destAddr common.Addre
 	}
 
 	// sync for new exit root
-	return m.WaitExitRootToBeSynced(ctx, orgExitRoot, 0, uint(destNetwork))
+	return m.WaitExitRootToBeSynced(ctx, orgExitRoot, 0, destNetwork)
 }
 
 // SendL2BridgeMessage bridges a message from l2 to l1.
@@ -332,7 +332,7 @@ func (m *Manager) SendL2BridgeMessage(ctx context.Context, destAddr common.Addre
 		return err
 	}
 
-	orgExitRoot, err := m.storage.GetLatestExitRoot(ctx, uint(networkID), uint(destNetwork), nil)
+	orgExitRoot, err := m.storage.GetLatestExitRoot(ctx, networkID, destNetwork, nil)
 	if err != nil && err != gerror.ErrStorageNotFound {
 		return err
 	}
@@ -344,7 +344,7 @@ func (m *Manager) SendL2BridgeMessage(ctx context.Context, destAddr common.Addre
 	}
 
 	// sync for new exit root
-	return m.WaitExitRootToBeSynced(ctx, orgExitRoot, uint(networkID), uint(destNetwork))
+	return m.WaitExitRootToBeSynced(ctx, orgExitRoot, networkID, destNetwork)
 }
 
 // Setup creates all the required components and initializes them according to
@@ -605,10 +605,10 @@ func (m *Manager) CheckAccountTokenBalance(ctx context.Context, network NetworkS
 }
 
 // GetClaimDataByGER gets the claim data by ger
-func (m *Manager) GetClaimDataByGER(ctx context.Context, networkID, depositCount uint, ger common.Hash) ([MtHeight][bridgectrl.KeyLen]byte, [MtHeight][bridgectrl.KeyLen]byte, *etherman.GlobalExitRoot, error) {
+func (m *Manager) GetClaimDataByGER(ctx context.Context, networkID, depositCount uint32, ger common.Hash) ([MtHeight][bridgectrl.KeyLen]byte, [MtHeight][bridgectrl.KeyLen]byte, *etherman.GlobalExitRoot, error) {
 	res, err := m.bridgeService.GetProofByGER(context.Background(), &pb.GetProofByGERRequest{
-		NetId:      uint32(networkID),
-		DepositCnt: uint64(depositCount),
+		NetId:      networkID,
+		DepositCnt: depositCount,
 		Ger:        ger.String(),
 	})
 	if err != nil {
@@ -634,10 +634,10 @@ func (m *Manager) GetClaimDataByGER(ctx context.Context, networkID, depositCount
 }
 
 // GetClaimData gets the claim data
-func (m *Manager) GetClaimData(ctx context.Context, networkID, depositCount uint) ([MtHeight][bridgectrl.KeyLen]byte, [MtHeight][bridgectrl.KeyLen]byte, *etherman.GlobalExitRoot, error) {
+func (m *Manager) GetClaimData(ctx context.Context, networkID, depositCount uint32) ([MtHeight][bridgectrl.KeyLen]byte, [MtHeight][bridgectrl.KeyLen]byte, *etherman.GlobalExitRoot, error) {
 	res, err := m.bridgeService.GetProof(context.Background(), &pb.GetProofRequest{
-		NetId:      uint32(networkID),
-		DepositCnt: uint64(depositCount),
+		NetId:      networkID,
+		DepositCnt: depositCount,
 	})
 	if err != nil {
 		return [MtHeight][32]byte{}, [MtHeight][32]byte{}, nil, err
@@ -703,7 +703,7 @@ func (m *Manager) SendL2Claim(ctx context.Context, deposit *pb.Deposit, smtProof
 }
 
 // GetTrustedGlobalExitRootSynced reads the latest globalexitroot of a batch proposal from db
-func (m *Manager) GetTrustedGlobalExitRootSynced(ctx context.Context, networkID uint) (*etherman.GlobalExitRoot, error) {
+func (m *Manager) GetTrustedGlobalExitRootSynced(ctx context.Context, networkID uint32) (*etherman.GlobalExitRoot, error) {
 	return m.storage.GetLatestTrustedExitRoot(ctx, networkID, nil)
 }
 
@@ -795,7 +795,7 @@ func (m *Manager) ApproveERC20(ctx context.Context, erc20Addr, bridgeAddr common
 }
 
 // GetTokenWrapped get token wrapped info
-func (m *Manager) GetTokenWrapped(ctx context.Context, originNetwork uint, originalTokenAddr common.Address, isCreated bool) (*etherman.TokenWrapped, error) {
+func (m *Manager) GetTokenWrapped(ctx context.Context, originNetwork uint32, originalTokenAddr common.Address, isCreated bool) (*etherman.TokenWrapped, error) {
 	if isCreated {
 		if err := operations.Poll(defaultInterval, defaultDeadline, func() (bool, error) {
 			wrappedToken, err := m.storage.GetTokenWrapped(ctx, originNetwork, originalTokenAddr, nil)
@@ -811,12 +811,12 @@ func (m *Manager) GetTokenWrapped(ctx context.Context, originNetwork uint, origi
 }
 
 // UpdateBlocksForTesting updates the hash of blocks.
-func (m *Manager) UpdateBlocksForTesting(ctx context.Context, networkID uint, blockNum uint64) error {
+func (m *Manager) UpdateBlocksForTesting(ctx context.Context, networkID uint32, blockNum uint64) error {
 	return m.storage.UpdateBlocksForTesting(ctx, networkID, blockNum, nil)
 }
 
 // WaitExitRootToBeSynced waits until new exit root is synced.
-func (m *Manager) WaitExitRootToBeSynced(ctx context.Context, orgExitRoot *etherman.GlobalExitRoot, networkID, destNetwork uint) error {
+func (m *Manager) WaitExitRootToBeSynced(ctx context.Context, orgExitRoot *etherman.GlobalExitRoot, networkID, destNetwork uint32) error {
 	log.Debugf("WaitExitRootToBeSynced: %+v", orgExitRoot)
 	if orgExitRoot == nil {
 		orgExitRoot = &etherman.GlobalExitRoot{
@@ -875,13 +875,13 @@ func (m *Manager) ERC20Transfer(ctx context.Context, erc20Addr, to common.Addres
 	return client.ERC20Transfer(ctx, erc20Addr, to, amount, auth)
 }
 
-func (m *Manager) GetTokenAddress(ctx context.Context, network NetworkSID, originalNetwork uint, originalTokenAddr common.Address) (common.Address, error) {
+func (m *Manager) GetTokenAddress(ctx context.Context, network NetworkSID, originalNetwork uint32, originalTokenAddr common.Address) (common.Address, error) {
 	zeroAddr := common.Address{}
 	if network == L1 {
 		if originalNetwork == 0 {
 			return originalTokenAddr, nil
 		}
-		token, err := m.storage.GetTokenWrapped(ctx, uint(originalNetwork), originalTokenAddr, nil)
+		token, err := m.storage.GetTokenWrapped(ctx, originalNetwork, originalTokenAddr, nil)
 		if err != nil {
 			return common.Address{}, err
 		}
@@ -894,10 +894,10 @@ func (m *Manager) GetTokenAddress(ctx context.Context, network NetworkSID, origi
 		if err != nil {
 			return common.Address{}, err
 		}
-		if originalNetwork == uint(networkID) {
+		if originalNetwork == networkID {
 			return originalTokenAddr, nil
 		}
-		token, err := m.storage.GetTokenWrapped(ctx, uint(originalNetwork), originalTokenAddr, nil)
+		token, err := m.storage.GetTokenWrapped(ctx, originalNetwork, originalTokenAddr, nil)
 		if err != nil {
 			return common.Address{}, err
 		}
@@ -925,7 +925,7 @@ func (m *Manager) GetL1Balance(ctx context.Context, originalNetwork uint32, orig
 			return m.CheckAccountTokenBalance(ctx, L1, originalTokenAddr, &holder)
 		}
 	} else {
-		token, err := m.storage.GetTokenWrapped(ctx, uint(originalNetwork), originalTokenAddr, nil)
+		token, err := m.storage.GetTokenWrapped(ctx, originalNetwork, originalTokenAddr, nil)
 		if err == gerror.ErrStorageNotFound {
 			return big.NewInt(0), nil
 		} else if err != nil {
@@ -950,7 +950,7 @@ func (m *Manager) GetL2Balance(ctx context.Context, originalNetwork uint32, orig
 	} else {
 		// If the token is not created on L1 or in this rollup, it's needed to calculate
 		// the addr of the token on the rollup
-		token, err := m.storage.GetTokenWrapped(ctx, uint(originalNetwork), originalTokenAddr, nil)
+		token, err := m.storage.GetTokenWrapped(ctx, originalNetwork, originalTokenAddr, nil)
 		if err == gerror.ErrStorageNotFound {
 			return big.NewInt(0), nil
 		} else if err != nil {
@@ -961,7 +961,7 @@ func (m *Manager) GetL2Balance(ctx context.Context, originalNetwork uint32, orig
 	return m.CheckAccountTokenBalance(ctx, L2, rollupAddr, &holder)
 }
 
-func GetOpsman(ctx context.Context, l2NetworkURL, dbName, bridgeServiceHTTPPort, bridgeServiceGRPCPort, port string, networkID uint) (*Manager, error) {
+func GetOpsman(ctx context.Context, l2NetworkURL, dbName, bridgeServiceHTTPPort, bridgeServiceGRPCPort, port string, networkID uint32) (*Manager, error) {
 	//nolint:gomnd
 	opsCfg := &Config{
 		L1NetworkURL: "http://localhost:8545",

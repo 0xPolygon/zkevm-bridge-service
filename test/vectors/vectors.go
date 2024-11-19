@@ -2,10 +2,10 @@ package vectors
 
 // DepositVectorRaw represents the deposit vector
 type DepositVectorRaw struct {
-	OriginalNetwork    uint   `json:"originNetwork"`
+	OriginalNetwork    uint32 `json:"originNetwork"`
 	TokenAddress       string `json:"tokenAddress"`
 	Amount             string `json:"amount"`
-	DestinationNetwork uint   `json:"destinationNetwork"`
+	DestinationNetwork uint32 `json:"destinationNetwork"`
 	DestinationAddress string `json:"destinationAddress"`
 	ExpectedHash       string `json:"leafValue"`
 	CurrentHash        string `json:"currentLeafValue"`
@@ -23,18 +23,18 @@ type MTRootVectorRaw struct {
 // MTClaimVectorRaw represents the merkle proof
 type MTClaimVectorRaw struct {
 	Deposits     []DepositVectorRaw `json:"leafs"`
-	Index        uint               `json:"index"`
+	Index        uint32             `json:"index"`
 	MerkleProof  []string           `json:"proof"`
 	ExpectedRoot string             `json:"root"`
 }
 
 // ClaimVectorRaw represents the claim vector
 type ClaimVectorRaw struct {
-	Index              uint   `json:"index"`
-	OriginalNetwork    uint   `json:"originNetwork"`
+	Index              uint32 `json:"index"`
+	OriginalNetwork    uint32 `json:"originNetwork"`
 	Token              string `json:"token"`
 	Amount             string `json:"amount"`
-	DestinationNetwork uint   `json:"destNetwork"`
+	DestinationNetwork uint32 `json:"destNetwork"`
 	DestinationAddress string `json:"destAddress"`
 	BlockNumber        uint64 `json:"blockNumber"`
 }
@@ -44,5 +44,5 @@ type BlockVectorRaw struct {
 	BlockNumber uint64 `json:"blockNumber"`
 	BlockHash   string `json:"blockHash"`
 	ParentHash  string `json:"parentHash"`
-	NetworkID   uint   `json:"networkID"`
+	NetworkID   uint32 `json:"networkID"`
 }

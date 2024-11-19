@@ -401,7 +401,7 @@ func (_c *storageMock_BeginDBTransaction_Call) RunAndReturn(run func(context.Con
 }
 
 // CheckIfRootExists provides a mock function with given fields: ctx, root, network, dbTx
-func (_m *storageMock) CheckIfRootExists(ctx context.Context, root []byte, network uint8, dbTx pgx.Tx) (bool, error) {
+func (_m *storageMock) CheckIfRootExists(ctx context.Context, root []byte, network uint32, dbTx pgx.Tx) (bool, error) {
 	ret := _m.Called(ctx, root, network, dbTx)
 
 	if len(ret) == 0 {
@@ -410,16 +410,16 @@ func (_m *storageMock) CheckIfRootExists(ctx context.Context, root []byte, netwo
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint8, pgx.Tx) (bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint32, pgx.Tx) (bool, error)); ok {
 		return rf(ctx, root, network, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint8, pgx.Tx) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint32, pgx.Tx) bool); ok {
 		r0 = rf(ctx, root, network, dbTx)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []byte, uint8, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []byte, uint32, pgx.Tx) error); ok {
 		r1 = rf(ctx, root, network, dbTx)
 	} else {
 		r1 = ret.Error(1)
@@ -436,15 +436,15 @@ type storageMock_CheckIfRootExists_Call struct {
 // CheckIfRootExists is a helper method to define mock.On call
 //   - ctx context.Context
 //   - root []byte
-//   - network uint8
+//   - network uint32
 //   - dbTx pgx.Tx
 func (_e *storageMock_Expecter) CheckIfRootExists(ctx interface{}, root interface{}, network interface{}, dbTx interface{}) *storageMock_CheckIfRootExists_Call {
 	return &storageMock_CheckIfRootExists_Call{Call: _e.mock.On("CheckIfRootExists", ctx, root, network, dbTx)}
 }
 
-func (_c *storageMock_CheckIfRootExists_Call) Run(run func(ctx context.Context, root []byte, network uint8, dbTx pgx.Tx)) *storageMock_CheckIfRootExists_Call {
+func (_c *storageMock_CheckIfRootExists_Call) Run(run func(ctx context.Context, root []byte, network uint32, dbTx pgx.Tx)) *storageMock_CheckIfRootExists_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]byte), args[2].(uint8), args[3].(pgx.Tx))
+		run(args[0].(context.Context), args[1].([]byte), args[2].(uint32), args[3].(pgx.Tx))
 	})
 	return _c
 }
@@ -454,7 +454,7 @@ func (_c *storageMock_CheckIfRootExists_Call) Return(_a0 bool, _a1 error) *stora
 	return _c
 }
 
-func (_c *storageMock_CheckIfRootExists_Call) RunAndReturn(run func(context.Context, []byte, uint8, pgx.Tx) (bool, error)) *storageMock_CheckIfRootExists_Call {
+func (_c *storageMock_CheckIfRootExists_Call) RunAndReturn(run func(context.Context, []byte, uint32, pgx.Tx) (bool, error)) *storageMock_CheckIfRootExists_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -507,7 +507,7 @@ func (_c *storageMock_Commit_Call) RunAndReturn(run func(context.Context, pgx.Tx
 }
 
 // GetLastBlock provides a mock function with given fields: ctx, networkID, dbTx
-func (_m *storageMock) GetLastBlock(ctx context.Context, networkID uint, dbTx pgx.Tx) (*etherman.Block, error) {
+func (_m *storageMock) GetLastBlock(ctx context.Context, networkID uint32, dbTx pgx.Tx) (*etherman.Block, error) {
 	ret := _m.Called(ctx, networkID, dbTx)
 
 	if len(ret) == 0 {
@@ -516,10 +516,10 @@ func (_m *storageMock) GetLastBlock(ctx context.Context, networkID uint, dbTx pg
 
 	var r0 *etherman.Block
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint, pgx.Tx) (*etherman.Block, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, pgx.Tx) (*etherman.Block, error)); ok {
 		return rf(ctx, networkID, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uint, pgx.Tx) *etherman.Block); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, pgx.Tx) *etherman.Block); ok {
 		r0 = rf(ctx, networkID, dbTx)
 	} else {
 		if ret.Get(0) != nil {
@@ -527,7 +527,7 @@ func (_m *storageMock) GetLastBlock(ctx context.Context, networkID uint, dbTx pg
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, uint, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, pgx.Tx) error); ok {
 		r1 = rf(ctx, networkID, dbTx)
 	} else {
 		r1 = ret.Error(1)
@@ -543,15 +543,15 @@ type storageMock_GetLastBlock_Call struct {
 
 // GetLastBlock is a helper method to define mock.On call
 //   - ctx context.Context
-//   - networkID uint
+//   - networkID uint32
 //   - dbTx pgx.Tx
 func (_e *storageMock_Expecter) GetLastBlock(ctx interface{}, networkID interface{}, dbTx interface{}) *storageMock_GetLastBlock_Call {
 	return &storageMock_GetLastBlock_Call{Call: _e.mock.On("GetLastBlock", ctx, networkID, dbTx)}
 }
 
-func (_c *storageMock_GetLastBlock_Call) Run(run func(ctx context.Context, networkID uint, dbTx pgx.Tx)) *storageMock_GetLastBlock_Call {
+func (_c *storageMock_GetLastBlock_Call) Run(run func(ctx context.Context, networkID uint32, dbTx pgx.Tx)) *storageMock_GetLastBlock_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uint), args[2].(pgx.Tx))
+		run(args[0].(context.Context), args[1].(uint32), args[2].(pgx.Tx))
 	})
 	return _c
 }
@@ -561,7 +561,7 @@ func (_c *storageMock_GetLastBlock_Call) Return(_a0 *etherman.Block, _a1 error) 
 	return _c
 }
 
-func (_c *storageMock_GetLastBlock_Call) RunAndReturn(run func(context.Context, uint, pgx.Tx) (*etherman.Block, error)) *storageMock_GetLastBlock_Call {
+func (_c *storageMock_GetLastBlock_Call) RunAndReturn(run func(context.Context, uint32, pgx.Tx) (*etherman.Block, error)) *storageMock_GetLastBlock_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -626,25 +626,25 @@ func (_c *storageMock_GetLatestL1SyncedExitRoot_Call) RunAndReturn(run func(cont
 }
 
 // GetNumberDeposits provides a mock function with given fields: ctx, origNetworkID, blockNumber, dbTx
-func (_m *storageMock) GetNumberDeposits(ctx context.Context, origNetworkID uint, blockNumber uint64, dbTx pgx.Tx) (uint64, error) {
+func (_m *storageMock) GetNumberDeposits(ctx context.Context, origNetworkID uint32, blockNumber uint64, dbTx pgx.Tx) (uint32, error) {
 	ret := _m.Called(ctx, origNetworkID, blockNumber, dbTx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetNumberDeposits")
 	}
 
-	var r0 uint64
+	var r0 uint32
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint, uint64, pgx.Tx) (uint64, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint64, pgx.Tx) (uint32, error)); ok {
 		return rf(ctx, origNetworkID, blockNumber, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uint, uint64, pgx.Tx) uint64); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint64, pgx.Tx) uint32); ok {
 		r0 = rf(ctx, origNetworkID, blockNumber, dbTx)
 	} else {
-		r0 = ret.Get(0).(uint64)
+		r0 = ret.Get(0).(uint32)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, uint, uint64, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, uint64, pgx.Tx) error); ok {
 		r1 = rf(ctx, origNetworkID, blockNumber, dbTx)
 	} else {
 		r1 = ret.Error(1)
@@ -660,32 +660,32 @@ type storageMock_GetNumberDeposits_Call struct {
 
 // GetNumberDeposits is a helper method to define mock.On call
 //   - ctx context.Context
-//   - origNetworkID uint
+//   - origNetworkID uint32
 //   - blockNumber uint64
 //   - dbTx pgx.Tx
 func (_e *storageMock_Expecter) GetNumberDeposits(ctx interface{}, origNetworkID interface{}, blockNumber interface{}, dbTx interface{}) *storageMock_GetNumberDeposits_Call {
 	return &storageMock_GetNumberDeposits_Call{Call: _e.mock.On("GetNumberDeposits", ctx, origNetworkID, blockNumber, dbTx)}
 }
 
-func (_c *storageMock_GetNumberDeposits_Call) Run(run func(ctx context.Context, origNetworkID uint, blockNumber uint64, dbTx pgx.Tx)) *storageMock_GetNumberDeposits_Call {
+func (_c *storageMock_GetNumberDeposits_Call) Run(run func(ctx context.Context, origNetworkID uint32, blockNumber uint64, dbTx pgx.Tx)) *storageMock_GetNumberDeposits_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uint), args[2].(uint64), args[3].(pgx.Tx))
+		run(args[0].(context.Context), args[1].(uint32), args[2].(uint64), args[3].(pgx.Tx))
 	})
 	return _c
 }
 
-func (_c *storageMock_GetNumberDeposits_Call) Return(_a0 uint64, _a1 error) *storageMock_GetNumberDeposits_Call {
+func (_c *storageMock_GetNumberDeposits_Call) Return(_a0 uint32, _a1 error) *storageMock_GetNumberDeposits_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *storageMock_GetNumberDeposits_Call) RunAndReturn(run func(context.Context, uint, uint64, pgx.Tx) (uint64, error)) *storageMock_GetNumberDeposits_Call {
+func (_c *storageMock_GetNumberDeposits_Call) RunAndReturn(run func(context.Context, uint32, uint64, pgx.Tx) (uint32, error)) *storageMock_GetNumberDeposits_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetPreviousBlock provides a mock function with given fields: ctx, networkID, offset, dbTx
-func (_m *storageMock) GetPreviousBlock(ctx context.Context, networkID uint, offset uint64, dbTx pgx.Tx) (*etherman.Block, error) {
+func (_m *storageMock) GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (*etherman.Block, error) {
 	ret := _m.Called(ctx, networkID, offset, dbTx)
 
 	if len(ret) == 0 {
@@ -694,10 +694,10 @@ func (_m *storageMock) GetPreviousBlock(ctx context.Context, networkID uint, off
 
 	var r0 *etherman.Block
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint, uint64, pgx.Tx) (*etherman.Block, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint64, pgx.Tx) (*etherman.Block, error)); ok {
 		return rf(ctx, networkID, offset, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uint, uint64, pgx.Tx) *etherman.Block); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint64, pgx.Tx) *etherman.Block); ok {
 		r0 = rf(ctx, networkID, offset, dbTx)
 	} else {
 		if ret.Get(0) != nil {
@@ -705,7 +705,7 @@ func (_m *storageMock) GetPreviousBlock(ctx context.Context, networkID uint, off
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, uint, uint64, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, uint64, pgx.Tx) error); ok {
 		r1 = rf(ctx, networkID, offset, dbTx)
 	} else {
 		r1 = ret.Error(1)
@@ -721,16 +721,16 @@ type storageMock_GetPreviousBlock_Call struct {
 
 // GetPreviousBlock is a helper method to define mock.On call
 //   - ctx context.Context
-//   - networkID uint
+//   - networkID uint32
 //   - offset uint64
 //   - dbTx pgx.Tx
 func (_e *storageMock_Expecter) GetPreviousBlock(ctx interface{}, networkID interface{}, offset interface{}, dbTx interface{}) *storageMock_GetPreviousBlock_Call {
 	return &storageMock_GetPreviousBlock_Call{Call: _e.mock.On("GetPreviousBlock", ctx, networkID, offset, dbTx)}
 }
 
-func (_c *storageMock_GetPreviousBlock_Call) Run(run func(ctx context.Context, networkID uint, offset uint64, dbTx pgx.Tx)) *storageMock_GetPreviousBlock_Call {
+func (_c *storageMock_GetPreviousBlock_Call) Run(run func(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx)) *storageMock_GetPreviousBlock_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uint), args[2].(uint64), args[3].(pgx.Tx))
+		run(args[0].(context.Context), args[1].(uint32), args[2].(uint64), args[3].(pgx.Tx))
 	})
 	return _c
 }
@@ -740,13 +740,13 @@ func (_c *storageMock_GetPreviousBlock_Call) Return(_a0 *etherman.Block, _a1 err
 	return _c
 }
 
-func (_c *storageMock_GetPreviousBlock_Call) RunAndReturn(run func(context.Context, uint, uint64, pgx.Tx) (*etherman.Block, error)) *storageMock_GetPreviousBlock_Call {
+func (_c *storageMock_GetPreviousBlock_Call) RunAndReturn(run func(context.Context, uint32, uint64, pgx.Tx) (*etherman.Block, error)) *storageMock_GetPreviousBlock_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Reset provides a mock function with given fields: ctx, blockNumber, networkID, dbTx
-func (_m *storageMock) Reset(ctx context.Context, blockNumber uint64, networkID uint, dbTx pgx.Tx) error {
+func (_m *storageMock) Reset(ctx context.Context, blockNumber uint64, networkID uint32, dbTx pgx.Tx) error {
 	ret := _m.Called(ctx, blockNumber, networkID, dbTx)
 
 	if len(ret) == 0 {
@@ -754,7 +754,7 @@ func (_m *storageMock) Reset(ctx context.Context, blockNumber uint64, networkID 
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, uint32, pgx.Tx) error); ok {
 		r0 = rf(ctx, blockNumber, networkID, dbTx)
 	} else {
 		r0 = ret.Error(0)
@@ -771,15 +771,15 @@ type storageMock_Reset_Call struct {
 // Reset is a helper method to define mock.On call
 //   - ctx context.Context
 //   - blockNumber uint64
-//   - networkID uint
+//   - networkID uint32
 //   - dbTx pgx.Tx
 func (_e *storageMock_Expecter) Reset(ctx interface{}, blockNumber interface{}, networkID interface{}, dbTx interface{}) *storageMock_Reset_Call {
 	return &storageMock_Reset_Call{Call: _e.mock.On("Reset", ctx, blockNumber, networkID, dbTx)}
 }
 
-func (_c *storageMock_Reset_Call) Run(run func(ctx context.Context, blockNumber uint64, networkID uint, dbTx pgx.Tx)) *storageMock_Reset_Call {
+func (_c *storageMock_Reset_Call) Run(run func(ctx context.Context, blockNumber uint64, networkID uint32, dbTx pgx.Tx)) *storageMock_Reset_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uint64), args[2].(uint), args[3].(pgx.Tx))
+		run(args[0].(context.Context), args[1].(uint64), args[2].(uint32), args[3].(pgx.Tx))
 	})
 	return _c
 }
@@ -789,7 +789,7 @@ func (_c *storageMock_Reset_Call) Return(_a0 error) *storageMock_Reset_Call {
 	return _c
 }
 
-func (_c *storageMock_Reset_Call) RunAndReturn(run func(context.Context, uint64, uint, pgx.Tx) error) *storageMock_Reset_Call {
+func (_c *storageMock_Reset_Call) RunAndReturn(run func(context.Context, uint64, uint32, pgx.Tx) error) *storageMock_Reset_Call {
 	_c.Call.Return(run)
 	return _c
 }

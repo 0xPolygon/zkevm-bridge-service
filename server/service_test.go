@@ -14,9 +14,11 @@ func TestGetClaimProofbyGER(t *testing.T) {
 		CacheSize: 32,
 	}
 	mockStorage := newBridgeServiceStorageMock(t)
-	sut := NewBridgeService(cfg, 32, []uint{0, 1}, mockStorage)
-	depositCnt := uint(0)
-	networkID := uint(0)
+	sut := NewBridgeService(cfg, 32, []uint32{0, 1}, mockStorage)
+	var (
+		depositCnt uint32
+		networkID  uint32
+	)
 	GER := common.Hash{}
 	deposit := &etherman.Deposit{}
 	mockStorage.EXPECT().GetDeposit(mock.Anything, depositCnt, networkID, mock.Anything).Return(deposit, nil)

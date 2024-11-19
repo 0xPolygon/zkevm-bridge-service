@@ -32,14 +32,14 @@ type ClaimTxManager struct {
 
 	// client is the ethereum client
 	l2Node          *utils.Client
-	l2NetworkID     uint
+	l2NetworkID     uint32
 	bridgeService   bridgeServiceInterface
 	cfg             Config
 	chExitRootEvent chan *etherman.GlobalExitRoot
-	chSynced        chan uint
+	chSynced        chan uint32
 	storage         StorageInterface
 	auth            *bind.TransactOpts
-	rollupID        uint
+	rollupID        uint32
 	synced          bool
 	nonceCache      *NonceCache
 	monitorTxs      types.TxMonitorer
@@ -47,13 +47,13 @@ type ClaimTxManager struct {
 
 // NewClaimTxManager creates a new claim transaction manager.
 func NewClaimTxManager(ctx context.Context, cfg Config, chExitRootEvent chan *etherman.GlobalExitRoot,
-	chSynced chan uint,
+	chSynced chan uint32,
 	l2NodeURL string,
-	l2NetworkID uint,
+	l2NetworkID uint32,
 	l2BridgeAddr common.Address,
 	bridgeService bridgeServiceInterface,
 	storage interface{},
-	rollupID uint,
+	rollupID uint32,
 	etherMan EthermanI,
 	nonceCache *NonceCache,
 	auth *bind.TransactOpts) (*ClaimTxManager, error) {

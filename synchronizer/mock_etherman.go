@@ -88,18 +88,18 @@ func (_c *ethermanMock_EthBlockByNumber_Call) RunAndReturn(run func(context.Cont
 }
 
 // GetNetworkID provides a mock function with given fields:
-func (_m *ethermanMock) GetNetworkID() uint {
+func (_m *ethermanMock) GetNetworkID() uint32 {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetNetworkID")
 	}
 
-	var r0 uint
-	if rf, ok := ret.Get(0).(func() uint); ok {
+	var r0 uint32
+	if rf, ok := ret.Get(0).(func() uint32); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(uint)
+		r0 = ret.Get(0).(uint32)
 	}
 
 	return r0
@@ -122,12 +122,12 @@ func (_c *ethermanMock_GetNetworkID_Call) Run(run func()) *ethermanMock_GetNetwo
 	return _c
 }
 
-func (_c *ethermanMock_GetNetworkID_Call) Return(_a0 uint) *ethermanMock_GetNetworkID_Call {
+func (_c *ethermanMock_GetNetworkID_Call) Return(_a0 uint32) *ethermanMock_GetNetworkID_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ethermanMock_GetNetworkID_Call) RunAndReturn(run func() uint) *ethermanMock_GetNetworkID_Call {
+func (_c *ethermanMock_GetNetworkID_Call) RunAndReturn(run func() uint32) *ethermanMock_GetNetworkID_Call {
 	_c.Call.Return(run)
 	return _c
 }
