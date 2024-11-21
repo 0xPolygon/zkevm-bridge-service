@@ -494,10 +494,10 @@ func (p *PostgresStorage) GetLatestRollupExitLeaves(ctx context.Context, dbTx pg
 }
 
 // GetLastDepositCount gets the last deposit count from the merkle tree.
-func (p *PostgresStorage) GetLastDepositCount(ctx context.Context, network uint32, dbTx pgx.Tx) (uint32, error) {
+func (p *PostgresStorage) GetLastDepositCount(ctx context.Context, networkID uint32, dbTx pgx.Tx) (uint32, error) {
 	var depositCnt int64
 	const getLastDepositCountSQL = "SELECT coalesce(MAX(deposit_cnt), -1) FROM sync.deposit WHERE id = (SELECT coalesce(MAX(deposit_id), -1) FROM mt.root WHERE network = $1)"
-	err := p.getExecQuerier(dbTx).QueryRow(ctx, getLastDepositCountSQL, network).Scan(&depositCnt)
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, getLastDepositCountSQL, networkID).Scan(&depositCnt)
 	if err != nil {
 		return 0, nil
 	}

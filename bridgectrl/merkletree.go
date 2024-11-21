@@ -17,8 +17,8 @@ var zeroHashes [][KeyLen]byte
 // MerkleTree struct
 type MerkleTree struct {
 	// store is the database storage to store all node data
-	store   merkleTreeStore
-	network uint32
+	store     merkleTreeStore
+	networkID uint32
 	// height is the depth of the merkle tree
 	height uint8
 	// count is the number of deposit
@@ -38,8 +38,8 @@ func init() {
 }
 
 // NewMerkleTree creates new MerkleTree.
-func NewMerkleTree(ctx context.Context, store merkleTreeStore, height uint8, network uint32) (*MerkleTree, error) {
-	depositCnt, err := store.GetLastDepositCount(ctx, network, nil)
+func NewMerkleTree(ctx context.Context, store merkleTreeStore, height uint8, networkID uint32) (*MerkleTree, error) {
+	depositCnt, err := store.GetLastDepositCount(ctx, networkID, nil)
 	if err != nil {
 		if err != gerror.ErrStorageNotFound {
 			return nil, err
@@ -50,10 +50,10 @@ func NewMerkleTree(ctx context.Context, store merkleTreeStore, height uint8, net
 	}
 
 	mt := &MerkleTree{
-		store:   store,
-		network: network,
-		height:  height,
-		count:   depositCnt,
+		store:     store,
+		networkID: networkID,
+		height:    height,
+		count:     depositCnt,
 	}
 	mt.siblings, err = mt.initSiblings(ctx, nil)
 
@@ -141,7 +141,7 @@ func (mt *MerkleTree) addLeaf(ctx context.Context, depositID uint64, leaf [KeyLe
 		}
 	}
 
-	err := mt.store.SetRoot(ctx, cur[:], depositID, mt.network, dbTx)
+	err := mt.store.SetRoot(ctx, cur[:], depositID, mt.networkID, dbTx)
 	if err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ func (mt *MerkleTree) getRoot(ctx context.Context, dbTx pgx.Tx) ([]byte, error) 
 	if mt.count == 0 {
 		return zeroHashes[mt.height][:], nil
 	}
-	return mt.store.GetRoot(ctx, mt.count-1, mt.network, dbTx)
+	return mt.store.GetRoot(ctx, mt.count-1, mt.networkID, dbTx)
 }
 
 func buildIntermediate(leaves [][KeyLen]byte) ([][][]byte, [][32]byte) {
@@ -207,7 +207,7 @@ func (mt *MerkleTree) updateLeaf(ctx context.Context, depositID uint64, leaves [
 		return fmt.Errorf("error: more than one root detected: %+v", nodes)
 	}
 	log.Debug("Root calculated: ", common.Bytes2Hex(ns[0][0]))
-	err := mt.store.SetRoot(ctx, ns[0][0], depositID, mt.network, dbTx)
+	err := mt.store.SetRoot(ctx, ns[0][0], depositID, mt.networkID, dbTx)
 	if err != nil {
 		return err
 	}
