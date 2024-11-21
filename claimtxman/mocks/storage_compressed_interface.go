@@ -178,7 +178,7 @@ func (_c *StorageCompressedInterface_Commit_Call) RunAndReturn(run func(context.
 }
 
 // GetClaimTxsByStatus provides a mock function with given fields: ctx, statuses, rollupID, dbTx
-func (_m *StorageCompressedInterface) GetClaimTxsByStatus(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint, dbTx pgx.Tx) ([]types.MonitoredTx, error) {
+func (_m *StorageCompressedInterface) GetClaimTxsByStatus(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint32, dbTx pgx.Tx) ([]types.MonitoredTx, error) {
 	ret := _m.Called(ctx, statuses, rollupID, dbTx)
 
 	if len(ret) == 0 {
@@ -187,10 +187,10 @@ func (_m *StorageCompressedInterface) GetClaimTxsByStatus(ctx context.Context, s
 
 	var r0 []types.MonitoredTx
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint, pgx.Tx) ([]types.MonitoredTx, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) ([]types.MonitoredTx, error)); ok {
 		return rf(ctx, statuses, rollupID, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint, pgx.Tx) []types.MonitoredTx); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) []types.MonitoredTx); ok {
 		r0 = rf(ctx, statuses, rollupID, dbTx)
 	} else {
 		if ret.Get(0) != nil {
@@ -198,7 +198,7 @@ func (_m *StorageCompressedInterface) GetClaimTxsByStatus(ctx context.Context, s
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []types.MonitoredTxStatus, uint, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) error); ok {
 		r1 = rf(ctx, statuses, rollupID, dbTx)
 	} else {
 		r1 = ret.Error(1)
@@ -215,15 +215,15 @@ type StorageCompressedInterface_GetClaimTxsByStatus_Call struct {
 // GetClaimTxsByStatus is a helper method to define mock.On call
 //   - ctx context.Context
 //   - statuses []types.MonitoredTxStatus
-//   - rollupID uint
+//   - rollupID uint32
 //   - dbTx pgx.Tx
 func (_e *StorageCompressedInterface_Expecter) GetClaimTxsByStatus(ctx interface{}, statuses interface{}, rollupID interface{}, dbTx interface{}) *StorageCompressedInterface_GetClaimTxsByStatus_Call {
 	return &StorageCompressedInterface_GetClaimTxsByStatus_Call{Call: _e.mock.On("GetClaimTxsByStatus", ctx, statuses, rollupID, dbTx)}
 }
 
-func (_c *StorageCompressedInterface_GetClaimTxsByStatus_Call) Run(run func(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint, dbTx pgx.Tx)) *StorageCompressedInterface_GetClaimTxsByStatus_Call {
+func (_c *StorageCompressedInterface_GetClaimTxsByStatus_Call) Run(run func(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint32, dbTx pgx.Tx)) *StorageCompressedInterface_GetClaimTxsByStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]types.MonitoredTxStatus), args[2].(uint), args[3].(pgx.Tx))
+		run(args[0].(context.Context), args[1].([]types.MonitoredTxStatus), args[2].(uint32), args[3].(pgx.Tx))
 	})
 	return _c
 }
@@ -233,7 +233,7 @@ func (_c *StorageCompressedInterface_GetClaimTxsByStatus_Call) Return(_a0 []type
 	return _c
 }
 
-func (_c *StorageCompressedInterface_GetClaimTxsByStatus_Call) RunAndReturn(run func(context.Context, []types.MonitoredTxStatus, uint, pgx.Tx) ([]types.MonitoredTx, error)) *StorageCompressedInterface_GetClaimTxsByStatus_Call {
+func (_c *StorageCompressedInterface_GetClaimTxsByStatus_Call) RunAndReturn(run func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) ([]types.MonitoredTx, error)) *StorageCompressedInterface_GetClaimTxsByStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

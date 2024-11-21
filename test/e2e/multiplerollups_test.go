@@ -20,9 +20,9 @@ func TestMultipleRollups(t *testing.T) {
 		t.Skip()
 	}
 	const (
-		mainnetID uint = 0
-		rollup1ID uint = 1
-		rollup2ID uint = 2
+		mainnetID uint32 = 0
+		rollup1ID uint32 = 1
+		rollup2ID uint32 = 2
 	)
 	ctx := context.Background()
 	opsman1, err := operations.GetOpsman(ctx, "http://localhost:8123", "test_db", "8080", "9090", "5435", 1)
@@ -163,9 +163,9 @@ func TestMultipleRollups(t *testing.T) {
 }
 
 type bridgeData struct {
-	originNet       uint
-	destNet         uint
-	originTokenNet  uint
+	originNet       uint32
+	destNet         uint32
+	originTokenNet  uint32
 	originTokenAddr common.Address
 	amount          *big.Int
 }
@@ -218,7 +218,7 @@ func bridge(
 		log.Debug("deposit claimed on L2")
 	} else {
 		log.Debug("getting proof to perform claim from bridge service...")
-		smtProof, smtRollupProof, globaExitRoot, err := opsman.GetClaimData(ctx, uint(deposit.NetworkId), uint(deposit.DepositCnt))
+		smtProof, smtRollupProof, globaExitRoot, err := opsman.GetClaimData(ctx, deposit.NetworkId, deposit.DepositCnt)
 		require.NoError(t, err)
 		log.Debug("sending claim tx to L1")
 		err = opsman.SendL1Claim(ctx, deposit, smtProof, smtRollupProof, globaExitRoot)

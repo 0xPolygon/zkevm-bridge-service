@@ -18,8 +18,8 @@ import (
 )
 
 var (
-	networks  []uint = []uint{0, 1}
-	addresses        = initAddresses(10)
+	networks  = []uint32{0, 1}
+	addresses = initAddresses(10)
 )
 
 func init() {
@@ -51,7 +51,7 @@ func initAddresses(count int) []common.Address {
 	return res
 }
 
-func randDeposit(r *rand.Rand, depositCnt uint, blockID uint64, networkID int) *etherman.Deposit {
+func randDeposit(r *rand.Rand, depositCnt uint32, blockID uint64, networkID uint32) *etherman.Deposit {
 	return &etherman.Deposit{
 		LeafType:           0,
 		OriginalNetwork:    networks[0],
@@ -73,9 +73,9 @@ func initServer(b *testing.B, bench benchmark) *bridgectrl.BridgeController {
 	require.NoError(b, err)
 	b.StartTimer()
 	ctx := context.Background()
-	counts := []uint{0, 0}
+	counts := []uint32{0, 0}
 	for i := 0; i < bench.initSize+bench.postSize; i++ {
-		networkID := rand.Intn(2) //nolint: gosec
+		networkID := uint32(rand.Intn(2)) //nolint: gosec
 		dbTx, err := store.BeginDBTransaction(context.Background())
 		require.NoError(b, err)
 		id, err := store.AddBlock(context.TODO(), &etherman.Block{
@@ -145,7 +145,7 @@ func addDeposit(b *testing.B, bench benchmark) {
 		depositIDs []uint64
 	)
 	for i := 0; i < bench.initSize; i++ {
-		deposit := randDeposit(r, uint(i), 0, 0)
+		deposit := randDeposit(r, uint32(i), 0, 0)
 		depositID, err := store.AddDeposit(context.TODO(), deposit, nil)
 		require.NoError(b, err)
 		deposits = append(deposits, deposit)

@@ -29,14 +29,14 @@ type ClientSynchronizer struct {
 	cancelCtx         context.CancelFunc
 	genBlockNumber    uint64
 	cfg               Config
-	networkID         uint
+	networkID         uint32
 	chExitRootEventL2 chan *etherman.GlobalExitRoot
 	chsExitRootEvent  []chan *etherman.GlobalExitRoot
-	chSynced          chan uint
+	chSynced          chan uint32
 	zkEVMClient       zkEVMClientInterface
 	synced            bool
 	l1RollupExitRoot  common.Hash
-	allNetworkIDs     []uint
+	allNetworkIDs     []uint32
 }
 
 // NewSynchronizer creates and initializes an instance of Synchronizer
@@ -49,9 +49,9 @@ func NewSynchronizer(
 	genBlockNumber uint64,
 	chExitRootEventL2 chan *etherman.GlobalExitRoot,
 	chsExitRootEvent []chan *etherman.GlobalExitRoot,
-	chSynced chan uint,
+	chSynced chan uint32,
 	cfg Config,
-	allNetworkIDs []uint) (Synchronizer, error) {
+	allNetworkIDs []uint32) (Synchronizer, error) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	networkID := ethMan.GetNetworkID()
 	ger, err := storage.(storageInterface).GetLatestL1SyncedExitRoot(ctx, nil)
@@ -498,7 +498,7 @@ func (s *ClientSynchronizer) resetState(blockNumber uint64) error {
 		return err
 	}
 
-	err = s.bridgeCtrl.ReorgMT(s.ctx, uint(depositCnt), s.networkID, dbTx)
+	err = s.bridgeCtrl.ReorgMT(s.ctx, depositCnt, s.networkID, dbTx)
 	if err != nil {
 		log.Error("networkID: %d, error resetting ReorgMT the state. Error: %v", s.networkID, err)
 		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
@@ -611,7 +611,7 @@ func (s *ClientSynchronizer) processVerifyBatch(verifyBatch etherman.VerifiedBat
 	}
 	if isRollupSyncing {
 		// Just check that the calculated RollupExitRoot is fine
-		ok, err := s.storage.CheckIfRootExists(s.ctx, verifyBatch.LocalExitRoot.Bytes(), uint8(verifyBatch.RollupID), dbTx)
+		ok, err := s.storage.CheckIfRootExists(s.ctx, verifyBatch.LocalExitRoot.Bytes(), verifyBatch.RollupID, dbTx)
 		if err != nil {
 			log.Errorf("networkID: %d, error Checking if root exists. Error: %v", s.networkID, err)
 			rollbackErr := s.storage.Rollback(s.ctx, dbTx)

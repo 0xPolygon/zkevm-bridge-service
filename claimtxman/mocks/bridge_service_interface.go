@@ -28,7 +28,7 @@ func (_m *bridgeServiceInterface) EXPECT() *bridgeServiceInterface_Expecter {
 }
 
 // GetClaimProofForCompressed provides a mock function with given fields: ger, depositCnt, networkID, dbTx
-func (_m *bridgeServiceInterface) GetClaimProofForCompressed(ger common.Hash, depositCnt uint, networkID uint, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][32]byte, [][32]byte, error) {
+func (_m *bridgeServiceInterface) GetClaimProofForCompressed(ger common.Hash, depositCnt uint32, networkID uint32, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][32]byte, [][32]byte, error) {
 	ret := _m.Called(ger, depositCnt, networkID, dbTx)
 
 	if len(ret) == 0 {
@@ -39,10 +39,10 @@ func (_m *bridgeServiceInterface) GetClaimProofForCompressed(ger common.Hash, de
 	var r1 [][32]byte
 	var r2 [][32]byte
 	var r3 error
-	if rf, ok := ret.Get(0).(func(common.Hash, uint, uint, pgx.Tx) (*etherman.GlobalExitRoot, [][32]byte, [][32]byte, error)); ok {
+	if rf, ok := ret.Get(0).(func(common.Hash, uint32, uint32, pgx.Tx) (*etherman.GlobalExitRoot, [][32]byte, [][32]byte, error)); ok {
 		return rf(ger, depositCnt, networkID, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(common.Hash, uint, uint, pgx.Tx) *etherman.GlobalExitRoot); ok {
+	if rf, ok := ret.Get(0).(func(common.Hash, uint32, uint32, pgx.Tx) *etherman.GlobalExitRoot); ok {
 		r0 = rf(ger, depositCnt, networkID, dbTx)
 	} else {
 		if ret.Get(0) != nil {
@@ -50,7 +50,7 @@ func (_m *bridgeServiceInterface) GetClaimProofForCompressed(ger common.Hash, de
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(common.Hash, uint, uint, pgx.Tx) [][32]byte); ok {
+	if rf, ok := ret.Get(1).(func(common.Hash, uint32, uint32, pgx.Tx) [][32]byte); ok {
 		r1 = rf(ger, depositCnt, networkID, dbTx)
 	} else {
 		if ret.Get(1) != nil {
@@ -58,7 +58,7 @@ func (_m *bridgeServiceInterface) GetClaimProofForCompressed(ger common.Hash, de
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(common.Hash, uint, uint, pgx.Tx) [][32]byte); ok {
+	if rf, ok := ret.Get(2).(func(common.Hash, uint32, uint32, pgx.Tx) [][32]byte); ok {
 		r2 = rf(ger, depositCnt, networkID, dbTx)
 	} else {
 		if ret.Get(2) != nil {
@@ -66,7 +66,7 @@ func (_m *bridgeServiceInterface) GetClaimProofForCompressed(ger common.Hash, de
 		}
 	}
 
-	if rf, ok := ret.Get(3).(func(common.Hash, uint, uint, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(3).(func(common.Hash, uint32, uint32, pgx.Tx) error); ok {
 		r3 = rf(ger, depositCnt, networkID, dbTx)
 	} else {
 		r3 = ret.Error(3)
@@ -82,16 +82,16 @@ type bridgeServiceInterface_GetClaimProofForCompressed_Call struct {
 
 // GetClaimProofForCompressed is a helper method to define mock.On call
 //   - ger common.Hash
-//   - depositCnt uint
-//   - networkID uint
+//   - depositCnt uint32
+//   - networkID uint32
 //   - dbTx pgx.Tx
 func (_e *bridgeServiceInterface_Expecter) GetClaimProofForCompressed(ger interface{}, depositCnt interface{}, networkID interface{}, dbTx interface{}) *bridgeServiceInterface_GetClaimProofForCompressed_Call {
 	return &bridgeServiceInterface_GetClaimProofForCompressed_Call{Call: _e.mock.On("GetClaimProofForCompressed", ger, depositCnt, networkID, dbTx)}
 }
 
-func (_c *bridgeServiceInterface_GetClaimProofForCompressed_Call) Run(run func(ger common.Hash, depositCnt uint, networkID uint, dbTx pgx.Tx)) *bridgeServiceInterface_GetClaimProofForCompressed_Call {
+func (_c *bridgeServiceInterface_GetClaimProofForCompressed_Call) Run(run func(ger common.Hash, depositCnt uint32, networkID uint32, dbTx pgx.Tx)) *bridgeServiceInterface_GetClaimProofForCompressed_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(common.Hash), args[1].(uint), args[2].(uint), args[3].(pgx.Tx))
+		run(args[0].(common.Hash), args[1].(uint32), args[2].(uint32), args[3].(pgx.Tx))
 	})
 	return _c
 }
@@ -101,13 +101,13 @@ func (_c *bridgeServiceInterface_GetClaimProofForCompressed_Call) Return(_a0 *et
 	return _c
 }
 
-func (_c *bridgeServiceInterface_GetClaimProofForCompressed_Call) RunAndReturn(run func(common.Hash, uint, uint, pgx.Tx) (*etherman.GlobalExitRoot, [][32]byte, [][32]byte, error)) *bridgeServiceInterface_GetClaimProofForCompressed_Call {
+func (_c *bridgeServiceInterface_GetClaimProofForCompressed_Call) RunAndReturn(run func(common.Hash, uint32, uint32, pgx.Tx) (*etherman.GlobalExitRoot, [][32]byte, [][32]byte, error)) *bridgeServiceInterface_GetClaimProofForCompressed_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetDepositStatus provides a mock function with given fields: ctx, depositCount, networkID, destNetworkID
-func (_m *bridgeServiceInterface) GetDepositStatus(ctx context.Context, depositCount uint, networkID uint, destNetworkID uint) (string, error) {
+func (_m *bridgeServiceInterface) GetDepositStatus(ctx context.Context, depositCount uint32, networkID uint32, destNetworkID uint32) (string, error) {
 	ret := _m.Called(ctx, depositCount, networkID, destNetworkID)
 
 	if len(ret) == 0 {
@@ -116,16 +116,16 @@ func (_m *bridgeServiceInterface) GetDepositStatus(ctx context.Context, depositC
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint, uint, uint) (string, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, uint32) (string, error)); ok {
 		return rf(ctx, depositCount, networkID, destNetworkID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uint, uint, uint) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, uint32) string); ok {
 		r0 = rf(ctx, depositCount, networkID, destNetworkID)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, uint, uint, uint) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, uint32, uint32) error); ok {
 		r1 = rf(ctx, depositCount, networkID, destNetworkID)
 	} else {
 		r1 = ret.Error(1)
@@ -141,16 +141,16 @@ type bridgeServiceInterface_GetDepositStatus_Call struct {
 
 // GetDepositStatus is a helper method to define mock.On call
 //   - ctx context.Context
-//   - depositCount uint
-//   - networkID uint
-//   - destNetworkID uint
+//   - depositCount uint32
+//   - networkID uint32
+//   - destNetworkID uint32
 func (_e *bridgeServiceInterface_Expecter) GetDepositStatus(ctx interface{}, depositCount interface{}, networkID interface{}, destNetworkID interface{}) *bridgeServiceInterface_GetDepositStatus_Call {
 	return &bridgeServiceInterface_GetDepositStatus_Call{Call: _e.mock.On("GetDepositStatus", ctx, depositCount, networkID, destNetworkID)}
 }
 
-func (_c *bridgeServiceInterface_GetDepositStatus_Call) Run(run func(ctx context.Context, depositCount uint, networkID uint, destNetworkID uint)) *bridgeServiceInterface_GetDepositStatus_Call {
+func (_c *bridgeServiceInterface_GetDepositStatus_Call) Run(run func(ctx context.Context, depositCount uint32, networkID uint32, destNetworkID uint32)) *bridgeServiceInterface_GetDepositStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uint), args[2].(uint), args[3].(uint))
+		run(args[0].(context.Context), args[1].(uint32), args[2].(uint32), args[3].(uint32))
 	})
 	return _c
 }
@@ -160,7 +160,7 @@ func (_c *bridgeServiceInterface_GetDepositStatus_Call) Return(_a0 string, _a1 e
 	return _c
 }
 
-func (_c *bridgeServiceInterface_GetDepositStatus_Call) RunAndReturn(run func(context.Context, uint, uint, uint) (string, error)) *bridgeServiceInterface_GetDepositStatus_Call {
+func (_c *bridgeServiceInterface_GetDepositStatus_Call) RunAndReturn(run func(context.Context, uint32, uint32, uint32) (string, error)) *bridgeServiceInterface_GetDepositStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

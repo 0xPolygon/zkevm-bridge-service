@@ -290,11 +290,11 @@ func TestMTStorage(t *testing.T) {
 
 	count, err := pg.GetLastDepositCount(ctx, 0, tx)
 	require.NoError(t, err)
-	require.Equal(t, uint(0), count)
+	require.Equal(t, uint32(0), count)
 
 	dCount, err := pg.GetDepositCountByRoot(ctx, root, 0, tx)
 	require.NoError(t, err)
-	require.Equal(t, uint(0), dCount)
+	require.Equal(t, uint32(0), dCount)
 
 	require.NoError(t, tx.Commit(ctx))
 }
@@ -365,12 +365,12 @@ func TestBSStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, len(rDeposits), 1)
 
-	count, err = pg.GetNumberDeposits(ctx, 0, 0, tx)
+	countND, err := pg.GetNumberDeposits(ctx, 0, 0, tx)
 	require.NoError(t, err)
-	require.Equal(t, count, uint64(0))
-	count, err = pg.GetNumberDeposits(ctx, 0, 1, tx)
+	require.Equal(t, countND, uint32(0))
+	countND, err = pg.GetNumberDeposits(ctx, 0, 1, tx)
 	require.NoError(t, err)
-	require.Equal(t, count, uint64(2))
+	require.Equal(t, countND, uint32(2))
 
 	count, err = pg.GetClaimCount(ctx, claim.DestinationAddress.String(), tx)
 	require.NoError(t, err)

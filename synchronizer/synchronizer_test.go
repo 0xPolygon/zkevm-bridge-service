@@ -34,7 +34,7 @@ func NewSynchronizerTest(
 	genBlockNumber uint64,
 	chExitRootEventL2 chan *etherman.GlobalExitRoot,
 	chsExitRootEvent []chan *etherman.GlobalExitRoot,
-	chSynced chan uint,
+	chSynced chan uint32,
 	cfg Config) (Synchronizer, error) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	networkID := ethMan.GetNetworkID()
@@ -87,10 +87,10 @@ func TestSyncGer(t *testing.T) {
 			SyncChunkSize: 10,
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
-		m.Etherman.On("GetNetworkID").Return(uint(0))
+		m.Etherman.On("GetNetworkID").Return(uint32(0))
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
-		chSynced := make(chan uint)
+		chSynced := make(chan uint32)
 		parentCtx := context.Background()
 		sync, err := NewSynchronizerTest(parentCtx, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
 		require.NoError(t, err)
@@ -115,7 +115,7 @@ func TestSyncGer(t *testing.T) {
 		ethBlock0 := types.NewBlockWithHeader(ethHeader0)
 		ethBlock1 := types.NewBlockWithHeader(ethHeader1)
 		lastBlock := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64()}
-		var networkID uint = 0
+		var networkID uint32 = 0
 
 		m.Storage.
 			On("GetLastBlock", ctx, networkID, nil).
@@ -223,10 +223,10 @@ func TestSyncTrustedGer(t *testing.T) {
 			SyncChunkSize: 10,
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
-		m.Etherman.On("GetNetworkID").Return(uint(1))
+		m.Etherman.On("GetNetworkID").Return(uint32(1))
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
-		chSynced := make(chan uint)
+		chSynced := make(chan uint32)
 		parentCtx := context.Background()
 		sync, err := NewSynchronizerTest(parentCtx, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
 		require.NoError(t, err)
@@ -251,7 +251,7 @@ func TestSyncTrustedGer(t *testing.T) {
 		ethBlock0 := types.NewBlockWithHeader(ethHeader0)
 		ethBlock1 := types.NewBlockWithHeader(ethHeader1)
 		lastBlock := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64()}
-		var networkID uint = 1
+		var networkID uint32 = 1
 
 		m.Storage.
 			On("GetLastBlock", ctx, networkID, nil).
@@ -365,10 +365,10 @@ func TestReorg(t *testing.T) {
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		parentContext := context.Background()
-		m.Etherman.On("GetNetworkID").Return(uint(0))
+		m.Etherman.On("GetNetworkID").Return(uint32(0))
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
-		chSynced := make(chan uint)
+		chSynced := make(chan uint32)
 		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
 		require.NoError(t, err)
 
@@ -403,7 +403,7 @@ func TestReorg(t *testing.T) {
 
 		lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
 		lastBlock1 := &etherman.Block{BlockHash: ethBlock1.Hash(), BlockNumber: ethBlock1.Number().Uint64(), ParentHash: ethBlock1.ParentHash()}
-		var networkID uint = 0
+		var networkID uint32 = 0
 
 		m.Storage.
 			On("GetLastBlock", ctx, networkID, nil).
@@ -475,14 +475,14 @@ func TestReorg(t *testing.T) {
 			Return(nil).
 			Once()
 
-		depositCnt := 1
+		var depositCnt uint32 = 1
 		m.Storage.
 			On("GetNumberDeposits", ctx, networkID, ethBlock0.NumberU64(), m.DbTx).
-			Return(uint64(depositCnt), nil).
+			Return(depositCnt, nil).
 			Once()
 
 		m.BridgeCtrl.
-			On("ReorgMT", ctx, uint(depositCnt), networkID, m.DbTx).
+			On("ReorgMT", ctx, depositCnt, networkID, m.DbTx).
 			Return(nil).
 			Once()
 
@@ -613,10 +613,10 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		parentContext := context.Background()
-		m.Etherman.On("GetNetworkID").Return(uint(0))
+		m.Etherman.On("GetNetworkID").Return(uint32(0))
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
-		chSynced := make(chan uint)
+		chSynced := make(chan uint32)
 		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
 		require.NoError(t, err)
 
@@ -645,7 +645,7 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 
 		lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
 		lastBlock1 := &etherman.Block{BlockHash: ethBlock1.Hash(), BlockNumber: ethBlock1.Number().Uint64(), ParentHash: ethBlock1.ParentHash()}
-		var networkID uint = 0
+		var networkID uint32 = 0
 
 		m.Storage.
 			On("GetLastBlock", ctx, networkID, nil).
@@ -704,14 +704,14 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 			Return(nil).
 			Once()
 
-		depositCnt := 1
+		var depositCnt uint32 = 1
 		m.Storage.
 			On("GetNumberDeposits", ctx, networkID, ethBlock0.NumberU64(), m.DbTx).
-			Return(uint64(depositCnt), nil).
+			Return(depositCnt, nil).
 			Once()
 
 		m.BridgeCtrl.
-			On("ReorgMT", ctx, uint(depositCnt), networkID, m.DbTx).
+			On("ReorgMT", ctx, depositCnt, networkID, m.DbTx).
 			Return(nil).
 			Once()
 
@@ -773,10 +773,10 @@ func TestRegularReorg(t *testing.T) {
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		parentContext := context.Background()
-		m.Etherman.On("GetNetworkID").Return(uint(0))
+		m.Etherman.On("GetNetworkID").Return(uint32(0))
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
-		chSynced := make(chan uint)
+		chSynced := make(chan uint32)
 		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
 		require.NoError(t, err)
 
@@ -807,7 +807,7 @@ func TestRegularReorg(t *testing.T) {
 
 		lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
 		lastBlock1 := &etherman.Block{BlockHash: ethBlock1.Hash(), BlockNumber: ethBlock1.Number().Uint64(), ParentHash: ethBlock1.ParentHash()}
-		var networkID uint = 0
+		var networkID uint32 = 0
 
 		m.Storage.
 			On("GetLastBlock", ctx, networkID, nil).
@@ -854,14 +854,14 @@ func TestRegularReorg(t *testing.T) {
 			Return(nil).
 			Once()
 
-		depositCnt := 1
+		var depositCnt uint32 = 1
 		m.Storage.
 			On("GetNumberDeposits", ctx, networkID, ethBlock0.NumberU64(), m.DbTx).
-			Return(uint64(depositCnt), nil).
+			Return(depositCnt, nil).
 			Once()
 
 		m.BridgeCtrl.
-			On("ReorgMT", ctx, uint(depositCnt), networkID, m.DbTx).
+			On("ReorgMT", ctx, depositCnt, networkID, m.DbTx).
 			Return(nil).
 			Once()
 
@@ -983,10 +983,10 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		parentContext := context.Background()
-		m.Etherman.On("GetNetworkID").Return(uint(0))
+		m.Etherman.On("GetNetworkID").Return(uint32(0))
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
-		chSynced := make(chan uint)
+		chSynced := make(chan uint32)
 		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
 		require.NoError(t, err)
 
@@ -1018,7 +1018,7 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 		lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
 		lastBlock1 := &etherman.Block{BlockHash: ethBlock1.Hash(), BlockNumber: ethBlock1.Number().Uint64(), ParentHash: ethBlock1.ParentHash()}
 		lastBlock2 := &etherman.Block{BlockHash: ethBlock2.Hash(), BlockNumber: ethBlock2.Number().Uint64(), ParentHash: ethBlock2.ParentHash()}
-		var networkID uint = 0
+		var networkID uint32 = 0
 
 		m.Storage.
 			On("GetLastBlock", ctx, networkID, nil).
@@ -1093,14 +1093,14 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 			Return(nil).
 			Once()
 
-		depositCnt := 1
+		var depositCnt uint32 = 1
 		m.Storage.
 			On("GetNumberDeposits", ctx, networkID, ethBlock0.NumberU64(), m.DbTx).
-			Return(uint64(depositCnt), nil).
+			Return(depositCnt, nil).
 			Once()
 
 		m.BridgeCtrl.
-			On("ReorgMT", ctx, uint(depositCnt), networkID, m.DbTx).
+			On("ReorgMT", ctx, depositCnt, networkID, m.DbTx).
 			Return(nil).
 			Once()
 
@@ -1189,10 +1189,10 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		parentContext := context.Background()
-		m.Etherman.On("GetNetworkID").Return(uint(0))
+		m.Etherman.On("GetNetworkID").Return(uint32(0))
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
-		chSynced := make(chan uint)
+		chSynced := make(chan uint32)
 		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
 		require.NoError(t, err)
 
@@ -1223,7 +1223,7 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 
 		lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
 		lastBlock1 := &etherman.Block{BlockHash: ethBlock1.Hash(), BlockNumber: ethBlock1.Number().Uint64(), ParentHash: ethBlock1.ParentHash()}
-		var networkID uint = 0
+		var networkID uint32 = 0
 
 		m.Storage.
 			On("GetLastBlock", ctx, networkID, nil).
@@ -1295,14 +1295,14 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 			Return(nil).
 			Once()
 
-		depositCnt := 1
+		var depositCnt uint32 = 1
 		m.Storage.
 			On("GetNumberDeposits", ctx, networkID, ethBlock0.NumberU64(), m.DbTx).
-			Return(uint64(depositCnt), nil).
+			Return(depositCnt, nil).
 			Once()
 
 		m.BridgeCtrl.
-			On("ReorgMT", ctx, uint(depositCnt), networkID, m.DbTx).
+			On("ReorgMT", ctx, depositCnt, networkID, m.DbTx).
 			Return(nil).
 			Once()
 

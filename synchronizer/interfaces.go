@@ -16,11 +16,11 @@ type ethermanInterface interface {
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
 	GetRollupInfoByBlockRange(ctx context.Context, fromBlock uint64, toBlock *uint64) ([]etherman.Block, map[common.Hash][]etherman.Order, error)
 	EthBlockByNumber(ctx context.Context, blockNumber uint64) (*types.Block, error)
-	GetNetworkID() uint
+	GetNetworkID() uint32
 }
 
 type storageInterface interface {
-	GetLastBlock(ctx context.Context, networkID uint, dbTx pgx.Tx) (*etherman.Block, error)
+	GetLastBlock(ctx context.Context, networkID uint32, dbTx pgx.Tx) (*etherman.Block, error)
 	Rollback(ctx context.Context, dbTx pgx.Tx) error
 	BeginDBTransaction(ctx context.Context) (pgx.Tx, error)
 	Commit(ctx context.Context, dbTx pgx.Tx) error
@@ -29,18 +29,17 @@ type storageInterface interface {
 	AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx pgx.Tx) (uint64, error)
 	AddClaim(ctx context.Context, claim *etherman.Claim, dbTx pgx.Tx) error
 	AddTokenWrapped(ctx context.Context, tokenWrapped *etherman.TokenWrapped, dbTx pgx.Tx) error
-	Reset(ctx context.Context, blockNumber uint64, networkID uint, dbTx pgx.Tx) error
-	GetPreviousBlock(ctx context.Context, networkID uint, offset uint64, dbTx pgx.Tx) (*etherman.Block, error)
-	GetNumberDeposits(ctx context.Context, origNetworkID uint, blockNumber uint64, dbTx pgx.Tx) (uint64, error)
+	Reset(ctx context.Context, blockNumber uint64, networkID uint32, dbTx pgx.Tx) error
+	GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (*etherman.Block, error)
+	GetNumberDeposits(ctx context.Context, origNetworkID uint32, blockNumber uint64, dbTx pgx.Tx) (uint32, error)
 	AddTrustedGlobalExitRoot(ctx context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx pgx.Tx) (bool, error)
 	GetLatestL1SyncedExitRoot(ctx context.Context, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error)
-	CheckIfRootExists(ctx context.Context, root []byte, network uint8, dbTx pgx.Tx) (bool, error)
+	CheckIfRootExists(ctx context.Context, root []byte, network uint32, dbTx pgx.Tx) (bool, error)
 }
 
 type bridgectrlInterface interface {
 	AddDeposit(ctx context.Context, deposit *etherman.Deposit, depositID uint64, dbTx pgx.Tx) error
-	ReorgMT(ctx context.Context, depositCount, networkID uint, dbTx pgx.Tx) error
-	GetNetworkID(networkID uint) (uint8, error)
+	ReorgMT(ctx context.Context, depositCount, networkID uint32, dbTx pgx.Tx) error
 	AddRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx pgx.Tx) error
 }
 

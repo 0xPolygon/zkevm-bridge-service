@@ -13,7 +13,7 @@ type Block struct {
 	BlockNumber     uint64
 	BlockHash       common.Hash
 	ParentHash      common.Hash
-	NetworkID       uint
+	NetworkID       uint32
 	GlobalExitRoots []GlobalExitRoot
 	Deposits        []Deposit
 	Claims          []Claim
@@ -29,22 +29,22 @@ type GlobalExitRoot struct {
 	BlockNumber    uint64
 	ExitRoots      []common.Hash
 	GlobalExitRoot common.Hash
-	NetworkID      uint
+	NetworkID      uint32
 }
 
 // Deposit struct
 type Deposit struct {
 	Id                 uint64
 	LeafType           uint8
-	OriginalNetwork    uint
+	OriginalNetwork    uint32
 	OriginalAddress    common.Address
 	Amount             *big.Int
-	DestinationNetwork uint
+	DestinationNetwork uint32
 	DestinationAddress common.Address
-	DepositCount       uint
+	DepositCount       uint32
 	BlockID            uint64
 	BlockNumber        uint64
-	NetworkID          uint
+	NetworkID          uint32
 	TxHash             common.Hash
 	Metadata           []byte
 	// it is only used for the bridge service
@@ -54,27 +54,27 @@ type Deposit struct {
 // Claim struct
 type Claim struct {
 	MainnetFlag        bool
-	RollupIndex        uint64
-	Index              uint
-	OriginalNetwork    uint
+	RollupIndex        uint32
+	Index              uint32
+	OriginalNetwork    uint32
 	OriginalAddress    common.Address
 	Amount             *big.Int
 	DestinationAddress common.Address
 	BlockID            uint64
 	BlockNumber        uint64
-	NetworkID          uint
+	NetworkID          uint32
 	TxHash             common.Hash
 }
 
 // TokenWrapped struct
 type TokenWrapped struct {
 	TokenMetadata
-	OriginalNetwork      uint
+	OriginalNetwork      uint32
 	OriginalTokenAddress common.Address
 	WrappedTokenAddress  common.Address
 	BlockID              uint64
 	BlockNumber          uint64
-	NetworkID            uint
+	NetworkID            uint32
 }
 
 // TokenMetadata is a metadata of ERC20 token.
@@ -87,7 +87,7 @@ type TokenMetadata struct {
 type VerifiedBatch struct {
 	BlockNumber   uint64
 	BatchNumber   uint64
-	RollupID      uint
+	RollupID      uint32
 	LocalExitRoot common.Hash
 	TxHash        common.Hash
 	StateRoot     common.Hash
@@ -99,6 +99,6 @@ type RollupExitLeaf struct {
 	ID       uint64
 	BlockID  uint64
 	Leaf     common.Hash
-	RollupId uint
+	RollupId uint32
 	Root     common.Hash
 }

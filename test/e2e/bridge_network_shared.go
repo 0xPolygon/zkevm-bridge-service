@@ -243,10 +243,10 @@ func manualClaimDeposit(ctx context.Context, testData *bridge2e2TestData, deposi
 	return err
 }
 
-func generateGlobalIndex(deposit *pb.Deposit, rollupID uint) *big.Int {
+func generateGlobalIndex(deposit *pb.Deposit, rollupID uint32) *big.Int {
 	mainnetFlag := deposit.NetworkId == 0
 	rollupIndex := rollupID - 1
-	localExitRootIndex := uint(deposit.DepositCnt)
+	localExitRootIndex := deposit.DepositCnt
 	globalIndex := etherman.GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
 	return globalIndex
 }

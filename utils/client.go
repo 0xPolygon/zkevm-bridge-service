@@ -32,9 +32,9 @@ import (
 
 const (
 	// LeafTypeAsset represents a bridge asset
-	LeafTypeAsset uint32 = 0
+	LeafTypeAsset uint8 = 0
 	// LeafTypeMessage represents a bridge message
-	LeafTypeMessage uint32 = 1
+	LeafTypeMessage uint8 = 1
 
 	mtHeight = 32
 	keyLen   = 32
@@ -206,7 +206,7 @@ func (c *Client) SendBridgeMessage(ctx context.Context, destNetwork uint32, dest
 }
 
 // BuildSendClaim builds a tx data to be sent to the bridge method SendClaim.
-func (c *Client) BuildSendClaim(ctx context.Context, deposit *etherman.Deposit, smtProof [mtHeight][keyLen]byte, smtRollupProof [mtHeight][keyLen]byte, globalExitRoot *etherman.GlobalExitRoot, nonce, gasPrice int64, gasLimit uint64, rollupID uint, auth *bind.TransactOpts) (*types.Transaction, error) {
+func (c *Client) BuildSendClaim(ctx context.Context, deposit *etherman.Deposit, smtProof [mtHeight][keyLen]byte, smtRollupProof [mtHeight][keyLen]byte, globalExitRoot *etherman.GlobalExitRoot, nonce, gasPrice int64, gasLimit uint64, rollupID uint32, auth *bind.TransactOpts) (*types.Transaction, error) {
 	opts := *auth
 	opts.NoSend = true
 	// force nonce, gas limit and gas price to avoid querying it from the chain
@@ -222,10 +222,10 @@ func (c *Client) BuildSendClaim(ctx context.Context, deposit *etherman.Deposit, 
 	rollupIndex := rollupID - 1
 	localExitRootIndex := deposit.DepositCount
 	globalIndex := etherman.GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
-	if deposit.LeafType == uint8(LeafTypeAsset) {
+	if deposit.LeafType == LeafTypeAsset {
 		tx, err = c.Bridge.ClaimAsset(&opts, smtProof, smtRollupProof,
 			globalIndex, globalExitRoot.ExitRoots[0], globalExitRoot.ExitRoots[1], uint32(deposit.OriginalNetwork), deposit.OriginalAddress, uint32(deposit.DestinationNetwork), deposit.DestinationAddress, deposit.Amount, deposit.Metadata)
-	} else if deposit.LeafType == uint8(LeafTypeMessage) {
+	} else if deposit.LeafType == LeafTypeMessage {
 		tx, err = c.Bridge.ClaimMessage(&opts, smtProof, smtRollupProof, globalIndex, globalExitRoot.ExitRoots[0], globalExitRoot.ExitRoots[1], uint32(deposit.OriginalNetwork), deposit.OriginalAddress, uint32(deposit.DestinationNetwork), deposit.DestinationAddress, deposit.Amount, deposit.Metadata)
 	}
 	if err != nil {
@@ -248,7 +248,7 @@ func (c *Client) SendClaim(ctx context.Context, deposit *pb.Deposit, smtProof [m
 		err error
 	)
 	globalIndex, _ := big.NewInt(0).SetString(deposit.GlobalIndex, 0)
-	if deposit.LeafType == LeafTypeAsset {
+	if deposit.LeafType == uint32(LeafTypeAsset) {
 		tx, err = c.Bridge.ClaimAsset(auth, smtProof, smtRollupProof, globalIndex, globalExitRoot.ExitRoots[0], globalExitRoot.ExitRoots[1], deposit.OrigNet, common.HexToAddress(deposit.OrigAddr), deposit.DestNet, common.HexToAddress(deposit.DestAddr), amount, common.FromHex(deposit.Metadata))
 		if err != nil {
 			a, _ := polygonzkevmbridge.PolygonzkevmbridgeMetaData.GetAbi()
@@ -266,7 +266,7 @@ func (c *Client) SendClaim(ctx context.Context, deposit *pb.Deposit, smtProof [m
 				"id": 1
 			}'`, auth.From, "<To address>", common.Bytes2Hex(input))
 		}
-	} else if deposit.LeafType == LeafTypeMessage {
+	} else if deposit.LeafType == uint32(LeafTypeMessage) {
 		tx, err = c.Bridge.ClaimMessage(auth, smtProof, smtRollupProof, globalIndex, globalExitRoot.ExitRoots[0], globalExitRoot.ExitRoots[1], deposit.OrigNet, common.HexToAddress(deposit.OrigAddr), deposit.DestNet, common.HexToAddress(deposit.DestAddr), amount, common.FromHex(deposit.Metadata))
 	}
 	if err != nil {

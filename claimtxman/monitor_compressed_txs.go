@@ -19,7 +19,7 @@ const (
 )
 
 type StorageCompressedInterface interface {
-	GetClaimTxsByStatus(ctx context.Context, statuses []ctmtypes.MonitoredTxStatus, rollupID uint, dbTx pgx.Tx) ([]ctmtypes.MonitoredTx, error)
+	GetClaimTxsByStatus(ctx context.Context, statuses []ctmtypes.MonitoredTxStatus, rollupID uint32, dbTx pgx.Tx) ([]ctmtypes.MonitoredTx, error)
 	GetMonitoredTxsGroups(ctx context.Context, groupIds []uint64, dbTx pgx.Tx) (map[uint64]ctmtypes.MonitoredTxGroupDBEntry, error)
 
 	AddMonitoredTxsGroup(ctx context.Context, mTxGroup *ctmtypes.MonitoredTxGroupDBEntry, dbTx pgx.Tx) error
@@ -49,7 +49,7 @@ type MonitorCompressedTxs struct {
 	timeProvider          utils.TimeProvider
 	triggerGroups         *GroupsTrigger
 	gasOffset             uint64
-	rollupID              uint
+	rollupID              uint32
 }
 
 func NewMonitorCompressedTxs(ctx context.Context,
@@ -61,7 +61,7 @@ func NewMonitorCompressedTxs(ctx context.Context,
 	etherMan EthermanI,
 	timeProvider utils.TimeProvider,
 	gasOffset uint64,
-	rollupID uint) *MonitorCompressedTxs {
+	rollupID uint32) *MonitorCompressedTxs {
 	composer, err := NewComposeCompressClaim()
 	if err != nil {
 		log.Fatal("failed to create ComposeCompressClaim: %v", err)

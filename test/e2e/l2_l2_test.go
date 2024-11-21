@@ -64,7 +64,7 @@ func TestL2L2(t *testing.T) {
 		t.Log("balance: ", balance)
 		require.Equal(t, 0,  v.Cmp(balance))
 		// Get the claim data
-		smtProof, smtRollupProof, globaExitRoot, err := opsman1.GetClaimData(ctx, uint(deposits[0].NetworkId), uint(deposits[0].DepositCnt))
+		smtProof, smtRollupProof, globaExitRoot, err := opsman1.GetClaimData(ctx, deposits[0].NetworkId, deposits[0].DepositCnt)
 		require.NoError(t, err)
 		time.Sleep(5 * time.Second)
 		// Claim funds in destination L2
