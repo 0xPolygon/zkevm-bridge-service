@@ -10,7 +10,7 @@ import (
 )
 
 // RunMockServer runs mock server
-func RunMockServer(dbType string, height uint8, networks []uint) (*bridgectrl.BridgeController, StorageInterface, error) {
+func RunMockServer(dbType string, height uint8, networks []uint32) (*bridgectrl.BridgeController, StorageInterface, error) {
 	if dbType != "postgres" {
 		return nil, nil, fmt.Errorf("not registered database")
 	}

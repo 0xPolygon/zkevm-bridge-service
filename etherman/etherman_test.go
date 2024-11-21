@@ -93,7 +93,7 @@ func TestBridgeEvents(t *testing.T) {
 	assert.Equal(t, GlobalExitRootsOrder, order[block[0].BlockHash][1].Name)
 	assert.Equal(t, uint64(8), block[0].BlockNumber)
 	assert.Equal(t, big.NewInt(9000000000000000000), block[0].Deposits[0].Amount)
-	assert.Equal(t, uint(destNetwork), block[0].Deposits[0].DestinationNetwork)
+	assert.Equal(t, destNetwork, block[0].Deposits[0].DestinationNetwork)
 	assert.Equal(t, destinationAddr, block[0].Deposits[0].DestinationAddress)
 	assert.Equal(t, 1, len(block[0].GlobalExitRoots))
 
@@ -125,10 +125,10 @@ func TestBridgeEvents(t *testing.T) {
 	assert.Equal(t, uint64(9), block[0].BlockNumber)
 	assert.NotEqual(t, common.Address{}, block[0].Claims[0].OriginalAddress)
 	assert.Equal(t, auth.From, block[0].Claims[0].DestinationAddress)
-	assert.Equal(t, uint(34), block[0].Claims[0].Index)
-	assert.Equal(t, uint64(0), block[0].Claims[0].RollupIndex)
+	assert.Equal(t, uint32(34), block[0].Claims[0].Index)
+	assert.Equal(t, uint32(0), block[0].Claims[0].RollupIndex)
 	assert.Equal(t, true, block[0].Claims[0].MainnetFlag)
-	assert.Equal(t, uint(0), block[0].Claims[0].OriginalNetwork)
+	assert.Equal(t, uint32(0), block[0].Claims[0].OriginalNetwork)
 	assert.Equal(t, uint64(9), block[0].Claims[0].BlockNumber)
 }
 
@@ -143,8 +143,8 @@ func TestDecodeGlobalIndex(t *testing.T) {
 	mainnetFlag, rollupIndex, localExitRootIndex, err := DecodeGlobalIndex(globalIndex)
 	require.NoError(t, err)
 	assert.Equal(t, false, mainnetFlag)
-	assert.Equal(t, uint64(1), rollupIndex)
-	assert.Equal(t, uint64(11), localExitRootIndex)
+	assert.Equal(t, uint32(1), rollupIndex)
+	assert.Equal(t, uint32(11), localExitRootIndex)
 
 	globalIndex, _ = big.NewInt(0).SetString("8589934604", 0)
 
@@ -155,8 +155,8 @@ func TestDecodeGlobalIndex(t *testing.T) {
 	mainnetFlag, rollupIndex, localExitRootIndex, err = DecodeGlobalIndex(globalIndex)
 	require.NoError(t, err)
 	assert.Equal(t, false, mainnetFlag)
-	assert.Equal(t, uint64(2), rollupIndex)
-	assert.Equal(t, uint64(12), localExitRootIndex)
+	assert.Equal(t, uint32(2), rollupIndex)
+	assert.Equal(t, uint32(12), localExitRootIndex)
 
 	globalIndex, _ = big.NewInt(0).SetString("18446744073709551627", 0)
 
@@ -167,8 +167,8 @@ func TestDecodeGlobalIndex(t *testing.T) {
 	mainnetFlag, rollupIndex, localExitRootIndex, err = DecodeGlobalIndex(globalIndex)
 	require.NoError(t, err)
 	assert.Equal(t, true, mainnetFlag)
-	assert.Equal(t, uint64(0), rollupIndex)
-	assert.Equal(t, uint64(11), localExitRootIndex)
+	assert.Equal(t, uint32(0), rollupIndex)
+	assert.Equal(t, uint32(11), localExitRootIndex)
 
 	globalIndex, _ = big.NewInt(0).SetString("18446744073709551616", 0)
 
@@ -179,8 +179,8 @@ func TestDecodeGlobalIndex(t *testing.T) {
 	mainnetFlag, rollupIndex, localExitRootIndex, err = DecodeGlobalIndex(globalIndex)
 	require.NoError(t, err)
 	assert.Equal(t, true, mainnetFlag)
-	assert.Equal(t, uint64(0), rollupIndex)
-	assert.Equal(t, uint64(0), localExitRootIndex)
+	assert.Equal(t, uint32(0), rollupIndex)
+	assert.Equal(t, uint32(0), localExitRootIndex)
 }
 
 func TestVerifyBatchEvent(t *testing.T) {
@@ -235,7 +235,7 @@ func TestVerifyBatchEvent(t *testing.T) {
 
 func TestGenerateGlobalIndex(t *testing.T) {
 	globalIndex, _ := big.NewInt(0).SetString("4294967307", 0)
-	mainnetFlag, rollupIndex, localExitRootIndex := false, uint(1), uint(11)
+	mainnetFlag, rollupIndex, localExitRootIndex := false, uint32(1), uint32(11)
 	globalIndexGenerated := GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
 	t.Log("First test number:")
 	for _, n := range globalIndexGenerated.Bytes() {
@@ -244,7 +244,7 @@ func TestGenerateGlobalIndex(t *testing.T) {
 	assert.Equal(t, globalIndex, globalIndexGenerated)
 
 	globalIndex, _ = big.NewInt(0).SetString("8589934604", 0)
-	mainnetFlag, rollupIndex, localExitRootIndex = false, uint(2), uint(12)
+	mainnetFlag, rollupIndex, localExitRootIndex = false, uint32(2), uint32(12)
 	globalIndexGenerated = GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
 	t.Log("Second test number:")
 	for _, n := range globalIndexGenerated.Bytes() {
@@ -253,7 +253,7 @@ func TestGenerateGlobalIndex(t *testing.T) {
 	assert.Equal(t, globalIndex, globalIndexGenerated)
 
 	globalIndex, _ = big.NewInt(0).SetString("18446744073709551627", 0)
-	mainnetFlag, rollupIndex, localExitRootIndex = true, uint(0), uint(11)
+	mainnetFlag, rollupIndex, localExitRootIndex = true, uint32(0), uint32(11)
 	globalIndexGenerated = GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
 	t.Log("Third test number:")
 	for _, n := range globalIndexGenerated.Bytes() {

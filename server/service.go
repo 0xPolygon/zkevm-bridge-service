@@ -17,7 +17,7 @@ import (
 
 type bridgeService struct {
 	storage          bridgeServiceStorage
-	networkIDs       map[uint]uint8
+	networkIDs       map[uint32]uint8
 	height           uint8
 	defaultPageLimit uint32
 	maxPageLimit     uint32
@@ -27,8 +27,8 @@ type bridgeService struct {
 }
 
 // NewBridgeService creates new bridge service.
-func NewBridgeService(cfg Config, height uint8, networks []uint, storage interface{}) *bridgeService {
-	var networkIDs = make(map[uint]uint8)
+func NewBridgeService(cfg Config, height uint8, networks []uint32, storage interface{}) *bridgeService {
+	var networkIDs = make(map[uint32]uint8)
 	for i, network := range networks {
 		networkIDs[network] = uint8(i)
 	}
@@ -64,7 +64,7 @@ func (s *bridgeService) getNode(ctx context.Context, parentHash [bridgectrl.KeyL
 }
 
 // getProof returns the merkle proof for a given index and root.
-func (s *bridgeService) getProof(index uint, root [bridgectrl.KeyLen]byte, dbTx pgx.Tx) ([][bridgectrl.KeyLen]byte, error) {
+func (s *bridgeService) getProof(index uint32, root [bridgectrl.KeyLen]byte, dbTx pgx.Tx) ([][bridgectrl.KeyLen]byte, error) {
 	var siblings [][bridgectrl.KeyLen]byte
 
 	cur := root
@@ -115,7 +115,7 @@ func (s *bridgeService) getProof(index uint, root [bridgectrl.KeyLen]byte, dbTx 
 }
 
 // getRollupExitProof returns the merkle proof for the zkevm leaf.
-func (s *bridgeService) getRollupExitProof(rollupIndex uint, root common.Hash, dbTx pgx.Tx) ([][bridgectrl.KeyLen]byte, common.Hash, error) {
+func (s *bridgeService) getRollupExitProof(rollupIndex uint32, root common.Hash, dbTx pgx.Tx) ([][bridgectrl.KeyLen]byte, common.Hash, error) {
 	ctx := context.Background()
 
 	// Get leaves given the root
@@ -148,7 +148,7 @@ func (s *bridgeService) getRollupExitProof(rollupIndex uint, root common.Hash, d
 }
 
 // GetClaimProof returns the merkle proof to claim the given deposit.
-func (s *bridgeService) GetClaimProof(depositCnt, networkID uint, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
+func (s *bridgeService) GetClaimProof(depositCnt, networkID uint32, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
 	ctx := context.Background()
 
 	deposit, err := s.storage.GetDeposit(ctx, depositCnt, networkID, dbTx)
@@ -194,7 +194,7 @@ func (s *bridgeService) GetClaimProof(depositCnt, networkID uint, dbTx pgx.Tx) (
 }
 
 // GetClaimProofbyGER returns the merkle proof to claim the given deposit.
-func (s *bridgeService) GetClaimProofbyGER(depositCnt, networkID uint, GER common.Hash, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
+func (s *bridgeService) GetClaimProofbyGER(depositCnt, networkID uint32, GER common.Hash, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
 	ctx := context.Background()
 
 	if dbTx == nil { // if the call comes from the rest API
@@ -245,7 +245,7 @@ func (s *bridgeService) GetClaimProofbyGER(depositCnt, networkID uint, GER commo
 }
 
 // GetClaimProofForCompressed returns the merkle proof to claim the given deposit.
-func (s *bridgeService) GetClaimProofForCompressed(ger common.Hash, depositCnt, networkID uint, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
+func (s *bridgeService) GetClaimProofForCompressed(ger common.Hash, depositCnt, networkID uint32, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
 	ctx := context.Background()
 
 	if dbTx == nil { // if the call comes from the rest API
@@ -301,7 +301,7 @@ func emptyProof() [][bridgectrl.KeyLen]byte {
 }
 
 // GetDepositStatus returns deposit with ready_for_claim status.
-func (s *bridgeService) GetDepositStatus(ctx context.Context, depositCount uint, originNetworkID, destNetworkID uint) (string, error) {
+func (s *bridgeService) GetDepositStatus(ctx context.Context, depositCount, originNetworkID, destNetworkID uint32) (string, error) {
 	var (
 		claimTxHash string
 	)
@@ -339,7 +339,7 @@ func (s *bridgeService) GetBridges(ctx context.Context, req *pb.GetBridgesReques
 	if err != nil {
 		return nil, err
 	}
-	deposits, err := s.storage.GetDeposits(ctx, req.DestAddr, uint(limit), uint(req.Offset), nil)
+	deposits, err := s.storage.GetDeposits(ctx, req.DestAddr, limit, req.Offset, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -351,7 +351,7 @@ func (s *bridgeService) GetBridges(ctx context.Context, req *pb.GetBridgesReques
 			return nil, err
 		}
 		mainnetFlag := deposit.NetworkID == 0
-		var rollupIndex uint
+		var rollupIndex uint32
 		if !mainnetFlag {
 			rollupIndex = deposit.NetworkID - 1
 		}
@@ -359,14 +359,14 @@ func (s *bridgeService) GetBridges(ctx context.Context, req *pb.GetBridgesReques
 		pbDeposits = append(
 			pbDeposits, &pb.Deposit{
 				LeafType:      uint32(deposit.LeafType),
-				OrigNet:       uint32(deposit.OriginalNetwork),
+				OrigNet:       deposit.OriginalNetwork,
 				OrigAddr:      deposit.OriginalAddress.Hex(),
 				Amount:        deposit.Amount.String(),
-				DestNet:       uint32(deposit.DestinationNetwork),
+				DestNet:       deposit.DestinationNetwork,
 				DestAddr:      deposit.DestinationAddress.Hex(),
 				BlockNum:      deposit.BlockNumber,
-				DepositCnt:    uint64(deposit.DepositCount),
-				NetworkId:     uint32(deposit.NetworkID),
+				DepositCnt:    deposit.DepositCount,
+				NetworkId:     deposit.NetworkID,
 				TxHash:        deposit.TxHash.String(),
 				ClaimTxHash:   claimTxHash,
 				Metadata:      "0x" + hex.EncodeToString(deposit.Metadata),
@@ -396,7 +396,7 @@ func (s *bridgeService) GetClaims(ctx context.Context, req *pb.GetClaimsRequest)
 	if err != nil {
 		return nil, err
 	}
-	claims, err := s.storage.GetClaims(ctx, req.DestAddr, uint(limit), uint(req.Offset), nil) //nolint:gomnd
+	claims, err := s.storage.GetClaims(ctx, req.DestAddr, limit, req.Offset, nil) //nolint:gomnd
 	if err != nil {
 		return nil, err
 	}
@@ -404,11 +404,11 @@ func (s *bridgeService) GetClaims(ctx context.Context, req *pb.GetClaimsRequest)
 	var pbClaims []*pb.Claim
 	for _, claim := range claims {
 		pbClaims = append(pbClaims, &pb.Claim{
-			Index:       uint64(claim.Index),
-			OrigNet:     uint32(claim.OriginalNetwork),
+			Index:       claim.Index,
+			OrigNet:     claim.OriginalNetwork,
 			OrigAddr:    claim.OriginalAddress.Hex(),
 			Amount:      claim.Amount.String(),
-			NetworkId:   uint32(claim.NetworkID),
+			NetworkId:   claim.NetworkID,
 			DestAddr:    claim.DestinationAddress.Hex(),
 			BlockNum:    claim.BlockNumber,
 			TxHash:      claim.TxHash.String(),
@@ -426,7 +426,7 @@ func (s *bridgeService) GetClaims(ctx context.Context, req *pb.GetClaimsRequest)
 // GetProof returns the merkle proof for the given deposit.
 // Bridge rest API endpoint
 func (s *bridgeService) GetProof(ctx context.Context, req *pb.GetProofRequest) (*pb.GetProofResponse, error) {
-	globalExitRoot, merkleProof, rollupMerkleProof, err := s.GetClaimProof(uint(req.DepositCnt), uint(req.NetId), nil)
+	globalExitRoot, merkleProof, rollupMerkleProof, err := s.GetClaimProof(req.DepositCnt, req.NetId, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -455,12 +455,12 @@ func (s *bridgeService) GetProof(ctx context.Context, req *pb.GetProofRequest) (
 // GetBridge returns the bridge  with status whether it is able to send a claim transaction or not.
 // Bridge rest API endpoint
 func (s *bridgeService) GetBridge(ctx context.Context, req *pb.GetBridgeRequest) (*pb.GetBridgeResponse, error) {
-	deposit, err := s.storage.GetDeposit(ctx, uint(req.DepositCnt), uint(req.NetId), nil)
+	deposit, err := s.storage.GetDeposit(ctx, req.DepositCnt, req.NetId, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	claimTxHash, err := s.GetDepositStatus(ctx, uint(req.DepositCnt), deposit.NetworkID, deposit.DestinationNetwork)
+	claimTxHash, err := s.GetDepositStatus(ctx, req.DepositCnt, deposit.NetworkID, deposit.DestinationNetwork)
 	if err != nil {
 		return nil, err
 	}
@@ -468,14 +468,14 @@ func (s *bridgeService) GetBridge(ctx context.Context, req *pb.GetBridgeRequest)
 	return &pb.GetBridgeResponse{
 		Deposit: &pb.Deposit{
 			LeafType:      uint32(deposit.LeafType),
-			OrigNet:       uint32(deposit.OriginalNetwork),
+			OrigNet:       deposit.OriginalNetwork,
 			OrigAddr:      deposit.OriginalAddress.Hex(),
 			Amount:        deposit.Amount.String(),
-			DestNet:       uint32(deposit.DestinationNetwork),
+			DestNet:       deposit.DestinationNetwork,
 			DestAddr:      deposit.DestinationAddress.Hex(),
 			BlockNum:      deposit.BlockNumber,
-			DepositCnt:    uint64(deposit.DepositCount),
-			NetworkId:     uint32(deposit.NetworkID),
+			DepositCnt:    deposit.DepositCount,
+			NetworkId:     deposit.NetworkID,
 			TxHash:        deposit.TxHash.String(),
 			ClaimTxHash:   claimTxHash,
 			Metadata:      "0x" + hex.EncodeToString(deposit.Metadata),
@@ -487,7 +487,7 @@ func (s *bridgeService) GetBridge(ctx context.Context, req *pb.GetBridgeRequest)
 // GetTokenWrapped returns the token wrapped created for a specific network
 // Bridge rest API endpoint
 func (s *bridgeService) GetTokenWrapped(ctx context.Context, req *pb.GetTokenWrappedRequest) (*pb.GetTokenWrappedResponse, error) {
-	tokenWrapped, err := s.storage.GetTokenWrapped(ctx, uint(req.OrigNet), common.HexToAddress(req.OrigTokenAddr), nil)
+	tokenWrapped, err := s.storage.GetTokenWrapped(ctx, req.OrigNet, common.HexToAddress(req.OrigTokenAddr), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -506,7 +506,7 @@ func (s *bridgeService) GetTokenWrapped(ctx context.Context, req *pb.GetTokenWra
 
 func (s *bridgeService) GetProofByGER(ctx context.Context, req *pb.GetProofByGERRequest) (*pb.GetProofResponse, error) {
 	ger := common.HexToHash(req.Ger)
-	globalExitRoot, merkleProof, rollupMerkleProof, err := s.GetClaimProofbyGER(uint(req.DepositCnt), uint(req.NetId), ger, nil)
+	globalExitRoot, merkleProof, rollupMerkleProof, err := s.GetClaimProofbyGER(req.DepositCnt, req.NetId, ger, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -551,7 +551,7 @@ func (s *bridgeService) GetPendingBridgesToClaim(ctx context.Context, req *pb.Ge
 	var pbDeposits []*pb.Deposit
 	for _, deposit := range deposits {
 		mainnetFlag := deposit.NetworkID == 0
-		var rollupIndex uint
+		var rollupIndex uint32
 		if !mainnetFlag {
 			rollupIndex = deposit.NetworkID - 1
 		}
@@ -559,14 +559,14 @@ func (s *bridgeService) GetPendingBridgesToClaim(ctx context.Context, req *pb.Ge
 		pbDeposits = append(
 			pbDeposits, &pb.Deposit{
 				LeafType:      uint32(deposit.LeafType),
-				OrigNet:       uint32(deposit.OriginalNetwork),
+				OrigNet:       deposit.OriginalNetwork,
 				OrigAddr:      deposit.OriginalAddress.Hex(),
 				Amount:        deposit.Amount.String(),
-				DestNet:       uint32(deposit.DestinationNetwork),
+				DestNet:       deposit.DestinationNetwork,
 				DestAddr:      deposit.DestinationAddress.Hex(),
 				BlockNum:      deposit.BlockNumber,
-				DepositCnt:    uint64(deposit.DepositCount),
-				NetworkId:     uint32(deposit.NetworkID),
+				DepositCnt:    deposit.DepositCount,
+				NetworkId:     deposit.NetworkID,
 				TxHash:        deposit.TxHash.String(),
 				ClaimTxHash:   "",
 				Metadata:      "0x" + hex.EncodeToString(deposit.Metadata),

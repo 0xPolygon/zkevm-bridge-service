@@ -25,7 +25,7 @@ type MonitorTxs struct {
 	// client is the ethereum client
 	l2Node     *utils.Client
 	cfg        Config
-	rollupID   uint
+	rollupID   uint32
 	nonceCache *NonceCache
 	auth       *bind.TransactOpts
 }
@@ -35,7 +35,7 @@ func NewMonitorTxs(ctx context.Context,
 	l2Node *utils.Client,
 	cfg Config,
 	nonceCache *NonceCache,
-	rollupID uint,
+	rollupID uint32,
 	auth *bind.TransactOpts) *MonitorTxs {
 	return &MonitorTxs{
 		rollupID:   rollupID,

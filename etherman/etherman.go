@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"time"
 
@@ -450,11 +451,11 @@ func (etherMan *Client) depositEvent(ctx context.Context, vLog types.Log, blocks
 	var deposit Deposit
 	deposit.Amount = d.Amount
 	deposit.BlockNumber = vLog.BlockNumber
-	deposit.OriginalNetwork = uint(d.OriginNetwork)
+	deposit.OriginalNetwork = d.OriginNetwork
 	deposit.DestinationAddress = d.DestinationAddress
-	deposit.DestinationNetwork = uint(d.DestinationNetwork)
+	deposit.DestinationNetwork = d.DestinationNetwork
 	deposit.OriginalAddress = d.OriginAddress
-	deposit.DepositCount = uint(d.DepositCount)
+	deposit.DepositCount = d.DepositCount
 	deposit.TxHash = vLog.TxHash
 	deposit.Metadata = d.Metadata
 	deposit.LeafType = d.LeafType
@@ -487,7 +488,7 @@ func (etherMan *Client) oldClaimEvent(ctx context.Context, vLog types.Log, block
 	if err != nil {
 		return err
 	}
-	return etherMan.claimEvent(ctx, vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, uint(c.Index), uint(c.OriginNetwork), 0, false)
+	return etherMan.claimEvent(ctx, vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, c.Index, c.OriginNetwork, 0, false)
 }
 
 func (etherMan *Client) newClaimEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
@@ -500,10 +501,10 @@ func (etherMan *Client) newClaimEvent(ctx context.Context, vLog types.Log, block
 	if err != nil {
 		return err
 	}
-	return etherMan.claimEvent(ctx, vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, uint(localExitRootIndex), uint(c.OriginNetwork), rollupIndex, mainnetFlag)
+	return etherMan.claimEvent(ctx, vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, localExitRootIndex, c.OriginNetwork, rollupIndex, mainnetFlag)
 }
 
-func (etherMan *Client) claimEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, amount *big.Int, destinationAddress, originAddress common.Address, Index uint, originNetwork uint, rollupIndex uint64, mainnetFlag bool) error {
+func (etherMan *Client) claimEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, amount *big.Int, destinationAddress, originAddress common.Address, Index, originNetwork, rollupIndex uint32, mainnetFlag bool) error {
 	var claim Claim
 	claim.Amount = amount
 	claim.DestinationAddress = destinationAddress
@@ -544,7 +545,7 @@ func (etherMan *Client) tokenWrappedEvent(ctx context.Context, vLog types.Log, b
 		return err
 	}
 	var tokenWrapped TokenWrapped
-	tokenWrapped.OriginalNetwork = uint(tw.OriginNetwork)
+	tokenWrapped.OriginalNetwork = tw.OriginNetwork
 	tokenWrapped.OriginalTokenAddress = tw.OriginTokenAddress
 	tokenWrapped.WrappedTokenAddress = tw.WrappedTokenAddress
 	tokenWrapped.BlockNumber = vLog.BlockNumber
@@ -609,8 +610,8 @@ func (etherMan *Client) EthBlockByNumber(ctx context.Context, blockNumber uint64
 }
 
 // GetNetworkID gets the network ID of the dedicated chain.
-func (etherMan *Client) GetNetworkID() uint {
-	return uint(etherMan.NetworkID)
+func (etherMan *Client) GetNetworkID() uint32 {
+	return etherMan.NetworkID
 }
 
 func (etherMan *Client) verifyBatchesTrustedAggregatorEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
@@ -620,7 +621,7 @@ func (etherMan *Client) verifyBatchesTrustedAggregatorEvent(ctx context.Context,
 		etherMan.logger.Error("error parsing verifyBatchesTrustedAggregator event. Error: ", err)
 		return err
 	}
-	return etherMan.verifyBatches(ctx, vLog, blocks, blocksOrder, uint(vb.RollupID), vb.NumBatch, vb.StateRoot, vb.ExitRoot, vb.Aggregator)
+	return etherMan.verifyBatches(ctx, vLog, blocks, blocksOrder, vb.RollupID, vb.NumBatch, vb.StateRoot, vb.ExitRoot, vb.Aggregator)
 }
 
 func (etherMan *Client) verifyBatchesEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
@@ -630,10 +631,10 @@ func (etherMan *Client) verifyBatchesEvent(ctx context.Context, vLog types.Log, 
 		etherMan.logger.Error("error parsing VerifyBatches event. Error: ", err)
 		return err
 	}
-	return etherMan.verifyBatches(ctx, vLog, blocks, blocksOrder, uint(vb.RollupID), vb.NumBatch, vb.StateRoot, vb.ExitRoot, vb.Aggregator)
+	return etherMan.verifyBatches(ctx, vLog, blocks, blocksOrder, vb.RollupID, vb.NumBatch, vb.StateRoot, vb.ExitRoot, vb.Aggregator)
 }
 
-func (etherMan *Client) verifyBatches(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, rollupID uint, batchNum uint64, stateRoot, localExitRoot common.Hash, aggregator common.Address) error {
+func (etherMan *Client) verifyBatches(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, rollupID uint32, batchNum uint64, stateRoot, localExitRoot common.Hash, aggregator common.Address) error {
 	var verifyBatch VerifiedBatch
 	verifyBatch.BlockNumber = vLog.BlockNumber
 	verifyBatch.BatchNumber = batchNum
@@ -665,7 +666,7 @@ func (etherMan *Client) verifyBatches(ctx context.Context, vLog types.Log, block
 	return nil
 }
 
-func DecodeGlobalIndex(globalIndex *big.Int) (bool, uint64, uint64, error) {
+func DecodeGlobalIndex(globalIndex *big.Int) (bool, uint32, uint32, error) {
 	const lengthGlobalIndexInBytes = 32
 	var buf [32]byte
 	gIBytes := globalIndex.FillBytes(buf[:])
@@ -675,10 +676,16 @@ func DecodeGlobalIndex(globalIndex *big.Int) (bool, uint64, uint64, error) {
 	mainnetFlag := big.NewInt(0).SetBytes([]byte{gIBytes[23]}).Uint64() == 1
 	rollupIndex := big.NewInt(0).SetBytes(gIBytes[24:28])
 	localRootIndex := big.NewInt(0).SetBytes(gIBytes[29:32])
-	return mainnetFlag, rollupIndex.Uint64(), localRootIndex.Uint64(), nil
+	if rollupIndex.Uint64() > math.MaxUint32 {
+		return false, 0, 0, fmt.Errorf("invalid rollupIndex length. Should be fit into uint32 type")
+	}
+	if localRootIndex.Uint64() > math.MaxUint32 {
+		return false, 0, 0, fmt.Errorf("invalid localRootIndex length. Should be fit into uint32 type")
+	}
+	return mainnetFlag, uint32(rollupIndex.Uint64()), uint32(localRootIndex.Uint64()), nil
 }
 
-func GenerateGlobalIndex(mainnetFlag bool, rollupIndex uint, localExitRootIndex uint) *big.Int {
+func GenerateGlobalIndex(mainnetFlag bool, rollupIndex uint32, localExitRootIndex uint32) *big.Int {
 	var (
 		globalIndexBytes []byte
 		buf              [4]byte

@@ -121,64 +121,8 @@ func (_c *bridgectrlMock_AddRollupExitLeaf_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// GetNetworkID provides a mock function with given fields: networkID
-func (_m *bridgectrlMock) GetNetworkID(networkID uint) (uint8, error) {
-	ret := _m.Called(networkID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetNetworkID")
-	}
-
-	var r0 uint8
-	var r1 error
-	if rf, ok := ret.Get(0).(func(uint) (uint8, error)); ok {
-		return rf(networkID)
-	}
-	if rf, ok := ret.Get(0).(func(uint) uint8); ok {
-		r0 = rf(networkID)
-	} else {
-		r0 = ret.Get(0).(uint8)
-	}
-
-	if rf, ok := ret.Get(1).(func(uint) error); ok {
-		r1 = rf(networkID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// bridgectrlMock_GetNetworkID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNetworkID'
-type bridgectrlMock_GetNetworkID_Call struct {
-	*mock.Call
-}
-
-// GetNetworkID is a helper method to define mock.On call
-//   - networkID uint
-func (_e *bridgectrlMock_Expecter) GetNetworkID(networkID interface{}) *bridgectrlMock_GetNetworkID_Call {
-	return &bridgectrlMock_GetNetworkID_Call{Call: _e.mock.On("GetNetworkID", networkID)}
-}
-
-func (_c *bridgectrlMock_GetNetworkID_Call) Run(run func(networkID uint)) *bridgectrlMock_GetNetworkID_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(uint))
-	})
-	return _c
-}
-
-func (_c *bridgectrlMock_GetNetworkID_Call) Return(_a0 uint8, _a1 error) *bridgectrlMock_GetNetworkID_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *bridgectrlMock_GetNetworkID_Call) RunAndReturn(run func(uint) (uint8, error)) *bridgectrlMock_GetNetworkID_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // ReorgMT provides a mock function with given fields: ctx, depositCount, networkID, dbTx
-func (_m *bridgectrlMock) ReorgMT(ctx context.Context, depositCount uint, networkID uint, dbTx pgx.Tx) error {
+func (_m *bridgectrlMock) ReorgMT(ctx context.Context, depositCount uint32, networkID uint32, dbTx pgx.Tx) error {
 	ret := _m.Called(ctx, depositCount, networkID, dbTx)
 
 	if len(ret) == 0 {
@@ -186,7 +130,7 @@ func (_m *bridgectrlMock) ReorgMT(ctx context.Context, depositCount uint, networ
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint, uint, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, pgx.Tx) error); ok {
 		r0 = rf(ctx, depositCount, networkID, dbTx)
 	} else {
 		r0 = ret.Error(0)
@@ -202,16 +146,16 @@ type bridgectrlMock_ReorgMT_Call struct {
 
 // ReorgMT is a helper method to define mock.On call
 //   - ctx context.Context
-//   - depositCount uint
-//   - networkID uint
+//   - depositCount uint32
+//   - networkID uint32
 //   - dbTx pgx.Tx
 func (_e *bridgectrlMock_Expecter) ReorgMT(ctx interface{}, depositCount interface{}, networkID interface{}, dbTx interface{}) *bridgectrlMock_ReorgMT_Call {
 	return &bridgectrlMock_ReorgMT_Call{Call: _e.mock.On("ReorgMT", ctx, depositCount, networkID, dbTx)}
 }
 
-func (_c *bridgectrlMock_ReorgMT_Call) Run(run func(ctx context.Context, depositCount uint, networkID uint, dbTx pgx.Tx)) *bridgectrlMock_ReorgMT_Call {
+func (_c *bridgectrlMock_ReorgMT_Call) Run(run func(ctx context.Context, depositCount uint32, networkID uint32, dbTx pgx.Tx)) *bridgectrlMock_ReorgMT_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uint), args[2].(uint), args[3].(pgx.Tx))
+		run(args[0].(context.Context), args[1].(uint32), args[2].(uint32), args[3].(pgx.Tx))
 	})
 	return _c
 }
@@ -221,7 +165,7 @@ func (_c *bridgectrlMock_ReorgMT_Call) Return(_a0 error) *bridgectrlMock_ReorgMT
 	return _c
 }
 
-func (_c *bridgectrlMock_ReorgMT_Call) RunAndReturn(run func(context.Context, uint, uint, pgx.Tx) error) *bridgectrlMock_ReorgMT_Call {
+func (_c *bridgectrlMock_ReorgMT_Call) RunAndReturn(run func(context.Context, uint32, uint32, pgx.Tx) error) *bridgectrlMock_ReorgMT_Call {
 	_c.Call.Return(run)
 	return _c
 }

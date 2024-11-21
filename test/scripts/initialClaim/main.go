@@ -92,14 +92,14 @@ func main() {
 	}
 	e := etherman.Deposit{
 		LeafType:           uint8(bridgeData.LeafType),
-		OriginalNetwork:    uint(bridgeData.OrigNet),
+		OriginalNetwork:    bridgeData.OrigNet,
 		OriginalAddress:    common.HexToAddress(bridgeData.OrigAddr),
 		Amount:             a,
-		DestinationNetwork: uint(bridgeData.DestNet),
+		DestinationNetwork: bridgeData.DestNet,
 		DestinationAddress: common.HexToAddress(bridgeData.DestAddr),
-		DepositCount:       uint(bridgeData.DepositCnt),
+		DepositCount:       bridgeData.DepositCnt,
 		BlockNumber:        bridgeData.BlockNum,
-		NetworkID:          uint(bridgeData.NetworkId),
+		NetworkID:          bridgeData.NetworkId,
 		TxHash:             common.HexToHash(bridgeData.TxHash),
 		Metadata:           metadata,
 		ReadyForClaim:      bridgeData.ReadyForClaim,
@@ -119,7 +119,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
-	tx, err := c.BuildSendClaim(ctx, &e, smtProof, smtRollupProof, globalExitRoot, 0, 0, l2GasLimit, uint(rollupID), auth)
+	tx, err := c.BuildSendClaim(ctx, &e, smtProof, smtRollupProof, globalExitRoot, 0, 0, l2GasLimit, rollupID, auth)
 	if err != nil {
 		log.Fatal("error: ", err)
 	}
