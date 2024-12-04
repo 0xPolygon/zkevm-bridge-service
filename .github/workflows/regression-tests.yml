@@ -3,7 +3,7 @@ name: Regression Tests
 on:
   pull_request:
   push:
-    branches: [main]
+    branches: [develop]
 
 concurrency:
   group: regression-tests-${{ github.event.pull_request.number || github.ref }}
