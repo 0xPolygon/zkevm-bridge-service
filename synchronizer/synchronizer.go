@@ -626,8 +626,8 @@ func (s *ClientSynchronizer) processVerifyBatch(verifyBatch etherman.VerifiedBat
 			log.Errorf("networkID: %d, Root: %s doesn't exist!", s.networkID, verifyBatch.LocalExitRoot.String())
 			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
 			if rollbackErr != nil {
-				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
-					s.networkID, verifyBatch.BlockNumber, rollbackErr, err.Error())
+				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v",
+					s.networkID, verifyBatch.BlockNumber, rollbackErr)
 				return rollbackErr
 			}
 			return fmt.Errorf("networkID: %d, Root: %s doesn't exist!", s.networkID, verifyBatch.LocalExitRoot.String())

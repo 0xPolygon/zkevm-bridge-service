@@ -606,14 +606,36 @@ func (p *PostgresStorage) UpdateL1DepositsStatus(ctx context.Context, exitRoot [
 
 // UpdateL2DepositsStatus updates the ready_for_claim status of L2 deposits.
 func (p *PostgresStorage) UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID, networkID uint32, dbTx pgx.Tx) error {
-	const updateDepositsStatusSQL = `UPDATE sync.deposit SET ready_for_claim = true
+	const updateL2DepositsStatusSQL = `UPDATE sync.deposit SET ready_for_claim = true
 		WHERE deposit_cnt <=
 		(SELECT sync.deposit.deposit_cnt FROM mt.root INNER JOIN sync.deposit ON sync.deposit.id = mt.root.deposit_id WHERE mt.root.root = (select leaf from mt.rollup_exit where root = $1 and rollup_id = $2) AND mt.root.network = $3)
 			AND network_id = $3 AND ready_for_claim = false;`
-	_, err := p.getExecQuerier(dbTx).Exec(ctx, updateDepositsStatusSQL, exitRoot, rollupID, networkID)
+	_, err := p.getExecQuerier(dbTx).Exec(ctx, updateL2DepositsStatusSQL, exitRoot, rollupID, networkID)
 	return err
 }
 
+// GetDepositsFromOtherL2ToClaim returns L2 deposits whose destination is an specific L2 
+func (p *PostgresStorage) GetDepositsFromOtherL2ToClaim(ctx context.Context, destinationNetwork uint32, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
+	const getL2DepositsToClaimStatusSQL = `select sync.deposit.id, sync.deposit.leaf_type, sync.deposit.orig_net, sync.deposit.orig_addr, sync.deposit.amount, sync.deposit.dest_net, sync.deposit.dest_addr, sync.deposit.deposit_cnt, sync.deposit.block_id, sync.deposit.network_id, sync.deposit.tx_hash, sync.deposit.metadata, sync.deposit.ready_for_claim FROM sync.deposit where sync.deposit.deposit_cnt not in (select index FROM sync.claim where sync.claim.network_id = $1) and sync.deposit.network_id !=0 and sync.deposit.dest_net = $1 and ready_for_claim =true order by deposit_cnt desc;`
+	rows, err := p.getExecQuerier(dbTx).Query(ctx, getL2DepositsToClaimStatusSQL, destinationNetwork)
+	if err != nil {
+		return nil, err
+	}
+	deposits := make([]*etherman.Deposit, 0, len(rows.RawValues()))
+	for rows.Next() {
+		var (
+			deposit etherman.Deposit
+			amount  string
+		)
+		err = rows.Scan(&deposit.Id, &deposit.LeafType, &deposit.OriginalNetwork, &deposit.OriginalAddress, &amount, &deposit.DestinationNetwork, &deposit.DestinationAddress, &deposit.DepositCount, &deposit.BlockID, &deposit.NetworkID, &deposit.TxHash, &deposit.Metadata, &deposit.ReadyForClaim)
+		if err != nil {
+			return nil, err
+		}
+		deposit.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:gomnd
+		deposits = append(deposits, &deposit)
+	}
+	return deposits, nil
+}
 // AddClaimTx adds a claim monitored transaction to the storage.
 func (p *PostgresStorage) AddClaimTx(ctx context.Context, mTx ctmtypes.MonitoredTx, dbTx pgx.Tx) error {
 	const addMonitoredTxSQL = `INSERT INTO sync.monitored_txs 
