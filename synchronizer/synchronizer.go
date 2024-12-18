@@ -217,7 +217,7 @@ func (s *ClientSynchronizer) syncTrustedState() error {
 	}
 	isUpdated, err := s.storage.AddTrustedGlobalExitRoot(s.ctx, ger, nil)
 	if err != nil {
-		log.Error("networkID: %d, error storing latest trusted globalExitRoot. Error: %v", s.networkID, err)
+		log.Errorf("networkID: %d, error storing latest trusted globalExitRoot. Error: %v", s.networkID, err)
 		return err
 	}
 	if isUpdated {

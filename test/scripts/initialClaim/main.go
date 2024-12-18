@@ -114,12 +114,7 @@ func main() {
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
-	// Get RollupID
-	rollupID, err := polygonRollupManager.RollupAddressToID(&bind.CallOpts{Pending: false}, polygonRollupManagerAddress)
-	if err != nil {
-		log.Fatal("Error: ", err)
-	}
-	tx, err := c.BuildSendClaim(ctx, &e, smtProof, smtRollupProof, globalExitRoot, 0, 0, l2GasLimit, rollupID, auth)
+	tx, err := c.BuildSendClaim(ctx, &e, smtProof, smtRollupProof, globalExitRoot, 0, 0, l2GasLimit, auth)
 	if err != nil {
 		log.Fatal("error: ", err)
 	}

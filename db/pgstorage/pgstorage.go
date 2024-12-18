@@ -636,6 +636,18 @@ func (p *PostgresStorage) GetDepositsFromOtherL2ToClaim(ctx context.Context, des
 	}
 	return deposits, nil
 }
+
+// GetLatestTrustedGERByDeposit return the latest trusted ger for an specific deposit
+func (p *PostgresStorage) GetLatestTrustedGERByDeposit(ctx context.Context, depositCnt, networkID, destinationNetwork uint32, dbTx pgx.Tx) (common.Hash, error) {
+	const getLatestTrustedGERByDeposit = `SELECT sync.exit_root.global_exit_root FROM sync.deposit inner join mt.root on mt.root.deposit_id = sync.deposit.id inner join mt.rollup_exit on mt.rollup_exit.leaf = mt.root.root inner join sync.exit_root on sync.exit_root.exit_roots[2]= mt.rollup_exit.root where deposit_cnt = $1 and sync.deposit.network_id = $2 and dest_net = $3 and mt.rollup_exit.rollup_id = $2 and sync.exit_root.block_id = 0 and sync.exit_root.network_id = sync.deposit.dest_net order by sync.exit_root.id desc limit 1`
+	var ger common.Hash
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, getLatestTrustedGERByDeposit, depositCnt, networkID, destinationNetwork).Scan(&ger)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return common.Hash{}, gerror.ErrStorageNotFound
+	}
+	return ger, err
+}
+
 // AddClaimTx adds a claim monitored transaction to the storage.
 func (p *PostgresStorage) AddClaimTx(ctx context.Context, mTx ctmtypes.MonitoredTx, dbTx pgx.Tx) error {
 	const addMonitoredTxSQL = `INSERT INTO sync.monitored_txs 

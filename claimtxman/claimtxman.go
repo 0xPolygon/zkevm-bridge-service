@@ -2,6 +2,7 @@ package claimtxman
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/0xPolygonHermez/zkevm-node/state/runtime"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -172,8 +174,9 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger *etherman.GlobalExitRoot) err
 
 func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbTx pgx.Tx) error {
 	var (
-		deposits []*etherman.Deposit
-		err error
+		deposits       []*etherman.Deposit
+		globalExitRoot = ger.GlobalExitRoot
+		err            error
 	)
 	if ger.BlockID != 0 { // L2 exit root is updated
 		log.Infof("RollupID: %d, Rollup exitroot %v is updated", tm.rollupID, ger.ExitRoots[1])
@@ -184,10 +187,28 @@ func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbT
 		}
 		// If L2 claims processor is enabled
 		if tm.cfg.AreClaimsBetweenL2sEnabled {
+			log.Debugf("rollupID: %d, getting L2 deposits to autoClaim", tm.rollupID)
 			deposits, err = tm.storage.GetDepositsFromOtherL2ToClaim(tm.ctx, tm.l2NetworkID, dbTx)
 			if err != nil {
 				log.Errorf("rollupID: %d, error getting deposits from other L2 to claim. Error: %v", tm.rollupID, err)
 				return err
+			}
+			if len(deposits) > 0 {
+				globalExitRoot, err = tm.storage.GetLatestTrustedGERByDeposit(tm.ctx, deposits[0].DepositCount, deposits[0].NetworkID, deposits[0].DestinationNetwork, dbTx)
+				if errors.Is(err, gerror.ErrStorageNotFound) {
+					log.Infof("RollupID: %d, not fully synced yet. Retrying in 2s...")
+					time.Sleep(2 * time.Second)
+					globalExitRoot, err = tm.storage.GetLatestTrustedGERByDeposit(tm.ctx, deposits[0].DepositCount, deposits[0].NetworkID, deposits[0].DestinationNetwork, dbTx)
+					if errors.Is(err, gerror.ErrStorageNotFound) {
+						log.Infof("RollupID: %d, Still missing. Not fully synced yet. It will retry it later...")
+					} else if err != nil {
+						log.Errorf("rollupID: %d, error getting the latest trusted GER by deposit the second time. Error: %v", tm.rollupID, err)
+						return err
+					}
+				} else if err != nil {
+					log.Errorf("rollupID: %d, error getting the latest trusted GER by deposit. Error: %v", tm.rollupID, err)
+					return err
+				}
 			}
 		}
 	} else { // L1 exit root is updated in the trusted state
@@ -215,7 +236,7 @@ func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbT
 		}
 
 		log.Infof("RollupID: %d, create the claim tx for the deposit count %d. Deposit Id: %d", tm.rollupID, deposit.DepositCount, deposit.Id)
-		ger, proof, rollupProof, err := tm.bridgeService.GetClaimProofForCompressed(ger.GlobalExitRoot, deposit.DepositCount, deposit.NetworkID, dbTx)
+		ger, proof, rollupProof, err := tm.bridgeService.GetClaimProofForCompressed(globalExitRoot, deposit.DepositCount, deposit.NetworkID, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error getting Claim Proof for deposit Id %d. Error: %v", tm.rollupID, deposit.Id, err)
 			return err
@@ -233,7 +254,7 @@ func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbT
 				ExitRoots: []common.Hash{
 					ger.ExitRoots[0],
 					ger.ExitRoots[1],
-				}}, 1, 1, 1, tm.rollupID,
+				}}, 1, 1, 1,
 			tm.auth)
 		if err != nil {
 			log.Errorf("rollupID: %d, error BuildSendClaim tx for deposit Id: %d. Error: %v", tm.rollupID, deposit.Id, err)
