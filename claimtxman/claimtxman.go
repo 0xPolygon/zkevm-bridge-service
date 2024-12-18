@@ -197,7 +197,7 @@ func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbT
 				globalExitRoot, err = tm.storage.GetLatestTrustedGERByDeposit(tm.ctx, deposits[0].DepositCount, deposits[0].NetworkID, deposits[0].DestinationNetwork, dbTx)
 				if errors.Is(err, gerror.ErrStorageNotFound) {
 					log.Infof("RollupID: %d, not fully synced yet. Retrying in 2s...")
-					time.Sleep(2 * time.Second)
+					time.Sleep(tm.cfg.RetryInterval.Duration)
 					globalExitRoot, err = tm.storage.GetLatestTrustedGERByDeposit(tm.ctx, deposits[0].DepositCount, deposits[0].NetworkID, deposits[0].DestinationNetwork, dbTx)
 					if errors.Is(err, gerror.ErrStorageNotFound) {
 						log.Infof("RollupID: %d, Still missing. Not fully synced yet. It will retry it later...")

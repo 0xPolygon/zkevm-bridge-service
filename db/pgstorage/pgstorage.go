@@ -550,22 +550,7 @@ func (p *PostgresStorage) GetDeposits(ctx context.Context, destAddr string, limi
 		return nil, err
 	}
 
-	deposits := make([]*etherman.Deposit, 0, len(rows.RawValues()))
-
-	for rows.Next() {
-		var (
-			deposit etherman.Deposit
-			amount  string
-		)
-		err = rows.Scan(&deposit.Id, &deposit.LeafType, &deposit.OriginalNetwork, &deposit.OriginalAddress, &amount, &deposit.DestinationNetwork, &deposit.DestinationAddress, &deposit.DepositCount, &deposit.BlockID, &deposit.BlockNumber, &deposit.NetworkID, &deposit.TxHash, &deposit.Metadata, &deposit.ReadyForClaim)
-		if err != nil {
-			return nil, err
-		}
-		deposit.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:gomnd
-		deposits = append(deposits, &deposit)
-	}
-
-	return deposits, nil
+	return parseDeposits(rows, true)
 }
 
 // GetDepositCount gets the deposit count for the destination address.
@@ -588,20 +573,7 @@ func (p *PostgresStorage) UpdateL1DepositsStatus(ctx context.Context, exitRoot [
 		return nil, err
 	}
 
-	deposits := make([]*etherman.Deposit, 0, len(rows.RawValues()))
-	for rows.Next() {
-		var (
-			deposit etherman.Deposit
-			amount  string
-		)
-		err = rows.Scan(&deposit.Id, &deposit.LeafType, &deposit.OriginalNetwork, &deposit.OriginalAddress, &amount, &deposit.DestinationNetwork, &deposit.DestinationAddress, &deposit.DepositCount, &deposit.BlockID, &deposit.NetworkID, &deposit.TxHash, &deposit.Metadata, &deposit.ReadyForClaim)
-		if err != nil {
-			return nil, err
-		}
-		deposit.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:gomnd
-		deposits = append(deposits, &deposit)
-	}
-	return deposits, nil
+	return parseDeposits(rows, false)
 }
 
 // UpdateL2DepositsStatus updates the ready_for_claim status of L2 deposits.
@@ -614,27 +586,14 @@ func (p *PostgresStorage) UpdateL2DepositsStatus(ctx context.Context, exitRoot [
 	return err
 }
 
-// GetDepositsFromOtherL2ToClaim returns L2 deposits whose destination is an specific L2 
+// GetDepositsFromOtherL2ToClaim returns L2 deposits whose destination is an specific L2
 func (p *PostgresStorage) GetDepositsFromOtherL2ToClaim(ctx context.Context, destinationNetwork uint32, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
 	const getL2DepositsToClaimStatusSQL = `select sync.deposit.id, sync.deposit.leaf_type, sync.deposit.orig_net, sync.deposit.orig_addr, sync.deposit.amount, sync.deposit.dest_net, sync.deposit.dest_addr, sync.deposit.deposit_cnt, sync.deposit.block_id, sync.deposit.network_id, sync.deposit.tx_hash, sync.deposit.metadata, sync.deposit.ready_for_claim FROM sync.deposit where sync.deposit.deposit_cnt not in (select index FROM sync.claim where sync.claim.network_id = $1) and sync.deposit.network_id !=0 and sync.deposit.dest_net = $1 and ready_for_claim =true order by deposit_cnt desc;`
 	rows, err := p.getExecQuerier(dbTx).Query(ctx, getL2DepositsToClaimStatusSQL, destinationNetwork)
 	if err != nil {
 		return nil, err
 	}
-	deposits := make([]*etherman.Deposit, 0, len(rows.RawValues()))
-	for rows.Next() {
-		var (
-			deposit etherman.Deposit
-			amount  string
-		)
-		err = rows.Scan(&deposit.Id, &deposit.LeafType, &deposit.OriginalNetwork, &deposit.OriginalAddress, &amount, &deposit.DestinationNetwork, &deposit.DestinationAddress, &deposit.DepositCount, &deposit.BlockID, &deposit.NetworkID, &deposit.TxHash, &deposit.Metadata, &deposit.ReadyForClaim)
-		if err != nil {
-			return nil, err
-		}
-		deposit.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:gomnd
-		deposits = append(deposits, &deposit)
-	}
-	return deposits, nil
+	return parseDeposits(rows, false)
 }
 
 // GetLatestTrustedGERByDeposit return the latest trusted ger for an specific deposit
@@ -728,21 +687,10 @@ func (p *PostgresStorage) GetPendingDepositsToClaim(ctx context.Context, destAdd
 		return nil, 0, err
 	}
 
-	deposits := make([]*etherman.Deposit, 0, len(rows.RawValues()))
-
-	for rows.Next() {
-		var (
-			deposit etherman.Deposit
-			amount  string
-		)
-		err = rows.Scan(&deposit.Id, &deposit.LeafType, &deposit.OriginalNetwork, &deposit.OriginalAddress, &amount, &deposit.DestinationNetwork, &deposit.DestinationAddress, &deposit.DepositCount, &deposit.BlockID, &deposit.BlockNumber, &deposit.NetworkID, &deposit.TxHash, &deposit.Metadata, &deposit.ReadyForClaim)
-		if err != nil {
-			return nil, 0, err
-		}
-		deposit.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:gomnd
-		deposits = append(deposits, &deposit)
+	deposits, err := parseDeposits(rows, true)
+	if err != nil {
+		return nil, 0, err
 	}
-
 	return deposits, totalCount, nil
 }
 
@@ -758,4 +706,26 @@ func (p *PostgresStorage) UpdateBlocksForTesting(ctx context.Context, networkID 
 	const updateBlocksSQL = "UPDATE sync.block SET block_hash = SUBSTRING(block_hash FROM 1 FOR LENGTH(block_hash)-1) || '\x61' WHERE network_id = $1 AND block_num >= $2"
 	_, err := p.getExecQuerier(dbTx).Exec(ctx, updateBlocksSQL, networkID, blockNum)
 	return err
+}
+
+func parseDeposits(rows pgx.Rows, needBlockNum bool) ([]*etherman.Deposit, error) {
+	deposits := make([]*etherman.Deposit, 0, len(rows.RawValues()))
+	for rows.Next() {
+		var (
+			deposit etherman.Deposit
+			amount  string
+			err     error
+		)
+		if needBlockNum {
+			err = rows.Scan(&deposit.Id, &deposit.LeafType, &deposit.OriginalNetwork, &deposit.OriginalAddress, &amount, &deposit.DestinationNetwork, &deposit.DestinationAddress, &deposit.DepositCount, &deposit.BlockID, &deposit.BlockNumber, &deposit.NetworkID, &deposit.TxHash, &deposit.Metadata, &deposit.ReadyForClaim)
+		} else {
+			err = rows.Scan(&deposit.Id, &deposit.LeafType, &deposit.OriginalNetwork, &deposit.OriginalAddress, &amount, &deposit.DestinationNetwork, &deposit.DestinationAddress, &deposit.DepositCount, &deposit.BlockID, &deposit.NetworkID, &deposit.TxHash, &deposit.Metadata, &deposit.ReadyForClaim)
+		}
+		if err != nil {
+			return nil, err
+		}
+		deposit.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:gomnd
+		deposits = append(deposits, &deposit)
+	}
+	return deposits, nil
 }
