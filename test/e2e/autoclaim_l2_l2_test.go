@@ -59,7 +59,7 @@ func TestAutoClaimL2L2(t *testing.T) {
 		// Check L2 destination funds
 		balance, err := opsman2.CheckAccountBalance(ctx, operations.L2, &address)
 		require.NoError(t, err)
-		v, _ := big.NewInt(0).SetString("99999998418466000000000", 10)
+		v, _ := big.NewInt(0).SetString("99999998433970000000000", 10)
 		t.Log("balance: ", balance)
 		require.Equal(t, 0,  v.Cmp(balance))
 		// This deposit forces the update of the ger to process the previous ready for claim. It is

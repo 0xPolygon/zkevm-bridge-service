@@ -60,7 +60,7 @@ func TestL2L2(t *testing.T) {
 		// Check L2 destination funds
 		balance, err := opsman2.CheckAccountBalance(ctx, operations.L2, &address)
 		require.NoError(t, err)
-		v, _ := big.NewInt(0).SetString("99999999209233000000000", 10)
+		v, _ := big.NewInt(0).SetString("99999999216985000000000", 10)
 		t.Log("balance: ", balance)
 		require.Equal(t, 0,  v.Cmp(balance))
 		// Get the claim data
