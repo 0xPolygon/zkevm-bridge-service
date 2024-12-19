@@ -2,6 +2,7 @@ package claimtxman
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/big"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/0xPolygonHermez/zkevm-node/state/runtime"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -171,64 +173,96 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger *etherman.GlobalExitRoot) err
 }
 
 func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbTx pgx.Tx) error {
+	var (
+		deposits       []*etherman.Deposit
+		globalExitRoot = ger.GlobalExitRoot
+		err            error
+	)
 	if ger.BlockID != 0 { // L2 exit root is updated
 		log.Infof("RollupID: %d, Rollup exitroot %v is updated", tm.rollupID, ger.ExitRoots[1])
-		if err := tm.storage.UpdateL2DepositsStatus(tm.ctx, ger.ExitRoots[1][:], tm.rollupID, tm.l2NetworkID, dbTx); err != nil {
+		err = tm.storage.UpdateL2DepositsStatus(tm.ctx, ger.ExitRoots[1][:], tm.rollupID, tm.l2NetworkID, dbTx)
+		if err != nil {
 			log.Errorf("rollupID: %d, error updating L2DepositsStatus. Error: %v", tm.rollupID, err)
 			return err
 		}
+		// If L2 claims processor is enabled
+		if tm.cfg.AreClaimsBetweenL2sEnabled {
+			log.Debugf("rollupID: %d, getting L2 deposits to autoClaim", tm.rollupID)
+			deposits, err = tm.storage.GetDepositsFromOtherL2ToClaim(tm.ctx, tm.l2NetworkID, dbTx)
+			if err != nil {
+				log.Errorf("rollupID: %d, error getting deposits from other L2 to claim. Error: %v", tm.rollupID, err)
+				return err
+			}
+			if len(deposits) > 0 {
+				globalExitRoot, err = tm.storage.GetLatestTrustedGERByDeposit(tm.ctx, deposits[0].DepositCount, deposits[0].NetworkID, deposits[0].DestinationNetwork, dbTx)
+				if errors.Is(err, gerror.ErrStorageNotFound) {
+					log.Infof("RollupID: %d, not fully synced yet. Retrying in 2s...")
+					time.Sleep(tm.cfg.RetryInterval.Duration)
+					globalExitRoot, err = tm.storage.GetLatestTrustedGERByDeposit(tm.ctx, deposits[0].DepositCount, deposits[0].NetworkID, deposits[0].DestinationNetwork, dbTx)
+					if errors.Is(err, gerror.ErrStorageNotFound) {
+						log.Infof("RollupID: %d, Still missing. Not fully synced yet. It will retry it later...")
+					} else if err != nil {
+						log.Errorf("rollupID: %d, error getting the latest trusted GER by deposit the second time. Error: %v", tm.rollupID, err)
+						return err
+					}
+				} else if err != nil {
+					log.Errorf("rollupID: %d, error getting the latest trusted GER by deposit. Error: %v", tm.rollupID, err)
+					return err
+				}
+			}
+		}
 	} else { // L1 exit root is updated in the trusted state
 		log.Infof("RollupID: %d, Mainnet exitroot %v is updated", tm.rollupID, ger.ExitRoots[0])
-		deposits, err := tm.storage.UpdateL1DepositsStatus(tm.ctx, ger.ExitRoots[0][:], tm.l2NetworkID, dbTx)
+		deposits, err = tm.storage.UpdateL1DepositsStatus(tm.ctx, ger.ExitRoots[0][:], tm.l2NetworkID, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error getting and updating L1DepositsStatus. Error: %v", tm.rollupID, err)
 			return err
 		}
-		for _, deposit := range deposits {
-			if tm.l2NetworkID != deposit.DestinationNetwork {
-				log.Infof("Ignoring deposit id: %d deposit count:%d dest_net: %d, we are:%d", deposit.Id, deposit.DepositCount, deposit.DestinationNetwork, tm.l2NetworkID)
-				continue
-			}
+	}
+	for _, deposit := range deposits {
+		if tm.l2NetworkID != deposit.DestinationNetwork {
+			log.Infof("Ignoring deposit id: %d deposit count:%d dest_net: %d, we are:%d", deposit.Id, deposit.DepositCount, deposit.DestinationNetwork, tm.l2NetworkID)
+			continue
+		}
 
-			claimHash, err := tm.bridgeService.GetDepositStatus(tm.ctx, deposit.DepositCount, deposit.NetworkID, deposit.DestinationNetwork)
-			if err != nil {
-				log.Errorf("rollupID: %d, error getting deposit status for deposit id %d. Error: %v", tm.rollupID, deposit.Id, err)
-				return err
-			}
-			if len(claimHash) > 0 || deposit.LeafType == LeafTypeMessage && !tm.isDepositMessageAllowed(deposit) {
-				log.Infof("RollupID: %d, Ignoring deposit Id: %d, leafType: %d, claimHash: %s, deposit.OriginalAddress: %s", tm.rollupID, deposit.Id, deposit.LeafType, claimHash, deposit.OriginalAddress.String())
-				continue
-			}
+		claimHash, err := tm.bridgeService.GetDepositStatus(tm.ctx, deposit.DepositCount, deposit.NetworkID, deposit.DestinationNetwork)
+		if err != nil {
+			log.Errorf("rollupID: %d, error getting deposit status for deposit id %d. Error: %v", tm.rollupID, deposit.Id, err)
+			return err
+		}
+		if len(claimHash) > 0 || deposit.LeafType == LeafTypeMessage && !tm.isDepositMessageAllowed(deposit) {
+			log.Infof("RollupID: %d, Ignoring deposit Id: %d, leafType: %d, claimHash: %s, deposit.OriginalAddress: %s", tm.rollupID, deposit.Id, deposit.LeafType, claimHash, deposit.OriginalAddress.String())
+			continue
+		}
 
-			log.Infof("RollupID: %d, create the claim tx for the deposit count %d. Deposit Id: %d", tm.rollupID, deposit.DepositCount, deposit.Id)
-			ger, proof, rollupProof, err := tm.bridgeService.GetClaimProofForCompressed(ger.GlobalExitRoot, deposit.DepositCount, deposit.NetworkID, dbTx)
-			if err != nil {
-				log.Errorf("rollupID: %d, error getting Claim Proof for deposit Id %d. Error: %v", tm.rollupID, deposit.Id, err)
-				return err
-			}
-			var (
-				mtProof       [mtHeight][keyLen]byte
-				mtRollupProof [mtHeight][keyLen]byte
-			)
-			for i := 0; i < mtHeight; i++ {
-				mtProof[i] = proof[i]
-				mtRollupProof[i] = rollupProof[i]
-			}
-			tx, err := tm.l2Node.BuildSendClaim(tm.ctx, deposit, mtProof, mtRollupProof,
-				&etherman.GlobalExitRoot{
-					ExitRoots: []common.Hash{
-						ger.ExitRoots[0],
-						ger.ExitRoots[1],
-					}}, 1, 1, 1, tm.rollupID,
-				tm.auth)
-			if err != nil {
-				log.Errorf("rollupID: %d, error BuildSendClaim tx for deposit Id: %d. Error: %v", tm.rollupID, deposit.Id, err)
-				return err
-			}
-			if err = tm.addClaimTx(deposit.Id, tm.auth.From, tx.To(), nil, tx.Data(), ger.GlobalExitRoot, dbTx); err != nil {
-				log.Errorf("rollupID: %d, error adding claim tx for deposit Id: %d Error: %v", tm.rollupID, deposit.Id, err)
-				return err
-			}
+		log.Infof("RollupID: %d, create the claim tx for the deposit count %d. Deposit Id: %d", tm.rollupID, deposit.DepositCount, deposit.Id)
+		ger, proof, rollupProof, err := tm.bridgeService.GetClaimProofForCompressed(globalExitRoot, deposit.DepositCount, deposit.NetworkID, dbTx)
+		if err != nil {
+			log.Errorf("rollupID: %d, error getting Claim Proof for deposit Id %d. Error: %v", tm.rollupID, deposit.Id, err)
+			return err
+		}
+		var (
+			mtProof       [mtHeight][keyLen]byte
+			mtRollupProof [mtHeight][keyLen]byte
+		)
+		for i := 0; i < mtHeight; i++ {
+			mtProof[i] = proof[i]
+			mtRollupProof[i] = rollupProof[i]
+		}
+		tx, err := tm.l2Node.BuildSendClaim(tm.ctx, deposit, mtProof, mtRollupProof,
+			&etherman.GlobalExitRoot{
+				ExitRoots: []common.Hash{
+					ger.ExitRoots[0],
+					ger.ExitRoots[1],
+				}}, 1, 1, 1,
+			tm.auth)
+		if err != nil {
+			log.Errorf("rollupID: %d, error BuildSendClaim tx for deposit Id: %d. Error: %v", tm.rollupID, deposit.Id, err)
+			return err
+		}
+		if err = tm.addClaimTx(deposit.Id, tm.auth.From, tx.To(), nil, tx.Data(), ger.GlobalExitRoot, dbTx); err != nil {
+			log.Errorf("rollupID: %d, error adding claim tx for deposit Id: %d Error: %v", tm.rollupID, deposit.Id, err)
+			return err
 		}
 	}
 	return nil

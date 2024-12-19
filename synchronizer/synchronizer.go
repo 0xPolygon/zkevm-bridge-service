@@ -217,7 +217,7 @@ func (s *ClientSynchronizer) syncTrustedState() error {
 	}
 	isUpdated, err := s.storage.AddTrustedGlobalExitRoot(s.ctx, ger, nil)
 	if err != nil {
-		log.Error("networkID: %d, error storing latest trusted globalExitRoot. Error: %v", s.networkID, err)
+		log.Errorf("networkID: %d, error storing latest trusted globalExitRoot. Error: %v", s.networkID, err)
 		return err
 	}
 	if isUpdated {
@@ -488,7 +488,7 @@ func (s *ClientSynchronizer) resetState(blockNumber uint64) error {
 	}
 	depositCnt, err := s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
 	if err != nil {
-		log.Error("networkID: %d, error getting GetNumberDeposits. Error: %v", s.networkID, err)
+		log.Errorf("networkID: %d, error getting GetNumberDeposits. Error: %v", s.networkID, err)
 		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
 		if rollbackErr != nil {
 			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, error : %s",
@@ -500,7 +500,7 @@ func (s *ClientSynchronizer) resetState(blockNumber uint64) error {
 
 	err = s.bridgeCtrl.ReorgMT(s.ctx, depositCnt, s.networkID, dbTx)
 	if err != nil {
-		log.Error("networkID: %d, error resetting ReorgMT the state. Error: %v", s.networkID, err)
+		log.Errorf("networkID: %d, error resetting ReorgMT the state. Error: %v", s.networkID, err)
 		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
 		if rollbackErr != nil {
 			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, error : %s",
@@ -626,8 +626,8 @@ func (s *ClientSynchronizer) processVerifyBatch(verifyBatch etherman.VerifiedBat
 			log.Errorf("networkID: %d, Root: %s doesn't exist!", s.networkID, verifyBatch.LocalExitRoot.String())
 			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
 			if rollbackErr != nil {
-				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
-					s.networkID, verifyBatch.BlockNumber, rollbackErr, err.Error())
+				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v",
+					s.networkID, verifyBatch.BlockNumber, rollbackErr)
 				return rollbackErr
 			}
 			return fmt.Errorf("networkID: %d, Root: %s doesn't exist!", s.networkID, verifyBatch.LocalExitRoot.String())
