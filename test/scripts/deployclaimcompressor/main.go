@@ -89,6 +89,7 @@ func deploy(ctx *cli.Context) error {
 		log.Error("Error: ", err)
 		return err
 	}
+	log.Debug("networkID: ", networkID)
 	log.Debug("auth.From: ", auth.From)
 	balance, err := c.Client.BalanceAt(ctx.Context, auth.From, nil)
 	if err != nil {

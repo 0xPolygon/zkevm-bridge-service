@@ -191,7 +191,7 @@ func (ac *autoclaim) claimGrouped() error {
 			log.Errorf("error compressing claim data, Error: %v", err)
 			return err
 		}
-		log.Debug("Sending compressed claim tx")
+		log.Debugf("Sending compressed claim tx with %d claims", len(allClaimData))
 		tx, err := ac.bm.SendCompressedClaims(compressedTxData)
 		if err != nil {
 			log.Errorf("error sending compressed claims, Error: %v", err)
