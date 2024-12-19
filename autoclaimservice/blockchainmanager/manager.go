@@ -74,6 +74,7 @@ func NewClient(ctx context.Context, cfg *Config) (*Client, error) {
 		return nil, err
 	}
 	logger := log.WithFields("networkID", networkID)
+	logger.Debug("BlockchainManager client configured")
 
 	return &Client{
 		ctx:             ctx,

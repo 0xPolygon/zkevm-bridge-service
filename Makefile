@@ -433,6 +433,11 @@ test-l2l2: build-docker stop run-multi-single-bridge ## Runs all tests checking 
 	sleep 3
 	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -v -failfast -race -p 1 -timeout 2400s ./test/e2e/... -count 1 -tags='l2l2'
 
+.PHONY: test-autoclaiml2l2
+test-autoclaiml2l2: build-docker stop run-multi-single-bridge ## Runs all tests checking race conditions
+	sleep 3
+	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -v -failfast -race -p 1 -timeout 2400s ./test/e2e/... -count 1 -tags='autoclaiml2l2'
+
 .PHONY: test-e2ecompress
 test-e2ecompress: build-docker stop run-multi-single-bridge ## Runs all tests checking race conditions
 	sleep 3

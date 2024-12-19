@@ -29,6 +29,7 @@ PrivateKey = {Path = "./test/test.keystore", Password = "testonly"}
 RetryInterval = "1s"
 RetryNumber = 10
 AuthorizedClaimMessageAddresses = []
+AreClaimsBetweenL2sEnabled = false
 [ClaimTxManager.GroupingClaims]
     Enabled = false
     FrequencyToProcessCompressedClaims = "10m"

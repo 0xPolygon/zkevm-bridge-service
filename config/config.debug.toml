@@ -18,6 +18,7 @@ PrivateKey = {Path = "../test/test.keystore.claimtx", Password = "testonly"}
 RetryInterval = "1s"
 RetryNumber = 10
 AuthorizedClaimMessageAddresses = ["0x90F79bf6EB2c4f870365E785982E1f101E93b906"]
+AreClaimsBetweenL2sEnabled = false
 [ClaimTxManager.GroupingClaims]
     Enabled = false
     TriggerNumberOfClaims = 20

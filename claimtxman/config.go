@@ -20,6 +20,8 @@ type Config struct {
 	RetryNumber int `mapstructure:"RetryNumber"`
 	// AuthorizedClaimMessageAddresses are the allowed address to bridge message with autoClaim
 	AuthorizedClaimMessageAddresses []common.Address `mapstructure:"AuthorizedClaimMessageAddresses"`
+	// Enables the ability to Claim bridges between L2s automatically
+	AreClaimsBetweenL2sEnabled bool `mapstructure:"AreClaimsBetweenL2sEnabled"`
 
 	// GroupingClaims is the configuration for grouping claims
 	GroupingClaims ConfigGroupingClaims `mapstructure:"GroupingClaims"`
