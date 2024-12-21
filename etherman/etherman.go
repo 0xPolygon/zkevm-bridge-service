@@ -675,7 +675,7 @@ func DecodeGlobalIndex(globalIndex *big.Int) (bool, uint32, uint32, error) {
 	}
 	mainnetFlag := big.NewInt(0).SetBytes([]byte{gIBytes[23]}).Uint64() == 1
 	rollupIndex := big.NewInt(0).SetBytes(gIBytes[24:28])
-	localRootIndex := big.NewInt(0).SetBytes(gIBytes[29:32])
+	localRootIndex := big.NewInt(0).SetBytes(gIBytes[28:32])
 	if rollupIndex.Uint64() > math.MaxUint32 {
 		return false, 0, 0, fmt.Errorf("invalid rollupIndex length. Should be fit into uint32 type")
 	}
