@@ -2,6 +2,7 @@ package etherman
 
 import (
 	"context"
+	"math"
 	"math/big"
 	"testing"
 
@@ -181,6 +182,18 @@ func TestDecodeGlobalIndex(t *testing.T) {
 	assert.Equal(t, true, mainnetFlag)
 	assert.Equal(t, uint32(0), rollupIndex)
 	assert.Equal(t, uint32(0), localExitRootIndex)
+
+	globalIndex, _ = big.NewInt(0).SetString("18446744073709551615", 0)
+
+	gi = globalIndex.FillBytes(buf[:])
+	for _, n := range gi {
+		t.Logf("%08b ", n)
+	}
+	mainnetFlag, rollupIndex, localExitRootIndex, err = DecodeGlobalIndex(globalIndex)
+	require.NoError(t, err)
+	assert.Equal(t, false, mainnetFlag)
+	assert.Equal(t, uint32(math.MaxUint32), rollupIndex)
+	assert.Equal(t, uint32(math.MaxUint32), localExitRootIndex)
 }
 
 func TestVerifyBatchEvent(t *testing.T) {
@@ -238,7 +251,9 @@ func TestGenerateGlobalIndex(t *testing.T) {
 	mainnetFlag, rollupIndex, localExitRootIndex := false, uint32(1), uint32(11)
 	globalIndexGenerated := GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
 	t.Log("First test number:")
-	for _, n := range globalIndexGenerated.Bytes() {
+	var buf [32]byte
+	gIBytes := globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
 		t.Logf("%08b ", n)
 	}
 	assert.Equal(t, globalIndex, globalIndexGenerated)
@@ -247,7 +262,8 @@ func TestGenerateGlobalIndex(t *testing.T) {
 	mainnetFlag, rollupIndex, localExitRootIndex = false, uint32(2), uint32(12)
 	globalIndexGenerated = GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
 	t.Log("Second test number:")
-	for _, n := range globalIndexGenerated.Bytes() {
+	gIBytes = globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
 		t.Logf("%08b ", n)
 	}
 	assert.Equal(t, globalIndex, globalIndexGenerated)
@@ -256,7 +272,35 @@ func TestGenerateGlobalIndex(t *testing.T) {
 	mainnetFlag, rollupIndex, localExitRootIndex = true, uint32(0), uint32(11)
 	globalIndexGenerated = GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
 	t.Log("Third test number:")
-	for _, n := range globalIndexGenerated.Bytes() {
+	gIBytes = globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
+		t.Logf("%08b ", n)
+	}
+	assert.Equal(t, globalIndex, globalIndexGenerated)
+
+	globalIndex, _ = big.NewInt(0).SetString("18446744073709551615", 0)
+	globalIndexGenerated = GenerateGlobalIndex(false, math.MaxUint32, math.MaxUint32)
+	t.Log("Fourth test number:")
+	gIBytes = globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
+		t.Logf("%08b ", n)
+	}
+	assert.Equal(t, globalIndex, globalIndexGenerated)
+
+	globalIndex = big.NewInt(0)
+	globalIndexGenerated = GenerateGlobalIndex(false, uint32(0), uint32(0))
+	t.Log("Fourth test number:")
+	gIBytes = globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
+		t.Logf("%08b ", n)
+	}
+	assert.Equal(t, globalIndex.String(), globalIndexGenerated.String())
+
+	globalIndex, _ = big.NewInt(0).SetString("18446744073709551616", 0)
+	globalIndexGenerated = GenerateGlobalIndex(true, uint32(0), uint32(0))
+	t.Log("Fourth test number:")
+	gIBytes = globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
 		t.Logf("%08b ", n)
 	}
 	assert.Equal(t, globalIndex, globalIndexGenerated)
