@@ -30,7 +30,7 @@ type GlobalExitRoot struct {
 	ExitRoots      []common.Hash
 	GlobalExitRoot common.Hash
 	NetworkID      uint32
-	ID			   uint64
+	ID             uint64
 }
 
 // Deposit struct

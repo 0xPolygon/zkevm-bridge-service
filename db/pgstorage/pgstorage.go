@@ -332,6 +332,7 @@ func (p *PostgresStorage) UpdateL2GER(ctx context.Context, ger etherman.GlobalEx
 	_, err := p.getExecQuerier(dbTx).Exec(ctx, updateL2GERSQL, ger.ID, pq.Array([][]byte{ger.ExitRoots[0][:], ger.ExitRoots[1][:]}))
 	return err
 }
+
 // GetLatestTrustedExitRoot gets the latest trusted global exit root.
 func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkID uint32, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error) {
 	var (
@@ -346,7 +347,7 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 		}
 		return nil, err
 	}
-	if len(exitRoots) == 2 {
+	if len(exitRoots) == 2 { //nolint:gomnd
 		ger.ExitRoots = []common.Hash{common.BytesToHash(exitRoots[0]), common.BytesToHash(exitRoots[1])}
 	} else {
 		// Query to look for the missing values
