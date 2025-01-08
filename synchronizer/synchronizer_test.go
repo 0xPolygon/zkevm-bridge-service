@@ -181,6 +181,11 @@ func TestSyncGer(t *testing.T) {
 			Once()
 
 		m.Storage.
+			On("GetL2ExitRootsByGER", ctx, blocks[1].GlobalExitRoots[0].GlobalExitRoot, m.DbTx).
+			Return([]etherman.GlobalExitRoot{}, nil).
+			Once()
+
+		m.Storage.
 			On("AddGlobalExitRoot", ctx, &blocks[1].GlobalExitRoots[0], m.DbTx).
 			Return(nil).
 			Once()

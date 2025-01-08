@@ -172,7 +172,7 @@ func (s *ClientSynchronizer) Sync() error {
 					}
 				}
 			} else { // Sync Trusted GlobalExitRoots if L2 network is synced
-				if s.networkID == 0 || !s.sovereignChain { // if it is L1 or sovereignChain, trustedsync must be disabled
+				if s.networkID == 0 || s.sovereignChain { // if it is L1 or sovereignChain, trustedsync must be disabled
 					continue
 				}
 				log.Infof("networkID: %d, Virtual state is synced, getting trusted state", s.networkID)
