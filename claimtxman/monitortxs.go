@@ -16,7 +16,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/jackc/pgx/v4"
 )
 
 type MonitorTxs struct {
@@ -81,7 +80,7 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 		// update monitored tx changes into storage
 		// if the tx was mined but failed, we continue to consider it was not mined
 		// and store the failed receipt to be used to check if nonce needs to be reviewed
-		hasFailedReceipts, allHistoryTxMined, receiptSuccessful := tm.checkTxHistory(ctx, mTx, mTxLog, dbTx)
+		hasFailedReceipts, allHistoryTxMined, receiptSuccessful := tm.checkTxHistory(ctx, mTx, mTxLog)
 
 		if receiptSuccessful {
 			//mTxLog.Infof("tx %s was mined successfully", txHash.String())
@@ -211,7 +210,7 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 }
 
 // returns hasFailedReceipts, allHistoryTxMined, receiptSuccessful
-func (tm *MonitorTxs) checkTxHistory(ctx context.Context, mTx ctmtypes.MonitoredTx, mTxLog *log.Logger, dbTx pgx.Tx) (bool, bool, bool) {
+func (tm *MonitorTxs) checkTxHistory(ctx context.Context, mTx ctmtypes.MonitoredTx, mTxLog *log.Logger) (bool, bool, bool) {
 	var receipt *types.Receipt
 	hasFailedReceipts := false
 	allHistoryTxMined := true
