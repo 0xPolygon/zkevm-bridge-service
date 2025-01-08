@@ -43,7 +43,6 @@ type ClaimTxManager struct {
 	auth            *bind.TransactOpts
 	rollupID        uint32
 	l2Synced        bool
-	l1Synced        bool
 	nonceCache      *NonceCache
 	monitorTxs      types.TxMonitorer
 }
@@ -109,12 +108,8 @@ func (tm *ClaimTxManager) Start() {
 				log.Info("NetworkID synced: ", netID)
 				tm.l2Synced = true
 			}
-			if netID == 0 && !tm.l1Synced {
-				log.Info("L1 synced: ", netID)
-				tm.l1Synced = true
-			}
 		case ger = <-tm.chExitRootEvent:
-			if tm.l2Synced && tm.l1Synced {
+			if tm.l2Synced {
 				log.Debugf("RollupID: %d UpdateDepositsStatus for ger: %s", tm.rollupID, ger.GlobalExitRoot.String())
 				if tm.cfg.GroupingClaims.Enabled {
 					log.Debugf("rollupID: %d, Ger value updated and ready to be processed...", tm.rollupID)
@@ -130,7 +125,7 @@ func (tm *ClaimTxManager) Start() {
 				log.Infof("Waiting for networkID %d to be synced before processing deposits", tm.l2NetworkID)
 			}
 		case <-compressorTicker.C:
-			if tm.l2Synced && tm.l1Synced && tm.cfg.GroupingClaims.Enabled && ger.GlobalExitRoot != latestProcessedGer {
+			if tm.l2Synced && tm.cfg.GroupingClaims.Enabled && ger.GlobalExitRoot != latestProcessedGer {
 				log.Infof("RollupID: %d,Processing deposits for ger: %s", tm.rollupID, ger.GlobalExitRoot.String())
 				go func() {
 					err := tm.updateDepositsStatus(ger)
