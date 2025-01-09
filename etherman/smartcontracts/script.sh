@@ -20,3 +20,4 @@ compilegen() {
 
 gen  claimcompressor
 gen globalexitrootmanagerl2sovereignchain
+gen bridgel2sovereignchain
