@@ -157,7 +157,6 @@ func deploySovereignChainSMC(ctx *cli.Context) error {
 	}
 	log.Debug("balance: ", balance)
 
-
 	implementationBridgeAddr, _, _, err := bridgel2sovereignchain.DeployBridgel2sovereignchain(auth, c.Client)
 	if err != nil {
 		log.Error("error: ", err)
@@ -245,31 +244,31 @@ func sendETH(ctx *cli.Context) error {
 	}
 	log.Debug("init balance: ", balance)
 
-    fromAddress := key.Address
-    nonce, err := c.Client.PendingNonceAt(ctx.Context, fromAddress)
-    if err != nil {
-        log.Fatal(err)
-    }
+	fromAddress := key.Address
+	nonce, err := c.Client.PendingNonceAt(ctx.Context, fromAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    value, _ := big.NewInt(0).SetString("20000000000000000000", 0) // in wei (20 eth)
-    gasLimit := uint64(21000)                // in units
-    gasPrice, err := c.Client.SuggestGasPrice(ctx.Context)
-    if err != nil {
-        log.Fatal(err)
-    }
+	value, _ := big.NewInt(0).SetString("20000000000000000000", 0) // in wei (20 eth)
+	gasLimit := uint64(21000)                                      //nolint:gomnd
+	gasPrice, err := c.Client.SuggestGasPrice(ctx.Context)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-    var data []byte
-    tx := gethTypes.NewTransaction(nonce, destAddr, value, gasLimit, gasPrice, data)
+	var data []byte
+	tx := gethTypes.NewTransaction(nonce, destAddr, value, gasLimit, gasPrice, data)
 
-    signedTx, err := gethTypes.SignTx(tx, gethTypes.NewEIP155Signer(chainID), key.PrivateKey)
-    if err != nil {
-        log.Fatal(err)
-    }
-    err = c.Client.SendTransaction(ctx.Context, signedTx)
-    if err != nil {
-        log.Fatal(err)
-    }
-    log.Infof("tx sent: %s", signedTx.Hash().Hex())
+	signedTx, err := gethTypes.SignTx(tx, gethTypes.NewEIP155Signer(chainID), key.PrivateKey)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = c.Client.SendTransaction(ctx.Context, signedTx)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Infof("tx sent: %s", signedTx.Hash().Hex())
 
 	time.Sleep(3 * time.Second) //nolint:gomnd
 	balance, err = c.Client.BalanceAt(ctx.Context, destAddr, nil)
