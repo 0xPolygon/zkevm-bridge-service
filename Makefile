@@ -25,6 +25,7 @@ DOCKER_COMPOSE_BRIDGE_1 := zkevm-bridge-service-1
 DOCKER_COMPOSE_BRIDGE_2 := zkevm-bridge-service-2
 DOCKER_COMPOSE_BRIDGE_3 := zkevm-bridge-service-3
 DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN := zkevm-bridge-service-sovereign-chain
+DOCKER_COMPOSE_AGGORACLE := aggoracle
 
 RUN_STATE_DB := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_STATE_DB)
 RUN_POOL_DB := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_POOL_DB)
@@ -52,6 +53,7 @@ RUN_BRIDGE_2 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_2)
 RUN_BRIDGE_3 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_3)
 RUN_BRIDGE_V1TOV2 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_V1TOV2)
 RUN_BRIDGE_SOVEREIGN_CHAIN := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN)
+RUN_AGGORACLE := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_AGGORACLE)
 
 STOP_NODE_DB := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_NODE_DB) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_NODE_DB)
 STOP_BRIDGE_DB := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_DB) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_DB)
@@ -74,6 +76,7 @@ STOP_BRIDGE_2 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_2) && $(DOCKER_C
 STOP_BRIDGE_3 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_3) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_3)
 STOP_BRIDGE_V1TOV2 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_V1TOV2) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_V1TOV2)
 STOP_BRIDGE_SOVEREIGN_CHAIN := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN)
+STOP_AGGORACLE := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_AGGORACLE) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_AGGORACLE)
 STOP := $(DOCKER_COMPOSE) down --remove-orphans
 
 LDFLAGS += -X 'github.com/0xPolygonHermez/zkevm-bridge-service.Version=$(VERSION)'
@@ -306,6 +309,14 @@ run-bridge-sovereign-chain: ## Runs the bridge service
 stop-bridge-sovereign-chain: ## Stops the bridge service
 	$(STOP_BRIDGE_SOVEREIGN_CHAIN)
 
+.PHONY: run-aggoracle
+run-aggoracle: ## Runs the bridge service
+	$(RUN_AGGORACLE)
+
+.PHONY: stop-aggoracle
+stop-aggoracle: ## Stops the bridge service
+	$(STOP_AGGORACLE)
+
 .PHONY: stop
 stop: ## Stops all services
 	$(STOP)
@@ -405,8 +416,10 @@ run-sovereign-chain: ## runs all services
 	$(RUN_ZKPROVER)
 	sleep 3
 	$(RUN_NODE)
-	sleep 7
+	sleep 5
 	$(RUN_BRIDGE_SOVEREIGN_CHAIN)
+	sleep 20
+	$(RUN_AGGORACLE)
 
 .PHONY: update-external-dependencies
 update-external-dependencies: ## Updates external dependencies like images, test vectors or proto files

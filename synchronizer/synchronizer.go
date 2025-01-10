@@ -661,7 +661,7 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 	globalExitRoot.BlockID = blockID
 	globalExitRoot.NetworkID = s.networkID
 	if len(globalExitRoot.ExitRoots) == 2 { //nolint:gomnd
-		log.Debug("Storing L1 Ger: ", globalExitRoot.GlobalExitRoot)
+		log.Debugf("networkID: %d, Storing L1 Ger: ", s.networkID, globalExitRoot.GlobalExitRoot)
 		// Check if there is some globalExitRoot in L2. If so, it must be incompleted. It must be updated.
 		// A race condition between dbTxs (L1 dbTx and L2 dbTxs) is very unlikely because L1 sync takes usually takes more time than L2 sync.
 		gers, err := s.storage.GetL2ExitRootsByGER(s.ctx, globalExitRoot.GlobalExitRoot, dbTx)
@@ -701,7 +701,7 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 			return err
 		}
 	} else if len(globalExitRoot.ExitRoots) == 0 {
-		log.Debug("Storing L2 Ger: ", globalExitRoot.GlobalExitRoot)
+		log.Debugf("networkID: %d, Storing L2 Ger: %s", s.networkID, globalExitRoot.GlobalExitRoot)
 		// First read the mainnetExitRoot and rollupsExitRoot to store all the information in the db.
 		ger, err := s.storage.GetExitRootByGER(s.ctx, globalExitRoot.GlobalExitRoot, dbTx)
 		if errors.Is(err, gerror.ErrStorageNotFound) {
