@@ -176,7 +176,11 @@ func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalEx
 					log.Error("networkId: %d, error creating dbTx. Error: %v", networkID, err)
 					continue
 				}
-				if ger.BlockID != 0 { // L2 exit root is updated
+				if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
+					if len(ger.ExitRoots) == 0 {
+						log.Debug("Skipping the ready for claim update until the synchronization is completed")
+						continue
+					}
 					if err := s.UpdateL2DepositsStatus(ctx, ger.ExitRoots[1][:], networkID, networkID, dbTx); err != nil {
 						log.Errorf("networkId: %d, error updating L2DepositsStatus. Error: %v", networkID, err)
 						rollbackErr := s.Rollback(ctx, dbTx)
@@ -186,6 +190,10 @@ func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalEx
 						continue
 					}
 				} else { // L1 exit root is updated in the trusted state
+					if len(ger.ExitRoots) == 0 {
+						log.Debug("Skipping the ready for claim update until the synchronization is completed")
+						continue
+					}
 					_, err := s.UpdateL1DepositsStatus(ctx, ger.ExitRoots[0][:], networkID, dbTx)
 					if err != nil {
 						log.Errorf("networkId: %d, error getting and updating L1DepositsStatus. Error: %v", networkID, err)

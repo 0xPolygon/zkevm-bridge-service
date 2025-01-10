@@ -418,7 +418,7 @@ run-sovereign-chain: ## runs all services
 	$(RUN_NODE)
 	sleep 5
 	$(RUN_BRIDGE_SOVEREIGN_CHAIN)
-	sleep 20
+	sleep 30
 	$(RUN_AGGORACLE)
 
 .PHONY: update-external-dependencies

@@ -104,9 +104,13 @@ func (p *PostgresStorage) AddBlock(ctx context.Context, block *etherman.Block, d
 
 // AddGlobalExitRoot adds a new ExitRoot to the db.
 func (p *PostgresStorage) AddGlobalExitRoot(ctx context.Context, exitRoot *etherman.GlobalExitRoot, dbTx pgx.Tx) error {
-	const addExitRootSQL = "INSERT INTO sync.exit_root (block_id, global_exit_root, exit_roots) VALUES ($1, $2, $3)"
+	const addExitRootSQL = "INSERT INTO sync.exit_root (block_id, global_exit_root, exit_roots, network_id) VALUES ($1, $2, $3, $4)"
+	exitRoots := [][]byte{}
+	if len(exitRoot.ExitRoots) != 0 {
+		exitRoots = [][]byte{exitRoot.ExitRoots[0][:], exitRoot.ExitRoots[1][:]}
+	}
 	e := p.getExecQuerier(dbTx)
-	_, err := e.Exec(ctx, addExitRootSQL, exitRoot.BlockID, exitRoot.GlobalExitRoot, pq.Array([][]byte{exitRoot.ExitRoots[0][:], exitRoot.ExitRoots[1][:]}))
+	_, err := e.Exec(ctx, addExitRootSQL, exitRoot.BlockID, exitRoot.GlobalExitRoot, pq.Array(exitRoots), exitRoot.NetworkID)
 	return err
 }
 
@@ -314,7 +318,7 @@ func (p *PostgresStorage) GetL2ExitRootsByGER(ctx context.Context, ger common.Ha
 
 	for rows.Next() {
 		var gerData etherman.GlobalExitRoot
-		err = rows.Scan(&gerData.BlockID, &gerData.GlobalExitRoot, gerData.NetworkID, &gerData.ID)
+		err = rows.Scan(&gerData.BlockID, &gerData.GlobalExitRoot, &gerData.NetworkID, &gerData.ID)
 		if err != nil {
 			return nil, err
 		}
