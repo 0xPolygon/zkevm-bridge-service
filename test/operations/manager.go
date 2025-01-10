@@ -991,3 +991,32 @@ func GetOpsman(ctx context.Context, l2NetworkURL, dbName, bridgeServiceHTTPPort,
 	}
 	return NewManager(ctx, opsCfg)
 }
+
+// SendCustomDeposit sends a deposit.
+func (m *Manager) SendCustomDeposit(ctx context.Context, rpcURL string, bridgeAddress, tokenAddr common.Address, amount *big.Int, destNetwork uint32, destAddr *common.Address, l2 NetworkSID) error {
+	client, err := utils.NewClient(ctx, rpcURL, bridgeAddress)
+	if err != nil {
+		return err
+	}
+	auth, err := client.GetSigner(ctx, accHexPrivateKeys[l2])
+	if err != nil {
+		return err
+	}
+	networkID, err := client.Bridge.NetworkID(&bind.CallOpts{Pending: false})
+	if err != nil {
+		log.Error("error getting networkID: ", networkID)
+		return err
+	}
+	orgExitRoot, err := m.storage.GetLatestExitRoot(ctx, networkID, destNetwork, nil)
+	if err != nil && err != gerror.ErrStorageNotFound {
+		return err
+	}
+
+	err = client.SendBridgeAsset(ctx, tokenAddr, amount, destNetwork, destAddr, []byte{}, auth)
+	if err != nil {
+		return err
+	}
+
+	// sync for new exit root
+	return m.WaitExitRootToBeSynced(ctx, orgExitRoot, networkID, destNetwork)
+}
