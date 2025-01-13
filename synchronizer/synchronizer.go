@@ -544,15 +544,15 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock, syncedBlock *etherman
 	for {
 		if block == nil {
 			log.Infof("NetworkID: %d, [checkReorg function] Checking Block %d in L1", s.networkID, reorgedBlock.BlockNumber)
-			b, err := s.etherMan.EthBlockByNumber(s.ctx, reorgedBlock.BlockNumber)
+			b, err := s.etherMan.HeaderByNumber(s.ctx, new(big.Int).SetUint64(reorgedBlock.BlockNumber))
 			if err != nil {
 				log.Errorf("networkID: %d, error getting latest block synced from blockchain. Block: %d, error: %v", s.networkID, reorgedBlock.BlockNumber, err)
 				return nil, err
 			}
 			block = &etherman.Block{
-				BlockNumber: b.Number().Uint64(),
+				BlockNumber: b.Number.Uint64(),
 				BlockHash:   b.Hash(),
-				ParentHash:  b.ParentHash(),
+				ParentHash:  b.ParentHash,
 			}
 			if block.BlockNumber != reorgedBlock.BlockNumber {
 				err := fmt.Errorf("networkID: %d, wrong ethereum block retrieved from blockchain. Block numbers don't match. BlockNumber stored: %d. BlockNumber retrieved: %d",

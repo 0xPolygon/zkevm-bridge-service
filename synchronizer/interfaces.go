@@ -15,7 +15,6 @@ import (
 type ethermanInterface interface {
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
 	GetRollupInfoByBlockRange(ctx context.Context, fromBlock uint64, toBlock *uint64) ([]etherman.Block, map[common.Hash][]etherman.Order, error)
-	EthBlockByNumber(ctx context.Context, blockNumber uint64) (*types.Block, error)
 	GetNetworkID() uint32
 }
 
