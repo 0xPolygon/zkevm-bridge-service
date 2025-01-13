@@ -24,6 +24,8 @@ DOCKER_COMPOSE_BRIDGE_V1TOV2 := zkevm-bridge-service-v1tov2
 DOCKER_COMPOSE_BRIDGE_1 := zkevm-bridge-service-1
 DOCKER_COMPOSE_BRIDGE_2 := zkevm-bridge-service-2
 DOCKER_COMPOSE_BRIDGE_3 := zkevm-bridge-service-3
+DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN := zkevm-bridge-service-sovereign-chain
+DOCKER_COMPOSE_AGGORACLE := aggoracle
 
 RUN_STATE_DB := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_STATE_DB)
 RUN_POOL_DB := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_POOL_DB)
@@ -50,6 +52,8 @@ RUN_BRIDGE_1 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_1)
 RUN_BRIDGE_2 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_2)
 RUN_BRIDGE_3 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_3)
 RUN_BRIDGE_V1TOV2 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_V1TOV2)
+RUN_BRIDGE_SOVEREIGN_CHAIN := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN)
+RUN_AGGORACLE := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_AGGORACLE)
 
 STOP_NODE_DB := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_NODE_DB) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_NODE_DB)
 STOP_BRIDGE_DB := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_DB) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_DB)
@@ -71,6 +75,8 @@ STOP_BRIDGE_1 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_1) && $(DOCKER_C
 STOP_BRIDGE_2 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_2) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_2)
 STOP_BRIDGE_3 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_3) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_3)
 STOP_BRIDGE_V1TOV2 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_V1TOV2) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_V1TOV2)
+STOP_BRIDGE_SOVEREIGN_CHAIN := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN)
+STOP_AGGORACLE := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_AGGORACLE) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_AGGORACLE)
 STOP := $(DOCKER_COMPOSE) down --remove-orphans
 
 LDFLAGS += -X 'github.com/0xPolygonHermez/zkevm-bridge-service.Version=$(VERSION)'
@@ -83,8 +89,8 @@ GO_BIN := $(GO_BASE)/dist
 GO_ENV_VARS := GO_BIN=$(GO_BIN)
 GO_BINARY := zkevm-bridge
 GO_CMD := $(GO_BASE)/cmd
-GO_DEPLOY_SCRIPT := $(GO_BASE)/test/scripts/deployclaimcompressor
-GO_DEPLOY_SCRIPT_BINARY := test-deploy-claimcompressor
+GO_DEPLOY_SCRIPT := $(GO_BASE)/test/scripts/deploytool
+GO_DEPLOY_SCRIPT_BINARY := test-deploy-tool
 GO_DEPLOY_AUTOCLAIMER := $(GO_BASE)/autoclaimservice
 GO_DEPLOY_AUTOCLAIMER_BINARY := zkevm-autoclaimer
 
@@ -295,6 +301,22 @@ run-bridge-v1tov2: ## Runs the bridge service
 stop-bridge-v1tov2: ## Stops the bridge service
 	$(STOP_BRIDGE_V1TOV2)
 
+.PHONY: run-bridge-sovereign-chain
+run-bridge-sovereign-chain: ## Runs the bridge service
+	$(RUN_BRIDGE_SOVEREIGN_CHAIN)
+
+.PHONY: stop-bridge-sovereign-chain
+stop-bridge-sovereign-chain: ## Stops the bridge service
+	$(STOP_BRIDGE_SOVEREIGN_CHAIN)
+
+.PHONY: run-aggoracle
+run-aggoracle: ## Runs the bridge service
+	$(RUN_AGGORACLE)
+
+.PHONY: stop-aggoracle
+stop-aggoracle: ## Stops the bridge service
+	$(STOP_AGGORACLE)
+
 .PHONY: stop
 stop: ## Stops all services
 	$(STOP)
@@ -386,6 +408,19 @@ run-v1tov2: stop ## runs all services
 	$(RUN_AGGREGATOR_V1TOV2)
 	$(RUN_BRIDGE_V1TOV2)
 
+.PHONY: run-sovereign-chain
+run-sovereign-chain: ## runs all services
+	$(RUN_DBS)
+	$(RUN_L1_NETWORK)
+	sleep 5
+	$(RUN_ZKPROVER)
+	sleep 3
+	$(RUN_NODE)
+	sleep 5
+	$(RUN_BRIDGE_SOVEREIGN_CHAIN)
+	sleep 30
+	$(RUN_AGGORACLE)
+
 .PHONY: update-external-dependencies
 update-external-dependencies: ## Updates external dependencies like images, test vectors or proto files
 	go run ./scripts/cmd/... updatedeps
@@ -442,6 +477,11 @@ test-autoclaiml2l2: build-docker stop run-multi-single-bridge ## Runs all tests 
 test-e2ecompress: build-docker stop run-multi-single-bridge ## Runs all tests checking race conditions
 	sleep 3
 	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -v -failfast -race -p 1 -timeout 2400s ./test/e2e/... -count 1 -tags='e2ecompress'
+
+.PHONY: test-sovereignchain
+test-sovereignchain: build-docker stop run-multi-single-bridge ## Runs all tests checking race conditions
+	sleep 3
+	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -v -failfast -race -p 1 -timeout 2400s ./test/e2e/... -count 1 -tags='sovereignchain'
 
 .PHONY: build-test-e2e-real_network
 build-test-e2e-real_network: ## Build binary for e2e tests with real network

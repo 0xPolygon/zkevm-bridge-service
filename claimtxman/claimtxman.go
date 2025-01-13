@@ -42,7 +42,7 @@ type ClaimTxManager struct {
 	storage         StorageInterface
 	auth            *bind.TransactOpts
 	rollupID        uint32
-	synced          bool
+	l2Synced        bool
 	nonceCache      *NonceCache
 	monitorTxs      types.TxMonitorer
 }
@@ -104,12 +104,12 @@ func (tm *ClaimTxManager) Start() {
 			ticker.Stop()
 			return
 		case netID := <-tm.chSynced:
-			if netID == tm.l2NetworkID && !tm.synced {
+			if netID == tm.l2NetworkID && !tm.l2Synced {
 				log.Info("NetworkID synced: ", netID)
-				tm.synced = true
+				tm.l2Synced = true
 			}
 		case ger = <-tm.chExitRootEvent:
-			if tm.synced {
+			if tm.l2Synced {
 				log.Debugf("RollupID: %d UpdateDepositsStatus for ger: %s", tm.rollupID, ger.GlobalExitRoot.String())
 				if tm.cfg.GroupingClaims.Enabled {
 					log.Debugf("rollupID: %d, Ger value updated and ready to be processed...", tm.rollupID)
@@ -125,7 +125,7 @@ func (tm *ClaimTxManager) Start() {
 				log.Infof("Waiting for networkID %d to be synced before processing deposits", tm.l2NetworkID)
 			}
 		case <-compressorTicker.C:
-			if tm.synced && tm.cfg.GroupingClaims.Enabled && ger.GlobalExitRoot != latestProcessedGer {
+			if tm.l2Synced && tm.cfg.GroupingClaims.Enabled && ger.GlobalExitRoot != latestProcessedGer {
 				log.Infof("RollupID: %d,Processing deposits for ger: %s", tm.rollupID, ger.GlobalExitRoot.String())
 				go func() {
 					err := tm.updateDepositsStatus(ger)
@@ -178,7 +178,7 @@ func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbT
 		globalExitRoot = ger.GlobalExitRoot
 		err            error
 	)
-	if ger.BlockID != 0 { // L2 exit root is updated
+	if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
 		log.Infof("RollupID: %d, Rollup exitroot %v is updated", tm.rollupID, ger.ExitRoots[1])
 		err = tm.storage.UpdateL2DepositsStatus(tm.ctx, ger.ExitRoots[1][:], tm.rollupID, tm.l2NetworkID, dbTx)
 		if err != nil {

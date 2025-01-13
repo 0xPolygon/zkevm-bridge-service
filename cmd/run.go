@@ -105,10 +105,10 @@ func start(ctx *cli.Context) error {
 		chSyncedL2 := make(chan uint32)
 		chsExitRootEvent = append(chsExitRootEvent, chExitRootEventL2)
 		chsSyncedL2 = append(chsSyncedL2, chSyncedL2)
-		go runSynchronizer(ctx.Context, 0, bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint32{})
+		go runSynchronizer(ctx.Context, 0, bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint32{}, c.NetworkConfig.SovereignChains[i])
 	}
 	chSynced := make(chan uint32)
-	go runSynchronizer(ctx.Context, c.NetworkConfig.GenBlockNumber, bridgeController, l1Etherman, c.Synchronizer, storage, nil, nil, chsExitRootEvent, chSynced, networkIDs)
+	go runSynchronizer(ctx.Context, c.NetworkConfig.GenBlockNumber, bridgeController, l1Etherman, c.Synchronizer, storage, nil, nil, chsExitRootEvent, chSynced, networkIDs, false)
 	go func() {
 		for {
 			select {
@@ -176,7 +176,11 @@ func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalEx
 					log.Error("networkId: %d, error creating dbTx. Error: %v", networkID, err)
 					continue
 				}
-				if ger.BlockID != 0 { // L2 exit root is updated
+				if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
+					if len(ger.ExitRoots) == 0 {
+						log.Debug("Skipping the ready for claim update until the synchronization is completed")
+						continue
+					}
 					if err := s.UpdateL2DepositsStatus(ctx, ger.ExitRoots[1][:], networkID, networkID, dbTx); err != nil {
 						log.Errorf("networkId: %d, error updating L2DepositsStatus. Error: %v", networkID, err)
 						rollbackErr := s.Rollback(ctx, dbTx)
@@ -186,6 +190,10 @@ func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalEx
 						continue
 					}
 				} else { // L1 exit root is updated in the trusted state
+					if len(ger.ExitRoots) == 0 {
+						log.Debug("Skipping the ready for claim update until the synchronization is completed")
+						continue
+					}
 					_, err := s.UpdateL1DepositsStatus(ctx, ger.ExitRoots[0][:], networkID, dbTx)
 					if err != nil {
 						log.Errorf("networkId: %d, error getting and updating L1DepositsStatus. Error: %v", networkID, err)
@@ -227,7 +235,7 @@ func newEthermans(c *config.Config) (*etherman.Client, []*etherman.Client, error
 	}
 	var l2Ethermans []*etherman.Client
 	for i, addr := range c.L2PolygonBridgeAddresses {
-		l2Etherman, err := etherman.NewL2Client(c.Etherman.L2URLs[i], addr, c.NetworkConfig.L2ClaimCompressorAddress)
+		l2Etherman, err := etherman.NewL2Client(c.Etherman.L2URLs[i], addr, c.NetworkConfig.L2ClaimCompressorAddress, c.NetworkConfig.L2PolygonZkEVMGlobalExitRootAddresses[i], c.NetworkConfig.SovereignChains[i])
 		if err != nil {
 			log.Error("L2 etherman ", i, c.Etherman.L2URLs[i], ", error: ", err)
 			return l1Etherman, nil, err
@@ -237,8 +245,8 @@ func newEthermans(c *config.Config) (*etherman.Client, []*etherman.Client, error
 	return l1Etherman, l2Ethermans, nil
 }
 
-func runSynchronizer(ctx context.Context, genBlockNumber uint64, brdigeCtrl *bridgectrl.BridgeController, etherman *etherman.Client, cfg synchronizer.Config, storage db.Storage, zkEVMClient *client.Client, chExitRootEventL2 chan *etherman.GlobalExitRoot, chsExitRootEvent []chan *etherman.GlobalExitRoot, chSynced chan uint32, allNetworkIDs []uint32) {
-	sy, err := synchronizer.NewSynchronizer(ctx, storage, brdigeCtrl, etherman, zkEVMClient, genBlockNumber, chExitRootEventL2, chsExitRootEvent, chSynced, cfg, allNetworkIDs)
+func runSynchronizer(ctx context.Context, genBlockNumber uint64, brdigeCtrl *bridgectrl.BridgeController, etherman *etherman.Client, cfg synchronizer.Config, storage db.Storage, zkEVMClient *client.Client, chExitRootEventL2 chan *etherman.GlobalExitRoot, chsExitRootEvent []chan *etherman.GlobalExitRoot, chSynced chan uint32, allNetworkIDs []uint32, sovereignChain bool) {
+	sy, err := synchronizer.NewSynchronizer(ctx, storage, brdigeCtrl, etherman, zkEVMClient, genBlockNumber, chExitRootEventL2, chsExitRootEvent, chSynced, cfg, allNetworkIDs, sovereignChain)
 	if err != nil {
 		log.Fatal(err)
 	}

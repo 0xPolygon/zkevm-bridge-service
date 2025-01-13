@@ -104,9 +104,13 @@ func (p *PostgresStorage) AddBlock(ctx context.Context, block *etherman.Block, d
 
 // AddGlobalExitRoot adds a new ExitRoot to the db.
 func (p *PostgresStorage) AddGlobalExitRoot(ctx context.Context, exitRoot *etherman.GlobalExitRoot, dbTx pgx.Tx) error {
-	const addExitRootSQL = "INSERT INTO sync.exit_root (block_id, global_exit_root, exit_roots) VALUES ($1, $2, $3)"
+	const addExitRootSQL = "INSERT INTO sync.exit_root (block_id, global_exit_root, exit_roots, network_id) VALUES ($1, $2, $3, $4)"
+	exitRoots := [][]byte{}
+	if len(exitRoot.ExitRoots) != 0 {
+		exitRoots = [][]byte{exitRoot.ExitRoots[0][:], exitRoot.ExitRoots[1][:]}
+	}
 	e := p.getExecQuerier(dbTx)
-	_, err := e.Exec(ctx, addExitRootSQL, exitRoot.BlockID, exitRoot.GlobalExitRoot, pq.Array([][]byte{exitRoot.ExitRoots[0][:], exitRoot.ExitRoots[1][:]}))
+	_, err := e.Exec(ctx, addExitRootSQL, exitRoot.BlockID, exitRoot.GlobalExitRoot, pq.Array(exitRoots), exitRoot.NetworkID)
 	return err
 }
 
@@ -287,8 +291,8 @@ func (p *PostgresStorage) GetExitRootByGER(ctx context.Context, ger common.Hash,
 		gerData   etherman.GlobalExitRoot
 		exitRoots [][]byte
 	)
-	const getLatestL1SyncedExitRootSQL = "SELECT block_id, global_exit_root, exit_roots FROM sync.exit_root WHERE block_id > 0 AND global_exit_root = $1 ORDER BY id DESC LIMIT 1"
-	err := p.getExecQuerier(dbTx).QueryRow(ctx, getLatestL1SyncedExitRootSQL, ger).Scan(&gerData.BlockID, &gerData.GlobalExitRoot, pq.Array(&exitRoots))
+	const getSyncedExitRootSQL = "SELECT block_id, global_exit_root, exit_roots FROM sync.exit_root WHERE block_id > 0 AND global_exit_root = $1 AND network_id = 0 ORDER BY id DESC LIMIT 1"
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, getSyncedExitRootSQL, ger).Scan(&gerData.BlockID, &gerData.GlobalExitRoot, pq.Array(&exitRoots))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &gerData, gerror.ErrStorageNotFound
@@ -299,13 +303,47 @@ func (p *PostgresStorage) GetExitRootByGER(ctx context.Context, ger common.Hash,
 	return &gerData, nil
 }
 
+// GetL2ExitRootsByGER gets the global exit roots in al the L2 networks.
+func (p *PostgresStorage) GetL2ExitRootsByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) ([]etherman.GlobalExitRoot, error) {
+	const getL2ExitRootsByGERSQL = "SELECT block_id, global_exit_root, network_id, id FROM sync.exit_root WHERE block_id > 0 AND global_exit_root = $1 AND network_id != 0 AND cardinality(exit_roots) = 0 ORDER BY id DESC"
+	rows, err := p.getExecQuerier(dbTx).Query(ctx, getL2ExitRootsByGERSQL, ger)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, gerror.ErrStorageNotFound
+		}
+		return nil, err
+	}
+
+	gers := make([]etherman.GlobalExitRoot, 0, len(rows.RawValues()))
+
+	for rows.Next() {
+		var gerData etherman.GlobalExitRoot
+		err = rows.Scan(&gerData.BlockID, &gerData.GlobalExitRoot, &gerData.NetworkID, &gerData.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		gers = append(gers, gerData)
+	}
+	return gers, nil
+}
+
+// UpdateL2GER updates an L2 Ger in the storage.
+func (p *PostgresStorage) UpdateL2GER(ctx context.Context, ger etherman.GlobalExitRoot, dbTx pgx.Tx) error {
+	const updateL2GERSQL = `UPDATE sync.exit_root
+		SET exit_roots = $2
+		WHERE id = $1`
+	_, err := p.getExecQuerier(dbTx).Exec(ctx, updateL2GERSQL, ger.ID, pq.Array([][]byte{ger.ExitRoots[0][:], ger.ExitRoots[1][:]}))
+	return err
+}
+
 // GetLatestTrustedExitRoot gets the latest trusted global exit root.
 func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkID uint32, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error) {
 	var (
 		ger       etherman.GlobalExitRoot
 		exitRoots [][]byte
 	)
-	const getLatestTrustedExitRootSQL = "SELECT global_exit_root, exit_roots FROM sync.exit_root WHERE block_id = 0 AND network_id = $1 ORDER BY id DESC LIMIT 1"
+	const getLatestTrustedExitRootSQL = "SELECT global_exit_root, exit_roots FROM sync.exit_root WHERE network_id = $1 ORDER BY id DESC LIMIT 1"
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getLatestTrustedExitRootSQL, networkID).Scan(&ger.GlobalExitRoot, pq.Array(&exitRoots))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -313,7 +351,20 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 		}
 		return nil, err
 	}
-	ger.ExitRoots = []common.Hash{common.BytesToHash(exitRoots[0]), common.BytesToHash(exitRoots[1])}
+	if len(exitRoots) == 2 { //nolint:gomnd
+		ger.ExitRoots = []common.Hash{common.BytesToHash(exitRoots[0]), common.BytesToHash(exitRoots[1])}
+	} else {
+		// Query to look for the missing values
+		l1GER, err := p.GetExitRootByGER(ctx, ger.GlobalExitRoot, dbTx)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				log.Error("Missing L1Ger for the L2Ger entry")
+				return nil, gerror.ErrStorageNotFound
+			}
+			return nil, err
+		}
+		ger.ExitRoots = l1GER.ExitRoots
+	}
 	return &ger, nil
 }
 
@@ -598,7 +649,7 @@ func (p *PostgresStorage) GetDepositsFromOtherL2ToClaim(ctx context.Context, des
 
 // GetLatestTrustedGERByDeposit return the latest trusted ger for an specific deposit
 func (p *PostgresStorage) GetLatestTrustedGERByDeposit(ctx context.Context, depositCnt, networkID, destinationNetwork uint32, dbTx pgx.Tx) (common.Hash, error) {
-	const getLatestTrustedGERByDeposit = `SELECT sync.exit_root.global_exit_root FROM sync.deposit inner join mt.root on mt.root.deposit_id = sync.deposit.id inner join mt.rollup_exit on mt.rollup_exit.leaf = mt.root.root inner join sync.exit_root on sync.exit_root.exit_roots[2]= mt.rollup_exit.root where deposit_cnt = $1 and sync.deposit.network_id = $2 and dest_net = $3 and mt.rollup_exit.rollup_id = $2 and sync.exit_root.block_id = 0 and sync.exit_root.network_id = sync.deposit.dest_net order by sync.exit_root.id desc limit 1`
+	const getLatestTrustedGERByDeposit = `SELECT sync.exit_root.global_exit_root FROM sync.deposit inner join mt.root on mt.root.deposit_id = sync.deposit.id inner join mt.rollup_exit on mt.rollup_exit.leaf = mt.root.root inner join sync.exit_root on sync.exit_root.exit_roots[2]= mt.rollup_exit.root where deposit_cnt = $1 and sync.deposit.network_id = $2 and dest_net = $3 and mt.rollup_exit.rollup_id = $2 and sync.exit_root.network_id = sync.deposit.dest_net order by sync.exit_root.id desc limit 1`
 	var ger common.Hash
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getLatestTrustedGERByDeposit, depositCnt, networkID, destinationNetwork).Scan(&ger)
 	if errors.Is(err, pgx.ErrNoRows) {

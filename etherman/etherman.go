@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/claimcompressor"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/globalexitrootmanagerl2sovereignchain"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/oldpolygonzkevmbridge"
 	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonrollupmanager"
@@ -24,6 +25,17 @@ import (
 )
 
 var (
+	// SovereignChain L2GERManager events
+	insertGlobalExitRootSignatureHash     = crypto.Keccak256Hash([]byte("InsertGlobalExitRoot(bytes32)"))
+	removeLastGlobalExitRootSignatureHash = crypto.Keccak256Hash([]byte("RemoveLastGlobalExitRoot(bytes32)"))
+
+	// SovereignChain L2Bridge events
+	setBridgeManagerSignatureHash                  = crypto.Keccak256Hash([]byte("SetBridgeManager(address)"))
+	setSovereignTokenAddressSignatureHash          = crypto.Keccak256Hash([]byte("SetSovereignTokenAddress(uint32,address,address,bool)"))
+	migrateLegacyTokenSignatureHash                = crypto.Keccak256Hash([]byte("MigrateLegacyToken(address,address,address,uint256)"))
+	removeLegacySovereignTokenAddressSignatureHash = crypto.Keccak256Hash([]byte("RemoveLegacySovereignTokenAddress(address)"))
+	setSovereignWETHAddressSignatureHash           = crypto.Keccak256Hash([]byte("SetSovereignWETHAddress(address,bool)"))
+
 	// New Ger event
 	updateL1InfoTreeSignatureHash = crypto.Keccak256Hash([]byte("UpdateL1InfoTree(bytes32,bytes32)"))
 
@@ -121,6 +133,7 @@ type Client struct {
 	PolygonZkEVMGlobalExitRoot *polygonzkevmglobalexitroot.Polygonzkevmglobalexitroot
 	PolygonRollupManager       *polygonrollupmanager.Polygonrollupmanager
 	ClaimCompressor            *claimcompressor.Claimcompressor
+	GerL2SovereignChain        *globalexitrootmanagerl2sovereignchain.Globalexitrootmanagerl2sovereignchain
 	NetworkID                  uint32
 	SCAddresses                []common.Address
 	logger                     *log.Logger
@@ -167,7 +180,7 @@ func NewClient(cfg Config, polygonBridgeAddr, polygonZkEVMGlobalExitRootAddress,
 }
 
 // NewL2Client creates a new etherman for L2.
-func NewL2Client(url string, polygonBridgeAddr, claimCompressorAddress common.Address) (*Client, error) {
+func NewL2Client(url string, polygonBridgeAddress, claimCompressorAddress, polygonZkEVMGlobalExitRootAddress common.Address, sovereignChain bool) (*Client, error) {
 	// Connect to ethereum node
 	ethClient, err := ethclient.Dial(url)
 	if err != nil {
@@ -175,11 +188,11 @@ func NewL2Client(url string, polygonBridgeAddr, claimCompressorAddress common.Ad
 		return nil, err
 	}
 	// Create smc clients
-	bridge, err := polygonzkevmbridge.NewPolygonzkevmbridge(polygonBridgeAddr, ethClient)
+	bridge, err := polygonzkevmbridge.NewPolygonzkevmbridge(polygonBridgeAddress, ethClient)
 	if err != nil {
 		return nil, err
 	}
-	oldpolygonBridge, err := oldpolygonzkevmbridge.NewOldpolygonzkevmbridge(polygonBridgeAddr, ethClient)
+	oldpolygonBridge, err := oldpolygonzkevmbridge.NewOldpolygonzkevmbridge(polygonBridgeAddress, ethClient)
 	if err != nil {
 		return nil, err
 	}
@@ -198,17 +211,26 @@ func NewL2Client(url string, polygonBridgeAddr, claimCompressorAddress common.Ad
 	if err != nil {
 		return nil, err
 	}
-	scAddresses := []common.Address{polygonBridgeAddr}
+	scAddresses := []common.Address{polygonBridgeAddress}
 	logger := log.WithFields("networkID", networkID)
-
+	var gerL2SovereignChain *globalexitrootmanagerl2sovereignchain.Globalexitrootmanagerl2sovereignchain
+	if sovereignChain {
+		gerL2SovereignChain, err = globalexitrootmanagerl2sovereignchain.NewGlobalexitrootmanagerl2sovereignchain(polygonZkEVMGlobalExitRootAddress, ethClient)
+		if err != nil {
+			logger.Error("error creating an instance of globalexitrootmanagerl2sovereignchain: ", err)
+			return nil, err
+		}
+		scAddresses = append(scAddresses, polygonZkEVMGlobalExitRootAddress)
+	}
 	return &Client{
-		logger:           logger,
-		EtherClient:      ethClient,
-		PolygonBridge:    bridge,
-		OldPolygonBridge: oldpolygonBridge,
-		SCAddresses:      scAddresses,
-		ClaimCompressor:  claimCompressor,
-		NetworkID:        networkID,
+		logger:              logger,
+		EtherClient:         ethClient,
+		PolygonBridge:       bridge,
+		OldPolygonBridge:    oldpolygonBridge,
+		SCAddresses:         scAddresses,
+		ClaimCompressor:     claimCompressor,
+		NetworkID:           networkID,
+		GerL2SovereignChain: gerL2SovereignChain,
 	}, nil
 }
 
@@ -219,7 +241,7 @@ func (etherMan *Client) GetRollupInfoByBlockRange(ctx context.Context, fromBlock
 	query := ethereum.FilterQuery{
 		FromBlock: new(big.Int).SetUint64(fromBlock),
 		Addresses: etherMan.SCAddresses,
-		Topics:    [][]common.Hash{{updateGlobalExitRootSignatureHash, updateL1InfoTreeSignatureHash, depositEventSignatureHash, claimEventSignatureHash, oldClaimEventSignatureHash, newWrappedTokenEventSignatureHash, verifyBatchesTrustedAggregatorSignatureHash, rollupManagerVerifyBatchesSignatureHash}},
+		Topics:    [][]common.Hash{{updateGlobalExitRootSignatureHash, updateL1InfoTreeSignatureHash, depositEventSignatureHash, claimEventSignatureHash, oldClaimEventSignatureHash, newWrappedTokenEventSignatureHash, verifyBatchesTrustedAggregatorSignatureHash, rollupManagerVerifyBatchesSignatureHash, insertGlobalExitRootSignatureHash}},
 	}
 	if toBlock != nil {
 		query.ToBlock = new(big.Int).SetUint64(*toBlock)
@@ -392,8 +414,66 @@ func (etherMan *Client) processEvent(ctx context.Context, vLog types.Log, blocks
 	case transferAdminRoleSignatureHash:
 		etherMan.logger.Debug("TransferAdminRole event detected. Ignoring...")
 		return nil
+	case insertGlobalExitRootSignatureHash:
+		return etherMan.insertSovereignChainL2GER(ctx, vLog, blocks, blocksOrder)
+	case removeLastGlobalExitRootSignatureHash:
+		// TODO
+		return nil
+	case setBridgeManagerSignatureHash:
+		// TODO
+		etherMan.logger.Debug("setBridgeManager event detected. Ignoring...")
+		return nil
+	case setSovereignTokenAddressSignatureHash:
+		// TODO
+		etherMan.logger.Debug("setSovereignTokenAddress event detected. Ignoring...")
+		return nil
+	case migrateLegacyTokenSignatureHash:
+		// TODO
+		etherMan.logger.Debug("migrateLegacyToken event detected. Ignoring...")
+		return nil
+	case removeLegacySovereignTokenAddressSignatureHash:
+		// TODO
+		etherMan.logger.Debug("removeLegacySovereignTokenAddress event detected. Ignoring...")
+		return nil
+	case setSovereignWETHAddressSignatureHash:
+		// TODO
+		etherMan.logger.Debug("setSovereignWETHAddress event detected. Ignoring...")
+		return nil
 	}
 	etherMan.logger.Warnf("Event not registered: %+v", vLog)
+	return nil
+}
+
+func (etherMan *Client) insertSovereignChainL2GER(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+	etherMan.logger.Debug("insertSovereignChainL2GER event detected. Processing...")
+	var gExitRoot GlobalExitRoot
+	l2GER, err := etherMan.GerL2SovereignChain.ParseInsertGlobalExitRoot(vLog)
+	if err != nil {
+		return err
+	}
+	gExitRoot.GlobalExitRoot = l2GER.NewGlobalExitRoot
+	gExitRoot.BlockNumber = vLog.BlockNumber
+
+	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
+		fullBlock, err := etherMan.EtherClient.HeaderByHash(ctx, vLog.BlockHash)
+		if err != nil {
+			return fmt.Errorf("error getting hashParent. BlockNumber: %d. Error: %v", vLog.BlockNumber, err)
+		}
+		t := time.Unix(int64(fullBlock.Time), 0)
+		block := prepareBlock(vLog, t, fullBlock)
+		block.GlobalExitRoots = append(block.GlobalExitRoots, gExitRoot)
+		*blocks = append(*blocks, block)
+	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
+		(*blocks)[len(*blocks)-1].GlobalExitRoots = append((*blocks)[len(*blocks)-1].GlobalExitRoots, gExitRoot)
+	} else {
+		etherMan.logger.Error("Error processing UpdateGlobalExitRoot event. BlockHash:", vLog.BlockHash, ". BlockNumber: ", vLog.BlockNumber)
+		return fmt.Errorf("error processing UpdateGlobalExitRoot event")
+	}
+	or := Order{
+		Name: GlobalExitRootsOrder,
+		Pos:  len((*blocks)[len(*blocks)-1].GlobalExitRoots) - 1,
+	}
+	(*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash] = append((*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash], or)
 	return nil
 }
 
