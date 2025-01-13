@@ -1,0 +1,80 @@
+
+RPCURL = "http://localhost:8123"
+
+rollupCreationBlockNumber = "136"
+rollupManagerCreationBlockNumber = "1"
+genesisBlockNumber = "136"
+[L1Config]
+        chainId = "1337"
+        polygonZkEVMGlobalExitRootAddress = "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+        polygonRollupManagerAddress = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
+        polTokenAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+        polygonZkEVMAddress = "0x8dAF17A20c9DBA35f005b6324F493785D239719d"
+
+[L2Config]
+        GlobalExitRootAddr = "0x712516e61C8B383dF4A63CFe83d7701Bce54B03e"
+
+[Log]
+Environment = "development" # "production" or "development"
+Level = "debug"
+Outputs = ["stderr"]
+
+[AggOracle]
+TargetChainType="EVM"
+URLRPCL1="http://localhost:8545"
+BlockFinality="FinalizedBlock"
+WaitPeriodNextGER="1s"
+	[AggOracle.EVMSender]
+        GlobalExitRootL2="0x712516e61C8B383dF4A63CFe83d7701Bce54B03e"
+        URLRPCL2="http://localhost:8123" # This can be replaced with desired L2 e.g. OP Geth RPC
+        ChainIDL2=1001
+        GasOffset=0
+        WaitPeriodMonitorTx="1s"
+            [AggOracle.EVMSender.EthTxManager]
+            FrequencyToMonitorTxs = "1s"
+            WaitTxToBeMined = "1s"
+            GetReceiptMaxTime = "1s"
+            GetReceiptWaitInterval = "1s"
+            PrivateKeys = [
+                {Path = "/app/aggoracle.keystore", Password = "testonly"},
+            ]
+            ForcedGas = 0
+            GasPriceMarginFactor = 1
+            MaxGasPriceLimit = 0
+            StoragePath = "/tmp/ethtxmanager-sequencesender.json"
+            ReadPendingL1Txs = false
+            SafeStatusL1NumberOfBlocks = 5
+            FinalizedStatusL1NumberOfBlocks = 10
+                [AggOracle.EVMSender.EthTxManager.Etherman]
+                URL = "http://localhost:8123" # This can be replaced with desired L2 e.g. OP Geth RPC
+                MultiGasProvider = false
+                L1ChainID = 1001
+                HTTPHeaders = []
+
+[LastGERSync]
+DBPath = "/tmp/lastgersync"
+BlockFinality = "LatestBlock"
+InitialBlockNum = 0
+GlobalExitRootL2Addr = "0x712516e61C8B383dF4A63CFe83d7701Bce54B03e"
+RetryAfterErrorPeriod = "1s"
+MaxRetryAttemptsAfterError = -1
+WaitForNewBlocksPeriod = "1s"
+DownloadBufferSize = 100
+
+[ReorgDetectorL1]
+DBPath = "/tmp/reorgdetectorl1.sqlite"
+
+[ReorgDetectorL2]
+DBPath = "/tmp/reorgdetectorl2.sqlite"
+
+[L1InfoTreeSync]
+DBPath = "/tmp/L1InfoTreeSync.sqlite"
+GlobalExitRootAddr="0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+RollupManagerAddr = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
+SyncBlockChunkSize=100
+BlockFinality="LatestBlock"
+URLRPCL1="http://localhost:8545"
+WaitForNewBlocksPeriod="100ms"
+InitialBlock=0
+RetryAfterErrorPeriod="1s"
+MaxRetryAttemptsAfterError=-1

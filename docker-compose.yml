@@ -208,7 +208,7 @@ services:
     command:
       - "/bin/sh"
       - "-c"
-      - "/app/test-deploy-claimcompressor deploy --url \"http://zkevm-node:8123\" --bridgeAddress \"0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E\" --walletFile /pk/keystore.claimtxmanager --password \"testonly\" &&
+      - "/app/test-deploy-tool deployClaimCompressor --url \"http://zkevm-node:8123\" --bridgeAddress \"0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E\" --walletFile /pk/keystore.claimtxmanager --password \"testonly\" &&
         /app/zkevm-bridge run --cfg /app/config.toml"
 
   zkevm-bridge-service-v1tov2:
@@ -475,6 +475,8 @@ services:
       - ZKEVM_BRIDGE_NETWORKCONFIG_POLYGONROLLUPMANAGERADDRESS=0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0
       - ZKEVM_BRIDGE_NETWORKCONFIG_POLYGONBRIDGEADDRESS=0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E
       - ZKEVM_BRIDGE_NETWORKCONFIG_L2POLYGONBRIDGEADDRESSES=0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E,0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E
+      - ZKEVM_BRIDGE_NETWORKCONFIG_L2POLYGONZKEVMGLOBALEXITROOTADDRESSES=0xa40d5f56745a118d0906a34e69aec8c0db1cb8fa,0xa40d5f56745a118d0906a34e69aec8c0db1cb8fa
+      - ZKEVM_BRIDGE_NETWORKCONFIG_SOVEREIGNCHAINS=false,false
       - ZKEVM_BRIDGE_CLAIMTXMANAGER_GROUPINGCLAIMS_ENABLED=${ZKEVM_BRIDGE_CLAIMTXMANAGER_GROUPINGCLAIMS_ENABLED}
       - ZKEVM_BRIDGE_CLAIMTXMANAGER_ARECLAIMSBETWEENL2SENABLED=${ZKEVM_BRIDGE_CLAIMTXMANAGER_ARECLAIMSBETWEENL2SENABLED}
     volumes:
@@ -483,6 +485,55 @@ services:
     command:
       - "/bin/sh"
       - "-c"
-      - "/app/test-deploy-claimcompressor deploy --url \"http://zkevm-node-1:8123\" --bridgeAddress \"0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E\" --walletFile /pk/keystore.claimtxmanager --password \"testonly\" &&
-        /app/test-deploy-claimcompressor deploy --url \"http://zkevm-node-2:8124\" --bridgeAddress \"0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E\" --walletFile /pk/keystore.claimtxmanager --password \"testonly\" &&
+      - "/app/test-deploy-tool deployClaimCompressor --url \"http://zkevm-node-1:8123\" --bridgeAddress \"0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E\" --walletFile /pk/keystore.claimtxmanager --password \"testonly\" &&
+        /app/test-deploy-tool deployClaimCompressor --url \"http://zkevm-node-2:8124\" --bridgeAddress \"0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E\" --walletFile /pk/keystore.claimtxmanager --password \"testonly\" &&
         /app/zkevm-bridge run --cfg /app/config.toml"
+
+  zkevm-bridge-service-sovereign-chain:
+    container_name: zkevm-bridge-service-sovereign-chain
+    image: zkevm-bridge-service
+    ports:
+      - 8080:8080
+      - 9090:9090
+    environment:
+      - ZKEVM_BRIDGE_SYNCDB_USER=test_user
+      - ZKEVM_BRIDGE_SYNCDB_PASSWORD=test_password
+      - ZKEVM_BRIDGE_SYNCDB_NAME=test_db
+      - ZKEVM_BRIDGE_SYNCDB_HOST=zkevm-bridge-db
+      - ZKEVM_BRIDGE_SYNCDB_PORT=5432
+      - ZKEVM_BRIDGE_BRIDGESERVER_DB_USER=test_user
+      - ZKEVM_BRIDGE_BRIDGESERVER_DB_PASSWORD=test_password
+      - ZKEVM_BRIDGE_BRIDGESERVER_DB_NAME=test_db
+      - ZKEVM_BRIDGE_BRIDGESERVER_DB_HOST=zkevm-bridge-db
+      - ZKEVM_BRIDGE_BRIDGESERVER_DB_PORT=5432
+      - ZKEVM_BRIDGE_CLAIMTXMANAGER_GROUPINGCLAIMS_ENABLED=${ZKEVM_BRIDGE_CLAIMTXMANAGER_GROUPINGCLAIMS_ENABLED}
+      - ZKEVM_BRIDGE_NETWORKCONFIG_SOVEREIGNCHAINS=true
+      - ZKEVM_BRIDGE_NETWORKCONFIG_L2POLYGONZKEVMGLOBALEXITROOTADDRESSES=0x712516e61C8B383dF4A63CFe83d7701Bce54B03e
+      - ZKEVM_BRIDGE_NETWORKCONFIG_L2POLYGONBRIDGEADDRESSES=0x71C95911E9a5D330f4D621842EC243EE1343292e
+
+    volumes:
+      - ./test/test.keystore.claimtx:/pk/keystore.claimtxmanager
+      - ./test/test.keystore.aggregator:/pk/keystore.aggregator
+      - ./config/config.local.toml:/app/config.toml
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "/app/test-deploy-tool deployClaimCompressor --url \"http://zkevm-node:8123\" --bridgeAddress \"0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E\" --walletFile /pk/keystore.claimtxmanager --password \"testonly\" &&
+        /app/test-deploy-tool sendETH --url \"http://zkevm-node:8123\" --destAddress \"0x70997970c51812dc3a010c7d01b50e0d17dc79c8\" --walletFile /pk/keystore.claimtxmanager --password \"testonly\" &&
+        /app/test-deploy-tool sendETH --url \"http://zkevm-node:8123\" --destAddress \"0x71C95911E9a5D330f4D621842EC243EE1343292e\" --walletFile /pk/keystore.claimtxmanager --password \"testonly\" &&
+        /app/test-deploy-tool deploySovereignChainSMC --url \"http://zkevm-node:8123\" --walletFile /pk/keystore.aggregator --password \"testonly\" &&
+        /app/zkevm-bridge run --cfg /app/config.toml"
+
+  aggoracle:
+    network_mode: host
+    container_name: aggoracle
+    image: hermeznetwork/cdk:aggoracle-f3abefbb
+    ports:
+      - 50081:50081
+    volumes:
+      - ./test/config/aggoracle/config.toml:/app/config.toml:ro
+      - ./test/test.keystore.aggregator:/app/aggoracle.keystore:ro
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "cdk-node run -cfg=/app/config.toml -components=aggoracle"

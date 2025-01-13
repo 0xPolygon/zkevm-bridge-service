@@ -37,6 +37,7 @@ type ClientSynchronizer struct {
 	synced            bool
 	l1RollupExitRoot  common.Hash
 	allNetworkIDs     []uint32
+	sovereignChain    bool
 }
 
 // NewSynchronizer creates and initializes an instance of Synchronizer
@@ -51,7 +52,8 @@ func NewSynchronizer(
 	chsExitRootEvent []chan *etherman.GlobalExitRoot,
 	chSynced chan uint32,
 	cfg Config,
-	allNetworkIDs []uint32) (Synchronizer, error) {
+	allNetworkIDs []uint32,
+	sovereignChain bool) (Synchronizer, error) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	networkID := ethMan.GetNetworkID()
 	ger, err := storage.(storageInterface).GetLatestL1SyncedExitRoot(ctx, nil)
@@ -91,6 +93,7 @@ func NewSynchronizer(
 		zkEVMClient:       zkEVMClient,
 		chExitRootEventL2: chExitRootEventL2,
 		networkID:         networkID,
+		sovereignChain:    sovereignChain,
 	}, nil
 }
 
@@ -169,7 +172,7 @@ func (s *ClientSynchronizer) Sync() error {
 					}
 				}
 			} else { // Sync Trusted GlobalExitRoots if L2 network is synced
-				if s.networkID == 0 {
+				if s.networkID == 0 || s.sovereignChain { // if it is L1 or sovereignChain, trustedsync must be disabled
 					continue
 				}
 				log.Infof("networkID: %d, Virtual state is synced, getting trusted state", s.networkID)
@@ -656,16 +659,81 @@ func (s *ClientSynchronizer) processVerifyBatch(verifyBatch etherman.VerifiedBat
 func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.GlobalExitRoot, blockID uint64, dbTx pgx.Tx) error {
 	// Store GlobalExitRoot
 	globalExitRoot.BlockID = blockID
-	err := s.storage.AddGlobalExitRoot(s.ctx, &globalExitRoot, dbTx)
-	if err != nil {
-		log.Errorf("networkID: %d, error storing the GlobalExitRoot in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
-		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
-				s.networkID, globalExitRoot.BlockNumber, rollbackErr, err.Error())
-			return rollbackErr
+	globalExitRoot.NetworkID = s.networkID
+	if len(globalExitRoot.ExitRoots) == 2 { //nolint:gomnd
+		log.Debugf("networkID: %d, Storing L1 Ger: ", s.networkID, globalExitRoot.GlobalExitRoot)
+		// Check if there is some globalExitRoot in L2. If so, it must be incompleted. It must be updated.
+		// A race condition between dbTxs (L1 dbTx and L2 dbTxs) is very unlikely because L1 sync takes usually takes more time than L2 sync.
+		gers, err := s.storage.GetL2ExitRootsByGER(s.ctx, globalExitRoot.GlobalExitRoot, nil)
+		if err != nil && !errors.Is(err, gerror.ErrStorageNotFound) {
+			log.Errorf("networkID: %d, error storing the GlobalExitRoot in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
+			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
+			if rollbackErr != nil {
+				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
+					s.networkID, globalExitRoot.BlockNumber, rollbackErr, err.Error())
+				return rollbackErr
+			}
+			return err
 		}
-		return err
+		for _, ger := range gers {
+			ger.ExitRoots = globalExitRoot.ExitRoots
+			err = s.storage.UpdateL2GER(s.ctx, ger, dbTx)
+			if err != nil {
+				log.Errorf("networkID: %d, error storing the GlobalExitRoot updated in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
+				rollbackErr := s.storage.Rollback(s.ctx, dbTx)
+				if rollbackErr != nil {
+					log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
+						s.networkID, globalExitRoot.BlockNumber, rollbackErr, err.Error())
+					return rollbackErr
+				}
+				return err
+			}
+		}
+		err = s.storage.AddGlobalExitRoot(s.ctx, &globalExitRoot, dbTx)
+		if err != nil {
+			log.Errorf("networkID: %d, error storing the GlobalExitRoot in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
+			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
+			if rollbackErr != nil {
+				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
+					s.networkID, globalExitRoot.BlockNumber, rollbackErr, err.Error())
+				return rollbackErr
+			}
+			return err
+		}
+	} else if len(globalExitRoot.ExitRoots) == 0 {
+		log.Debugf("networkID: %d, Storing L2 Ger: %s", s.networkID, globalExitRoot.GlobalExitRoot)
+		// First read the mainnetExitRoot and rollupsExitRoot to store all the information in the db.
+		ger, err := s.storage.GetExitRootByGER(s.ctx, globalExitRoot.GlobalExitRoot, nil)
+		if errors.Is(err, gerror.ErrStorageNotFound) {
+			log.Warnf("networkID: %d, L1Ger entry not found in the database. GER: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
+		} else if err != nil {
+			log.Errorf("networkID: %d, error getting the GlobalExitRoot in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
+			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
+			if rollbackErr != nil {
+				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
+					s.networkID, globalExitRoot.BlockNumber, rollbackErr, err.Error())
+				return rollbackErr
+			}
+			return err
+		} else {
+			globalExitRoot.ExitRoots = ger.ExitRoots
+		}
+		// Store the GlobalExitRoot
+		err = s.storage.AddGlobalExitRoot(s.ctx, &globalExitRoot, dbTx)
+		if err != nil {
+			log.Errorf("networkID: %d, error storing the GlobalExitRoot in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
+			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
+			if rollbackErr != nil {
+				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
+					s.networkID, globalExitRoot.BlockNumber, rollbackErr, err.Error())
+				return rollbackErr
+			}
+			return err
+		}
+		log.Infof("networkID: %d, adding L2 ger to the channel. GER: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
+		s.chExitRootEventL2 <- &globalExitRoot
+	} else {
+		return fmt.Errorf("networkID: %d, error exitRoots have a wrong length. Length: %d", s.networkID, len(globalExitRoot.ExitRoots))
 	}
 	return nil
 }

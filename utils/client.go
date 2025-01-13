@@ -97,6 +97,23 @@ func (c *Client) GetSignerFromKeystore(ctx context.Context, ks zkevmtypes.Keysto
 	return bind.NewKeyedTransactorWithChainID(key.PrivateKey, chainID)
 }
 
+// GetKeyFromKeystore returns the Key from the keystore file.
+func (c *Client) GetKeyFromKeystore(ctx context.Context, ks zkevmtypes.KeystoreFileConfig) (*keystore.Key, *big.Int, error) {
+	keystoreEncrypted, err := os.ReadFile(filepath.Clean(ks.Path))
+	if err != nil {
+		return nil, nil, err
+	}
+	key, err := keystore.DecryptKey(keystoreEncrypted, ks.Password)
+	if err != nil {
+		return nil, nil, err
+	}
+	chainID, err := c.ChainID(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return key, chainID, nil
+}
+
 // CheckTxWasMined check if a tx was already mined
 func (c *Client) CheckTxWasMined(ctx context.Context, txHash common.Hash) (bool, *types.Receipt, error) {
 	receipt, err := c.TransactionReceipt(ctx, txHash)

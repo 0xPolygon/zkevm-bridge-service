@@ -5,7 +5,10 @@ package synchronizer
 import (
 	context "context"
 
+	common "github.com/ethereum/go-ethereum/common"
+
 	etherman "github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+
 	mock "github.com/stretchr/testify/mock"
 
 	pgx "github.com/jackc/pgx/v4"
@@ -506,6 +509,126 @@ func (_c *storageMock_Commit_Call) RunAndReturn(run func(context.Context, pgx.Tx
 	return _c
 }
 
+// GetExitRootByGER provides a mock function with given fields: ctx, ger, dbTx
+func (_m *storageMock) GetExitRootByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error) {
+	ret := _m.Called(ctx, ger, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetExitRootByGER")
+	}
+
+	var r0 *etherman.GlobalExitRoot
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, common.Hash, pgx.Tx) (*etherman.GlobalExitRoot, error)); ok {
+		return rf(ctx, ger, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, common.Hash, pgx.Tx) *etherman.GlobalExitRoot); ok {
+		r0 = rf(ctx, ger, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*etherman.GlobalExitRoot)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, common.Hash, pgx.Tx) error); ok {
+		r1 = rf(ctx, ger, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// storageMock_GetExitRootByGER_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetExitRootByGER'
+type storageMock_GetExitRootByGER_Call struct {
+	*mock.Call
+}
+
+// GetExitRootByGER is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ger common.Hash
+//   - dbTx pgx.Tx
+func (_e *storageMock_Expecter) GetExitRootByGER(ctx interface{}, ger interface{}, dbTx interface{}) *storageMock_GetExitRootByGER_Call {
+	return &storageMock_GetExitRootByGER_Call{Call: _e.mock.On("GetExitRootByGER", ctx, ger, dbTx)}
+}
+
+func (_c *storageMock_GetExitRootByGER_Call) Run(run func(ctx context.Context, ger common.Hash, dbTx pgx.Tx)) *storageMock_GetExitRootByGER_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(common.Hash), args[2].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *storageMock_GetExitRootByGER_Call) Return(_a0 *etherman.GlobalExitRoot, _a1 error) *storageMock_GetExitRootByGER_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *storageMock_GetExitRootByGER_Call) RunAndReturn(run func(context.Context, common.Hash, pgx.Tx) (*etherman.GlobalExitRoot, error)) *storageMock_GetExitRootByGER_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetL2ExitRootsByGER provides a mock function with given fields: ctx, ger, dbTx
+func (_m *storageMock) GetL2ExitRootsByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) ([]etherman.GlobalExitRoot, error) {
+	ret := _m.Called(ctx, ger, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetL2ExitRootsByGER")
+	}
+
+	var r0 []etherman.GlobalExitRoot
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, common.Hash, pgx.Tx) ([]etherman.GlobalExitRoot, error)); ok {
+		return rf(ctx, ger, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, common.Hash, pgx.Tx) []etherman.GlobalExitRoot); ok {
+		r0 = rf(ctx, ger, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]etherman.GlobalExitRoot)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, common.Hash, pgx.Tx) error); ok {
+		r1 = rf(ctx, ger, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// storageMock_GetL2ExitRootsByGER_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetL2ExitRootsByGER'
+type storageMock_GetL2ExitRootsByGER_Call struct {
+	*mock.Call
+}
+
+// GetL2ExitRootsByGER is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ger common.Hash
+//   - dbTx pgx.Tx
+func (_e *storageMock_Expecter) GetL2ExitRootsByGER(ctx interface{}, ger interface{}, dbTx interface{}) *storageMock_GetL2ExitRootsByGER_Call {
+	return &storageMock_GetL2ExitRootsByGER_Call{Call: _e.mock.On("GetL2ExitRootsByGER", ctx, ger, dbTx)}
+}
+
+func (_c *storageMock_GetL2ExitRootsByGER_Call) Run(run func(ctx context.Context, ger common.Hash, dbTx pgx.Tx)) *storageMock_GetL2ExitRootsByGER_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(common.Hash), args[2].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *storageMock_GetL2ExitRootsByGER_Call) Return(_a0 []etherman.GlobalExitRoot, _a1 error) *storageMock_GetL2ExitRootsByGER_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *storageMock_GetL2ExitRootsByGER_Call) RunAndReturn(run func(context.Context, common.Hash, pgx.Tx) ([]etherman.GlobalExitRoot, error)) *storageMock_GetL2ExitRootsByGER_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLastBlock provides a mock function with given fields: ctx, networkID, dbTx
 func (_m *storageMock) GetLastBlock(ctx context.Context, networkID uint32, dbTx pgx.Tx) (*etherman.Block, error) {
 	ret := _m.Called(ctx, networkID, dbTx)
@@ -837,6 +960,54 @@ func (_c *storageMock_Rollback_Call) Return(_a0 error) *storageMock_Rollback_Cal
 }
 
 func (_c *storageMock_Rollback_Call) RunAndReturn(run func(context.Context, pgx.Tx) error) *storageMock_Rollback_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateL2GER provides a mock function with given fields: ctx, ger, dbTx
+func (_m *storageMock) UpdateL2GER(ctx context.Context, ger etherman.GlobalExitRoot, dbTx pgx.Tx) error {
+	ret := _m.Called(ctx, ger, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateL2GER")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, etherman.GlobalExitRoot, pgx.Tx) error); ok {
+		r0 = rf(ctx, ger, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// storageMock_UpdateL2GER_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateL2GER'
+type storageMock_UpdateL2GER_Call struct {
+	*mock.Call
+}
+
+// UpdateL2GER is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ger etherman.GlobalExitRoot
+//   - dbTx pgx.Tx
+func (_e *storageMock_Expecter) UpdateL2GER(ctx interface{}, ger interface{}, dbTx interface{}) *storageMock_UpdateL2GER_Call {
+	return &storageMock_UpdateL2GER_Call{Call: _e.mock.On("UpdateL2GER", ctx, ger, dbTx)}
+}
+
+func (_c *storageMock_UpdateL2GER_Call) Run(run func(ctx context.Context, ger etherman.GlobalExitRoot, dbTx pgx.Tx)) *storageMock_UpdateL2GER_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(etherman.GlobalExitRoot), args[2].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *storageMock_UpdateL2GER_Call) Return(_a0 error) *storageMock_UpdateL2GER_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *storageMock_UpdateL2GER_Call) RunAndReturn(run func(context.Context, etherman.GlobalExitRoot, pgx.Tx) error) *storageMock_UpdateL2GER_Call {
 	_c.Call.Return(run)
 	return _c
 }

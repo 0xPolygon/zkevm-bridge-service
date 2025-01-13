@@ -5,7 +5,10 @@ package mock_txcompressor
 import (
 	context "context"
 
+	common "github.com/ethereum/go-ethereum/common"
+
 	etherman "github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+
 	mock "github.com/stretchr/testify/mock"
 
 	pgx "github.com/jackc/pgx/v4"
@@ -294,6 +297,128 @@ func (_c *StorageInterface_GetClaimTxsByStatus_Call) Return(_a0 []types.Monitore
 }
 
 func (_c *StorageInterface_GetClaimTxsByStatus_Call) RunAndReturn(run func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) ([]types.MonitoredTx, error)) *StorageInterface_GetClaimTxsByStatus_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetDepositsFromOtherL2ToClaim provides a mock function with given fields: ctx, destinationNetwork, dbTx
+func (_m *StorageInterface) GetDepositsFromOtherL2ToClaim(ctx context.Context, destinationNetwork uint32, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
+	ret := _m.Called(ctx, destinationNetwork, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDepositsFromOtherL2ToClaim")
+	}
+
+	var r0 []*etherman.Deposit
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, pgx.Tx) ([]*etherman.Deposit, error)); ok {
+		return rf(ctx, destinationNetwork, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, pgx.Tx) []*etherman.Deposit); ok {
+		r0 = rf(ctx, destinationNetwork, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*etherman.Deposit)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, pgx.Tx) error); ok {
+		r1 = rf(ctx, destinationNetwork, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StorageInterface_GetDepositsFromOtherL2ToClaim_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDepositsFromOtherL2ToClaim'
+type StorageInterface_GetDepositsFromOtherL2ToClaim_Call struct {
+	*mock.Call
+}
+
+// GetDepositsFromOtherL2ToClaim is a helper method to define mock.On call
+//   - ctx context.Context
+//   - destinationNetwork uint32
+//   - dbTx pgx.Tx
+func (_e *StorageInterface_Expecter) GetDepositsFromOtherL2ToClaim(ctx interface{}, destinationNetwork interface{}, dbTx interface{}) *StorageInterface_GetDepositsFromOtherL2ToClaim_Call {
+	return &StorageInterface_GetDepositsFromOtherL2ToClaim_Call{Call: _e.mock.On("GetDepositsFromOtherL2ToClaim", ctx, destinationNetwork, dbTx)}
+}
+
+func (_c *StorageInterface_GetDepositsFromOtherL2ToClaim_Call) Run(run func(ctx context.Context, destinationNetwork uint32, dbTx pgx.Tx)) *StorageInterface_GetDepositsFromOtherL2ToClaim_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *StorageInterface_GetDepositsFromOtherL2ToClaim_Call) Return(_a0 []*etherman.Deposit, _a1 error) *StorageInterface_GetDepositsFromOtherL2ToClaim_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StorageInterface_GetDepositsFromOtherL2ToClaim_Call) RunAndReturn(run func(context.Context, uint32, pgx.Tx) ([]*etherman.Deposit, error)) *StorageInterface_GetDepositsFromOtherL2ToClaim_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetLatestTrustedGERByDeposit provides a mock function with given fields: ctx, depositCnt, networkID, destinationNetwork, dbTx
+func (_m *StorageInterface) GetLatestTrustedGERByDeposit(ctx context.Context, depositCnt uint32, networkID uint32, destinationNetwork uint32, dbTx pgx.Tx) (common.Hash, error) {
+	ret := _m.Called(ctx, depositCnt, networkID, destinationNetwork, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestTrustedGERByDeposit")
+	}
+
+	var r0 common.Hash
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, uint32, pgx.Tx) (common.Hash, error)); ok {
+		return rf(ctx, depositCnt, networkID, destinationNetwork, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, uint32, pgx.Tx) common.Hash); ok {
+		r0 = rf(ctx, depositCnt, networkID, destinationNetwork, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(common.Hash)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, uint32, uint32, pgx.Tx) error); ok {
+		r1 = rf(ctx, depositCnt, networkID, destinationNetwork, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StorageInterface_GetLatestTrustedGERByDeposit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLatestTrustedGERByDeposit'
+type StorageInterface_GetLatestTrustedGERByDeposit_Call struct {
+	*mock.Call
+}
+
+// GetLatestTrustedGERByDeposit is a helper method to define mock.On call
+//   - ctx context.Context
+//   - depositCnt uint32
+//   - networkID uint32
+//   - destinationNetwork uint32
+//   - dbTx pgx.Tx
+func (_e *StorageInterface_Expecter) GetLatestTrustedGERByDeposit(ctx interface{}, depositCnt interface{}, networkID interface{}, destinationNetwork interface{}, dbTx interface{}) *StorageInterface_GetLatestTrustedGERByDeposit_Call {
+	return &StorageInterface_GetLatestTrustedGERByDeposit_Call{Call: _e.mock.On("GetLatestTrustedGERByDeposit", ctx, depositCnt, networkID, destinationNetwork, dbTx)}
+}
+
+func (_c *StorageInterface_GetLatestTrustedGERByDeposit_Call) Run(run func(ctx context.Context, depositCnt uint32, networkID uint32, destinationNetwork uint32, dbTx pgx.Tx)) *StorageInterface_GetLatestTrustedGERByDeposit_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(uint32), args[3].(uint32), args[4].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *StorageInterface_GetLatestTrustedGERByDeposit_Call) Return(_a0 common.Hash, _a1 error) *StorageInterface_GetLatestTrustedGERByDeposit_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StorageInterface_GetLatestTrustedGERByDeposit_Call) RunAndReturn(run func(context.Context, uint32, uint32, uint32, pgx.Tx) (common.Hash, error)) *StorageInterface_GetLatestTrustedGERByDeposit_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -78,6 +78,11 @@ func Load(configFilePath string, network string) (*Config, error) {
 	if !viper.IsSet("NetworkConfig") && network != "" {
 		cfg.loadNetworkConfig(network)
 	}
+	if len(cfg.L2PolygonZkEVMGlobalExitRootAddresses) != len(cfg.SovereignChains) ||
+		len(cfg.SovereignChains) != len(cfg.L2PolygonBridgeAddresses) ||
+		len(cfg.L2PolygonBridgeAddresses) != len(cfg.Etherman.L2URLs) {
+		return nil, errors.New("the number of sovereign chains, L2PolygonZkEVMGlobalExitRootAddresses, L2PolygonBridgeAddresses and L2URLs must be the same")
+	}
 
 	return cfg, nil
 }
