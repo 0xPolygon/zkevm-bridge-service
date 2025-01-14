@@ -39,7 +39,7 @@ func (m migrationTest0015) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 	var allowed bool
 	err := db.QueryRow(selectGER).Scan(&allowed)
 	assert.NoError(t, err)
-	
+
 	const gerSQL = `
 		INSERT INTO sync.exit_root
 		(id, block_id, global_exit_root, exit_roots, network_id, allowed)
@@ -68,12 +68,12 @@ func (m migrationTest0015) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 
 func (m migrationTest0015) RunAssertsAfterMigrationDown(t *testing.T, db *sql.DB) {
 	var (
-		id uint64
-		blockID uint64
+		id             uint64
+		blockID        uint64
 		globalExitRoot common.Hash
-		exitRoots [][]byte
-		networkID uint32
-		allowed bool
+		exitRoots      [][]byte
+		networkID      uint32
+		allowed        bool
 	)
 	selectGER := `SELECT allowed FROM sync.exit_root limit 1;`
 	err := db.QueryRow(selectGER).Scan(&allowed)
