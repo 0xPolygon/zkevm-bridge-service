@@ -417,6 +417,11 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				if err != nil {
 					return err
 				}
+			case etherman.RemoveL2GEROrder:
+				err = s.processRemoveL2GlobalExitRoot(blocks[i].RemoveL2GER[element.Pos], blockID, dbTx)
+				if err != nil {
+					return err
+				}
 			case etherman.DepositsOrder:
 				err = s.processDeposit(blocks[i].Deposits[element.Pos], blockID, dbTx)
 				if err != nil {
@@ -703,7 +708,7 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 	} else if len(globalExitRoot.ExitRoots) == 0 {
 		log.Debugf("networkID: %d, Storing L2 Ger: %s", s.networkID, globalExitRoot.GlobalExitRoot)
 		// First read the mainnetExitRoot and rollupsExitRoot to store all the information in the db.
-		ger, err := s.storage.GetExitRootByGER(s.ctx, globalExitRoot.GlobalExitRoot, nil)
+		ger, err := s.storage.GetL1ExitRootByGER(s.ctx, globalExitRoot.GlobalExitRoot, nil)
 		if errors.Is(err, gerror.ErrStorageNotFound) {
 			log.Warnf("networkID: %d, L1Ger entry not found in the database. GER: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
 		} else if err != nil {
@@ -789,11 +794,28 @@ func (s *ClientSynchronizer) processTokenWrapped(tokenWrapped etherman.TokenWrap
 	tokenWrapped.NetworkID = s.networkID
 	err := s.storage.AddTokenWrapped(s.ctx, &tokenWrapped, dbTx)
 	if err != nil {
-		log.Errorf("networkID: %d, error storing new L1 TokenWrapped in Block:  %d, ExitRoot: %+v, err: %v", s.networkID, tokenWrapped.BlockNumber, tokenWrapped, err)
+		log.Errorf("networkID: %d, error storing new L1 TokenWrapped in Block:  %d, TokenWrapped: %+v, err: %v", s.networkID, tokenWrapped.BlockNumber, tokenWrapped, err)
 		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
 		if rollbackErr != nil {
 			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, err: %s",
 				s.networkID, tokenWrapped.BlockNumber, rollbackErr, err.Error())
+			return rollbackErr
+		}
+		return err
+	}
+	return nil
+}
+
+func (s *ClientSynchronizer) processRemoveL2GlobalExitRoot(ger etherman.GlobalExitRoot, blockID uint64, dbTx pgx.Tx) error {
+	ger.BlockID = blockID
+	ger.NetworkID = s.networkID
+	err := s.storage.AddRemoveL2GER(s.ctx, ger, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error storing removeL2Ger in Block:  %d, GER: %+v, err: %v", s.networkID, ger.BlockNumber, ger, err)
+		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
+		if rollbackErr != nil {
+			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, err: %s",
+				s.networkID, ger.BlockNumber, rollbackErr, err.Error())
 			return rollbackErr
 		}
 		return err

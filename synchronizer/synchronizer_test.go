@@ -122,7 +122,7 @@ func TestSyncGer(t *testing.T) {
 			Return(lastBlock, nil)
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 
@@ -263,7 +263,7 @@ func TestSyncTrustedGer(t *testing.T) {
 			Return(lastBlock, nil)
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 
@@ -406,7 +406,7 @@ func TestReorg(t *testing.T) {
 		ethHeader3 := &types.Header{Number: big.NewInt(3), ParentHash: ethBlock2.Hash()}
 		ethBlock3 := types.NewBlockWithHeader(ethHeader3)
 
-		lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
+		// lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
 		lastBlock1 := &etherman.Block{BlockHash: ethBlock1.Hash(), BlockNumber: ethBlock1.Number().Uint64(), ParentHash: ethBlock1.ParentHash()}
 		var networkID uint32 = 0
 
@@ -422,7 +422,7 @@ func TestReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock1.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock1.Number()).
 			Return(ethBlock1, nil).
 			Once()
 
@@ -466,7 +466,7 @@ func TestReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock0.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 
@@ -502,7 +502,7 @@ func TestReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock0.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 
@@ -648,7 +648,7 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 		ethHeader3 := &types.Header{Number: big.NewInt(3), ParentHash: ethBlock2.Hash()}
 		ethBlock3 := types.NewBlockWithHeader(ethHeader3)
 
-		lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
+		// lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
 		lastBlock1 := &etherman.Block{BlockHash: ethBlock1.Hash(), BlockNumber: ethBlock1.Number().Uint64(), ParentHash: ethBlock1.ParentHash()}
 		var networkID uint32 = 0
 
@@ -664,7 +664,7 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock1.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock1.Number()).
 			Return(ethBlock1, nil).
 			Once()
 
@@ -695,7 +695,7 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock0.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 
@@ -731,7 +731,7 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock0.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 
@@ -810,7 +810,7 @@ func TestRegularReorg(t *testing.T) {
 		ethHeader2 := &types.Header{Number: big.NewInt(2), ParentHash: ethBlock1.Hash()}
 		ethBlock2 := types.NewBlockWithHeader(ethHeader2)
 
-		lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
+		// lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
 		lastBlock1 := &etherman.Block{BlockHash: ethBlock1.Hash(), BlockNumber: ethBlock1.Number().Uint64(), ParentHash: ethBlock1.ParentHash()}
 		var networkID uint32 = 0
 
@@ -826,7 +826,7 @@ func TestRegularReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock1.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock1.Number()).
 			Return(ethBlock1bis, nil).
 			Once()
 
@@ -845,7 +845,7 @@ func TestRegularReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock0.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 
@@ -881,7 +881,7 @@ func TestRegularReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock0.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 
@@ -1020,8 +1020,8 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 		ethHeader3 := &types.Header{Number: big.NewInt(3), ParentHash: ethBlock2.Hash()}
 		ethBlock3 := types.NewBlockWithHeader(ethHeader3)
 
-		lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
-		lastBlock1 := &etherman.Block{BlockHash: ethBlock1.Hash(), BlockNumber: ethBlock1.Number().Uint64(), ParentHash: ethBlock1.ParentHash()}
+		// lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
+		// lastBlock1 := &etherman.Block{BlockHash: ethBlock1.Hash(), BlockNumber: ethBlock1.Number().Uint64(), ParentHash: ethBlock1.ParentHash()}
 		lastBlock2 := &etherman.Block{BlockHash: ethBlock2.Hash(), BlockNumber: ethBlock2.Number().Uint64(), ParentHash: ethBlock2.ParentHash()}
 		var networkID uint32 = 0
 
@@ -1037,7 +1037,7 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock2.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock2.Number()).
 			Return(ethBlock2, nil).
 			Once()
 
@@ -1068,7 +1068,7 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock1.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock1.Number()).
 			Return(ethBlock1bis, nil).
 			Once()
 
@@ -1084,7 +1084,7 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock0.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 
@@ -1120,7 +1120,7 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock0.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 
@@ -1226,7 +1226,7 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 		ethHeader2 := &types.Header{Number: big.NewInt(2), ParentHash: ethBlock1.Hash()}
 		ethBlock2 := types.NewBlockWithHeader(ethHeader2)
 
-		lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
+		// lastBlock0 := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64(), ParentHash: ethBlock0.ParentHash()}
 		lastBlock1 := &etherman.Block{BlockHash: ethBlock1.Hash(), BlockNumber: ethBlock1.Number().Uint64(), ParentHash: ethBlock1.ParentHash()}
 		var networkID uint32 = 0
 
@@ -1242,7 +1242,7 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock1.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock1.Number()).
 			Return(ethBlock1, nil).
 			Once()
 
@@ -1286,7 +1286,7 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock0.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 
@@ -1322,7 +1322,7 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 			Once()
 
 		m.Etherman.
-			On("EthBlockByNumber", ctx, lastBlock0.BlockNumber).
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
 			Return(ethBlock0, nil).
 			Once()
 

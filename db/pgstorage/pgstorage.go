@@ -104,7 +104,7 @@ func (p *PostgresStorage) AddBlock(ctx context.Context, block *etherman.Block, d
 
 // AddGlobalExitRoot adds a new ExitRoot to the db.
 func (p *PostgresStorage) AddGlobalExitRoot(ctx context.Context, exitRoot *etherman.GlobalExitRoot, dbTx pgx.Tx) error {
-	const addExitRootSQL = "INSERT INTO sync.exit_root (block_id, global_exit_root, exit_roots, network_id) VALUES ($1, $2, $3, $4)"
+	const addExitRootSQL = "INSERT INTO sync.exit_root (block_id, global_exit_root, exit_roots, network_id, allowed) VALUES ($1, $2, $3, $4, true)"
 	exitRoots := [][]byte{}
 	if len(exitRoot.ExitRoots) != 0 {
 		exitRoots = [][]byte{exitRoot.ExitRoots[0][:], exitRoot.ExitRoots[1][:]}
@@ -195,8 +195,8 @@ func (p *PostgresStorage) GetNumberDeposits(ctx context.Context, networkID uint3
 // AddTrustedGlobalExitRoot adds new global exit root which comes from the trusted sequencer.
 func (p *PostgresStorage) AddTrustedGlobalExitRoot(ctx context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx pgx.Tx) (bool, error) {
 	const addTrustedGerSQL = `
-		INSERT INTO sync.exit_root (block_id, global_exit_root, exit_roots, network_id)
-		VALUES (0, $1, $2, $3)
+		INSERT INTO sync.exit_root (block_id, global_exit_root, exit_roots, network_id, allowed)
+		VALUES (0, $1, $2, $3, true)
 		ON CONFLICT ON CONSTRAINT UC DO NOTHING;`
 	res, err := p.getExecQuerier(dbTx).Exec(ctx, addTrustedGerSQL, trustedExitRoot.GlobalExitRoot, pq.Array([][]byte{trustedExitRoot.ExitRoots[0][:], trustedExitRoot.ExitRoots[1][:]}), trustedExitRoot.NetworkID)
 	return res.RowsAffected() > 0, err
@@ -273,7 +273,7 @@ func (p *PostgresStorage) GetLatestL1SyncedExitRoot(ctx context.Context, dbTx pg
 		ger       etherman.GlobalExitRoot
 		exitRoots [][]byte
 	)
-	const getLatestL1SyncedExitRootSQL = "SELECT block_id, global_exit_root, exit_roots FROM sync.exit_root WHERE block_id > 0 AND network_id = 0 ORDER BY id DESC LIMIT 1"
+	const getLatestL1SyncedExitRootSQL = "SELECT block_id, global_exit_root, exit_roots FROM sync.exit_root WHERE allowed = true AND block_id > 0 AND network_id = 0 ORDER BY id DESC LIMIT 1"
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getLatestL1SyncedExitRootSQL).Scan(&ger.BlockID, &ger.GlobalExitRoot, pq.Array(&exitRoots))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -285,13 +285,13 @@ func (p *PostgresStorage) GetLatestL1SyncedExitRoot(ctx context.Context, dbTx pg
 	return &ger, nil
 }
 
-// GetExitRootByGER gets the latest L1 synced global exit root.
-func (p *PostgresStorage) GetExitRootByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error) {
+// GetL1ExitRootByGER gets the latest L1 synced global exit root.
+func (p *PostgresStorage) GetL1ExitRootByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error) {
 	var (
 		gerData   etherman.GlobalExitRoot
 		exitRoots [][]byte
 	)
-	const getSyncedExitRootSQL = "SELECT block_id, global_exit_root, exit_roots FROM sync.exit_root WHERE block_id > 0 AND global_exit_root = $1 AND network_id = 0 ORDER BY id DESC LIMIT 1"
+	const getSyncedExitRootSQL = "SELECT block_id, global_exit_root, exit_roots FROM sync.exit_root WHERE allowed = true AND block_id > 0 AND global_exit_root = $1 AND network_id = 0 ORDER BY id DESC LIMIT 1"
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getSyncedExitRootSQL, ger).Scan(&gerData.BlockID, &gerData.GlobalExitRoot, pq.Array(&exitRoots))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -303,9 +303,9 @@ func (p *PostgresStorage) GetExitRootByGER(ctx context.Context, ger common.Hash,
 	return &gerData, nil
 }
 
-// GetL2ExitRootsByGER gets the global exit roots in al the L2 networks.
+// GetL2ExitRootsByGER gets the global exit roots in all the L2 networks.
 func (p *PostgresStorage) GetL2ExitRootsByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) ([]etherman.GlobalExitRoot, error) {
-	const getL2ExitRootsByGERSQL = "SELECT block_id, global_exit_root, network_id, id FROM sync.exit_root WHERE block_id > 0 AND global_exit_root = $1 AND network_id != 0 AND cardinality(exit_roots) = 0 ORDER BY id DESC"
+	const getL2ExitRootsByGERSQL = "SELECT block_id, global_exit_root, network_id, id FROM sync.exit_root WHERE allowed = true AND block_id > 0 AND global_exit_root = $1 AND network_id != 0 AND cardinality(exit_roots) = 0 ORDER BY id DESC"
 	rows, err := p.getExecQuerier(dbTx).Query(ctx, getL2ExitRootsByGERSQL, ger)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -343,7 +343,7 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 		ger       etherman.GlobalExitRoot
 		exitRoots [][]byte
 	)
-	const getLatestTrustedExitRootSQL = "SELECT global_exit_root, exit_roots FROM sync.exit_root WHERE network_id = $1 ORDER BY id DESC LIMIT 1"
+	const getLatestTrustedExitRootSQL = "SELECT global_exit_root, exit_roots FROM sync.exit_root WHERE network_id = $1 AND allowed = true ORDER BY id DESC LIMIT 1"
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getLatestTrustedExitRootSQL, networkID).Scan(&ger.GlobalExitRoot, pq.Array(&exitRoots))
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -355,7 +355,7 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 		ger.ExitRoots = []common.Hash{common.BytesToHash(exitRoots[0]), common.BytesToHash(exitRoots[1])}
 	} else {
 		// Query to look for the missing values
-		l1GER, err := p.GetExitRootByGER(ctx, ger.GlobalExitRoot, dbTx)
+		l1GER, err := p.GetL1ExitRootByGER(ctx, ger.GlobalExitRoot, dbTx)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				log.Error("Missing L1Ger for the L2Ger entry")
@@ -649,7 +649,7 @@ func (p *PostgresStorage) GetDepositsFromOtherL2ToClaim(ctx context.Context, des
 
 // GetLatestTrustedGERByDeposit return the latest trusted ger for an specific deposit
 func (p *PostgresStorage) GetLatestTrustedGERByDeposit(ctx context.Context, depositCnt, networkID, destinationNetwork uint32, dbTx pgx.Tx) (common.Hash, error) {
-	const getLatestTrustedGERByDeposit = `SELECT sync.exit_root.global_exit_root FROM sync.deposit inner join mt.root on mt.root.deposit_id = sync.deposit.id inner join mt.rollup_exit on mt.rollup_exit.leaf = mt.root.root inner join sync.exit_root on sync.exit_root.exit_roots[2]= mt.rollup_exit.root where deposit_cnt = $1 and sync.deposit.network_id = $2 and dest_net = $3 and mt.rollup_exit.rollup_id = $2 and sync.exit_root.network_id = sync.deposit.dest_net order by sync.exit_root.id desc limit 1`
+	const getLatestTrustedGERByDeposit = `SELECT sync.exit_root.global_exit_root FROM sync.deposit inner join mt.root on mt.root.deposit_id = sync.deposit.id inner join mt.rollup_exit on mt.rollup_exit.leaf = mt.root.root inner join sync.exit_root on sync.exit_root.exit_roots[2]= mt.rollup_exit.root where sync.exit_root.allowed = true and deposit_cnt = $1 and sync.deposit.network_id = $2 and dest_net = $3 and mt.rollup_exit.rollup_id = $2 and sync.exit_root.network_id = sync.deposit.dest_net order by sync.exit_root.id desc limit 1`
 	var ger common.Hash
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getLatestTrustedGERByDeposit, depositCnt, networkID, destinationNetwork).Scan(&ger)
 	if errors.Is(err, pgx.ErrNoRows) {
@@ -743,6 +743,20 @@ func (p *PostgresStorage) GetPendingDepositsToClaim(ctx context.Context, destAdd
 		return nil, 0, err
 	}
 	return deposits, totalCount, nil
+}
+
+func (p *PostgresStorage) AddRemoveL2GER(ctx context.Context, globalExitRoot etherman.GlobalExitRoot, dbTx pgx.Tx) error {
+	const insertRemoveGERSQL = `INSERT INTO sync.remove_exit_root 
+		(block_id, global_exit_root, network_id)
+		VALUES ($1, $2, $3)`
+	_, err := p.getExecQuerier(dbTx).Exec(ctx, insertRemoveGERSQL, globalExitRoot.BlockID, globalExitRoot.GlobalExitRoot, globalExitRoot.NetworkID)
+	if err != nil {
+		return err
+	}
+	// Modify the allowed column in the exit_root table for this globalExitRoot
+	const updateGERStatusSQL = "UPDATE sync.exit_root SET allowed = false WHERE global_exit_root = $1 AND network_id = $2;"
+	_, err = p.getExecQuerier(dbTx).Exec(ctx, updateGERStatusSQL, globalExitRoot.GlobalExitRoot, globalExitRoot.NetworkID)
+	return err
 }
 
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.

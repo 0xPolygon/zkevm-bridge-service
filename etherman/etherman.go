@@ -107,8 +107,10 @@ var (
 type EventOrder string
 
 const (
-	// GlobalExitRootsOrder identifies a GlobalExitRoot event
+	// GlobalExitRootsOrder identifies a GlobalExitRoot event and insertGlobalExitRoot event
 	GlobalExitRootsOrder EventOrder = "GlobalExitRoot"
+	// RemoveL2GEROrder identifies the removeLastGlobalExitRoot event
+	RemoveL2GEROrder EventOrder = "RemoveL2GEROrder"
 	// DepositsOrder identifies a Deposits event
 	DepositsOrder EventOrder = "Deposit"
 	// ClaimsOrder identifies a Claims event
@@ -241,7 +243,7 @@ func (etherMan *Client) GetRollupInfoByBlockRange(ctx context.Context, fromBlock
 	query := ethereum.FilterQuery{
 		FromBlock: new(big.Int).SetUint64(fromBlock),
 		Addresses: etherMan.SCAddresses,
-		Topics:    [][]common.Hash{{updateGlobalExitRootSignatureHash, updateL1InfoTreeSignatureHash, depositEventSignatureHash, claimEventSignatureHash, oldClaimEventSignatureHash, newWrappedTokenEventSignatureHash, verifyBatchesTrustedAggregatorSignatureHash, rollupManagerVerifyBatchesSignatureHash, insertGlobalExitRootSignatureHash}},
+		Topics:    [][]common.Hash{{updateGlobalExitRootSignatureHash, updateL1InfoTreeSignatureHash, depositEventSignatureHash, claimEventSignatureHash, oldClaimEventSignatureHash, newWrappedTokenEventSignatureHash, verifyBatchesTrustedAggregatorSignatureHash, rollupManagerVerifyBatchesSignatureHash, insertGlobalExitRootSignatureHash, removeLastGlobalExitRootSignatureHash}},
 	}
 	if toBlock != nil {
 		query.ToBlock = new(big.Int).SetUint64(*toBlock)
@@ -417,30 +419,57 @@ func (etherMan *Client) processEvent(ctx context.Context, vLog types.Log, blocks
 	case insertGlobalExitRootSignatureHash:
 		return etherMan.insertSovereignChainL2GER(ctx, vLog, blocks, blocksOrder)
 	case removeLastGlobalExitRootSignatureHash:
-		// TODO
-		return nil
+		return etherMan.removeLastL2GER(ctx, vLog, blocks, blocksOrder)
 	case setBridgeManagerSignatureHash:
-		// TODO
 		etherMan.logger.Debug("setBridgeManager event detected. Ignoring...")
 		return nil
 	case setSovereignTokenAddressSignatureHash:
-		// TODO
 		etherMan.logger.Debug("setSovereignTokenAddress event detected. Ignoring...")
 		return nil
 	case migrateLegacyTokenSignatureHash:
-		// TODO
 		etherMan.logger.Debug("migrateLegacyToken event detected. Ignoring...")
 		return nil
 	case removeLegacySovereignTokenAddressSignatureHash:
-		// TODO
 		etherMan.logger.Debug("removeLegacySovereignTokenAddress event detected. Ignoring...")
 		return nil
 	case setSovereignWETHAddressSignatureHash:
-		// TODO
 		etherMan.logger.Debug("setSovereignWETHAddress event detected. Ignoring...")
 		return nil
 	}
 	etherMan.logger.Warnf("Event not registered: %+v", vLog)
+	return nil
+}
+
+func (etherMan *Client) removeLastL2GER(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+	etherMan.logger.Debug("removeLastGlobalExitRoot event detected. Processing...")
+	var gExitRoot GlobalExitRoot
+	l2GER, err := etherMan.GerL2SovereignChain.ParseRemoveLastGlobalExitRoot(vLog)
+	if err != nil {
+		return err
+	}
+	gExitRoot.GlobalExitRoot = l2GER.RemovedGlobalExitRoot
+	gExitRoot.BlockNumber = vLog.BlockNumber
+
+	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
+		fullBlock, err := etherMan.EtherClient.HeaderByHash(ctx, vLog.BlockHash)
+		if err != nil {
+			return fmt.Errorf("error getting hashParent. BlockNumber: %d. Error: %v", vLog.BlockNumber, err)
+		}
+		t := time.Unix(int64(fullBlock.Time), 0)
+		block := prepareBlock(vLog, t, fullBlock)
+		block.RemoveL2GER = append(block.RemoveL2GER, gExitRoot)
+		*blocks = append(*blocks, block)
+	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
+		(*blocks)[len(*blocks)-1].RemoveL2GER = append((*blocks)[len(*blocks)-1].RemoveL2GER, gExitRoot)
+	} else {
+		etherMan.logger.Error("Error processing UpdateGlobalExitRoot event. BlockHash:", vLog.BlockHash, ". BlockNumber: ", vLog.BlockNumber)
+		return fmt.Errorf("error processing UpdateGlobalExitRoot event")
+	}
+	or := Order{
+		Name: RemoveL2GEROrder,
+		Pos:  len((*blocks)[len(*blocks)-1].RemoveL2GER) - 1,
+	}
+	(*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash] = append((*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash], or)
 	return nil
 }
 
@@ -675,18 +704,6 @@ func hash(data ...[32]byte) [32]byte {
 // nil, the latest known header is returned.
 func (etherMan *Client) HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error) {
 	return etherMan.EtherClient.HeaderByNumber(ctx, number)
-}
-
-// EthBlockByNumber function retrieves the ethereum block information by ethereum block number.
-func (etherMan *Client) EthBlockByNumber(ctx context.Context, blockNumber uint64) (*types.Block, error) {
-	block, err := etherMan.EtherClient.BlockByNumber(ctx, new(big.Int).SetUint64(blockNumber))
-	if err != nil {
-		if errors.Is(err, ethereum.NotFound) || err.Error() == "block does not exist in blockchain" {
-			return nil, ErrNotFound
-		}
-		return nil, err
-	}
-	return block, nil
 }
 
 // GetNetworkID gets the network ID of the dedicated chain.

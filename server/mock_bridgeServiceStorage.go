@@ -509,12 +509,12 @@ func (_c *bridgeServiceStorageMock_GetDeposits_Call) RunAndReturn(run func(conte
 	return _c
 }
 
-// GetExitRootByGER provides a mock function with given fields: ctx, ger, dbTx
-func (_m *bridgeServiceStorageMock) GetExitRootByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error) {
+// GetL1ExitRootByGER provides a mock function with given fields: ctx, ger, dbTx
+func (_m *bridgeServiceStorageMock) GetL1ExitRootByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error) {
 	ret := _m.Called(ctx, ger, dbTx)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetExitRootByGER")
+		panic("no return value specified for GetL1ExitRootByGER")
 	}
 
 	var r0 *etherman.GlobalExitRoot
@@ -539,32 +539,32 @@ func (_m *bridgeServiceStorageMock) GetExitRootByGER(ctx context.Context, ger co
 	return r0, r1
 }
 
-// bridgeServiceStorageMock_GetExitRootByGER_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetExitRootByGER'
-type bridgeServiceStorageMock_GetExitRootByGER_Call struct {
+// bridgeServiceStorageMock_GetL1ExitRootByGER_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetL1ExitRootByGER'
+type bridgeServiceStorageMock_GetL1ExitRootByGER_Call struct {
 	*mock.Call
 }
 
-// GetExitRootByGER is a helper method to define mock.On call
+// GetL1ExitRootByGER is a helper method to define mock.On call
 //   - ctx context.Context
 //   - ger common.Hash
 //   - dbTx pgx.Tx
-func (_e *bridgeServiceStorageMock_Expecter) GetExitRootByGER(ctx interface{}, ger interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetExitRootByGER_Call {
-	return &bridgeServiceStorageMock_GetExitRootByGER_Call{Call: _e.mock.On("GetExitRootByGER", ctx, ger, dbTx)}
+func (_e *bridgeServiceStorageMock_Expecter) GetL1ExitRootByGER(ctx interface{}, ger interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetL1ExitRootByGER_Call {
+	return &bridgeServiceStorageMock_GetL1ExitRootByGER_Call{Call: _e.mock.On("GetL1ExitRootByGER", ctx, ger, dbTx)}
 }
 
-func (_c *bridgeServiceStorageMock_GetExitRootByGER_Call) Run(run func(ctx context.Context, ger common.Hash, dbTx pgx.Tx)) *bridgeServiceStorageMock_GetExitRootByGER_Call {
+func (_c *bridgeServiceStorageMock_GetL1ExitRootByGER_Call) Run(run func(ctx context.Context, ger common.Hash, dbTx pgx.Tx)) *bridgeServiceStorageMock_GetL1ExitRootByGER_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(common.Hash), args[2].(pgx.Tx))
 	})
 	return _c
 }
 
-func (_c *bridgeServiceStorageMock_GetExitRootByGER_Call) Return(_a0 *etherman.GlobalExitRoot, _a1 error) *bridgeServiceStorageMock_GetExitRootByGER_Call {
+func (_c *bridgeServiceStorageMock_GetL1ExitRootByGER_Call) Return(_a0 *etherman.GlobalExitRoot, _a1 error) *bridgeServiceStorageMock_GetL1ExitRootByGER_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *bridgeServiceStorageMock_GetExitRootByGER_Call) RunAndReturn(run func(context.Context, common.Hash, pgx.Tx) (*etherman.GlobalExitRoot, error)) *bridgeServiceStorageMock_GetExitRootByGER_Call {
+func (_c *bridgeServiceStorageMock_GetL1ExitRootByGER_Call) RunAndReturn(run func(context.Context, common.Hash, pgx.Tx) (*etherman.GlobalExitRoot, error)) *bridgeServiceStorageMock_GetL1ExitRootByGER_Call {
 	_c.Call.Return(run)
 	return _c
 }
