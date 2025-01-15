@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
 	"strings"
 	"time"
@@ -753,10 +754,60 @@ func (p *PostgresStorage) AddRemoveL2GER(ctx context.Context, globalExitRoot eth
 	if err != nil {
 		return err
 	}
+
 	// Modify the allowed column in the exit_root table for this globalExitRoot
-	const updateGERStatusSQL = "UPDATE sync.exit_root SET allowed = false WHERE global_exit_root = $1 AND network_id = $2;"
-	_, err = p.getExecQuerier(dbTx).Exec(ctx, updateGERStatusSQL, globalExitRoot.GlobalExitRoot, globalExitRoot.NetworkID)
+	const updateGERStatusSQL = "UPDATE sync.exit_root SET allowed = false WHERE global_exit_root = $1 AND network_id = $2 RETURNING id;"
+	var gerID uint64
+	err = p.getExecQuerier(dbTx).QueryRow(ctx, updateGERStatusSQL, globalExitRoot.GlobalExitRoot, globalExitRoot.NetworkID).Scan(&gerID)
+	if err != nil {
+		return err
+	}
+
+	// Look for the deposits where the ready for claim flag needs to be modified
+	getPreviousGERSQL := "SELECT global_exit_root FROM sync.exit_root WHERE network_id = $1 AND id < $2 ORDER BY id DESC LIMIT 1"
+	var prevGer common.Hash
+	err = p.getExecQuerier(dbTx).QueryRow(ctx, getPreviousGERSQL, globalExitRoot.NetworkID, gerID).Scan(&prevGer)
+	if err != nil {
+		return err
+	}
+	prevDepositID, _, err := p.GetDepositCountByGER(ctx, prevGer, globalExitRoot.NetworkID, false, dbTx)
+	if errors.Is(err, gerror.ErrStorageNotFound) {
+		log.Warnf("No previous deposit found using this prevGER: %s in L1, NetworkID: %d, currentGER: %s", prevGer.String(), globalExitRoot.NetworkID, globalExitRoot.GlobalExitRoot.String())
+		prevDepositID = 0
+	} else if err != nil {
+		return err
+	}
+	CurrentDepositID, _, err := p.GetDepositCountByGER(ctx, globalExitRoot.GlobalExitRoot, globalExitRoot.NetworkID, false, dbTx)
+	if errors.Is(err, gerror.ErrStorageNotFound) {
+		log.Warnf("No deposit found for this GER: %s in L1, NetworkID: %d", globalExitRoot.GlobalExitRoot.String(), globalExitRoot.NetworkID)
+		CurrentDepositID = math.MaxUint64
+	} else if err != nil {
+		return err
+	}
+	// Disable the ready for claim flag for this deposits
+	const updateDepositsFlagSQL = `UPDATE sync.deposit SET ready_for_claim = false WHERE id > $1 AND id <= $2 AND network_id = 0 AND dest_net = $3`
+	_, err = p.getExecQuerier(dbTx).Exec(ctx, updateDepositsFlagSQL, prevDepositID, CurrentDepositID, globalExitRoot.NetworkID)
 	return err
+}
+
+// GetDepositCountByGER gets the deposit count by the GER.
+func (p *PostgresStorage) GetDepositCountByGER(ctx context.Context, ger common.Hash, network uint32, rollupsTree bool, dbTx pgx.Tx) (uint64, uint32, error) {
+	var (
+		depositID  				uint64
+		depositCnt, rootNetwork uint32
+	)
+	arrayIndex := 1
+	if rollupsTree {
+		arrayIndex = 2
+		rootNetwork = network
+	}
+
+	const getDepositCountByGERSQL = "SELECT sync.deposit.id, sync.deposit.deposit_cnt FROM sync.deposit INNER JOIN mt.root ON sync.deposit.id = mt.root.deposit_id inner join sync.exit_root on mt.root.root = sync.exit_root.exit_roots[$1] WHERE sync.exit_root.global_exit_root = $2 and sync.exit_root.network_id = $3 AND mt.root.network = $4"
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, getDepositCountByGERSQL, arrayIndex, ger, network, rootNetwork).Scan(&depositID, &depositCnt)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return 0, 0, gerror.ErrStorageNotFound
+	}
+	return depositID, depositCnt, err
 }
 
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.
