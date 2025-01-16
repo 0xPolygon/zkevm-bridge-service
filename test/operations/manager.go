@@ -24,6 +24,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/0xPolygonHermez/zkevm-node/test/contracts/bin/ERC20"
 	"github.com/0xPolygonHermez/zkevm-node/test/operations"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/globalexitrootmanagerl2sovereignchain"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -37,6 +38,7 @@ const (
 	L1  NetworkSID = "l1"
 	L2  NetworkSID = "l2"
 	L22 NetworkSID = "l22"
+	L222 NetworkSID = "l222"
 
 	waitRootSyncDeadline = 120 * time.Second
 )
@@ -62,6 +64,7 @@ var accHexPrivateKeys = map[NetworkSID]string{
 	L1:  "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a", //0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC
 	L2:  "0xdfd01798f92667dbf91df722434e8fbe96af0211d4d1b82bbbbc8f1def7a814f", //0xc949254d682d8c9ad5682521675b8f43b102aec4
 	L22: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", //0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+	L222: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", //0x70997970c51812dc3a010c7d01b50e0d17dc79c8
 }
 
 // Config is the main Manager configuration.
@@ -1019,4 +1022,36 @@ func (m *Manager) SendCustomDeposit(ctx context.Context, rpcURL string, bridgeAd
 
 	// sync for new exit root
 	return m.WaitExitRootToBeSynced(ctx, orgExitRoot, networkID, destNetwork)
+}
+
+func (m *Manager) RemoveL2GER(ctx context.Context, l2GERManagerAddr common.Address, gersToRemove []common.Hash, networkID uint32, l2 NetworkSID) error {
+	client := m.clients[L2]
+	auth, err := client.GetSigner(ctx, accHexPrivateKeys[l2])
+	if err != nil {
+		return err
+	}
+	gerManager, err := globalexitrootmanagerl2sovereignchain.NewGlobalexitrootmanagerl2sovereignchain(l2GERManagerAddr, client.Client)
+	if err != nil {
+		log.Error("error instanciating ger manager. Error: ", err)
+		return err
+	}
+	if len(gersToRemove) == 0 {
+		return fmt.Errorf("error no gers to remove provided")
+	}
+	gersToRemoveAux := [][32]byte{}
+	for _, ger := range gersToRemove {
+		gersToRemoveAux = append(gersToRemoveAux, ger)
+	}
+	globalExitRoot, err := m.GetTrustedGlobalExitRootSynced(ctx, networkID)
+	if err != nil {
+		log.Error("error getting the GlobalExitRoot before sending the tx. Error: ", err)
+		return err
+	}
+	tx, err := gerManager.RemoveLastGlobalExitRoots(auth, gersToRemoveAux)
+	if err != nil {
+		log.Error("error removing gers. Error: ", err)
+		return err
+	}
+	log.Info("Remove gers transaction: ", tx.Hash())
+	return m.WaitExitRootToBeSynced(ctx, globalExitRoot, 0, networkID)
 }

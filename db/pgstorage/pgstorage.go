@@ -344,8 +344,8 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 		ger       etherman.GlobalExitRoot
 		exitRoots [][]byte
 	)
-	const getLatestTrustedExitRootSQL = "SELECT global_exit_root, exit_roots FROM sync.exit_root WHERE network_id = $1 AND allowed = true ORDER BY id DESC LIMIT 1"
-	err := p.getExecQuerier(dbTx).QueryRow(ctx, getLatestTrustedExitRootSQL, networkID).Scan(&ger.GlobalExitRoot, pq.Array(&exitRoots))
+	const getLatestTrustedExitRootSQL = "SELECT global_exit_root, exit_roots, block_id, network_id, id FROM sync.exit_root WHERE network_id = $1 AND allowed = true ORDER BY id DESC LIMIT 1"
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, getLatestTrustedExitRootSQL, networkID).Scan(&ger.GlobalExitRoot, pq.Array(&exitRoots), &ger.BlockID, &ger.NetworkID, &ger.ID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, gerror.ErrStorageNotFound
