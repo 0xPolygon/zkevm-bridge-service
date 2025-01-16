@@ -13,7 +13,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/oldpolygonzkevmbridge"
 	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonrollupmanager"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmbridge"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
 	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -130,7 +130,7 @@ type ethClienter interface {
 // Client is a simple implementation of EtherMan.
 type Client struct {
 	EtherClient                ethClienter
-	PolygonBridge              *polygonzkevmbridge.Polygonzkevmbridge
+	PolygonBridgeV2            *polygonzkevmbridgev2.Polygonzkevmbridgev2
 	OldPolygonBridge           *oldpolygonzkevmbridge.Oldpolygonzkevmbridge
 	PolygonZkEVMGlobalExitRoot *polygonzkevmglobalexitroot.Polygonzkevmglobalexitroot
 	PolygonRollupManager       *polygonrollupmanager.Polygonrollupmanager
@@ -151,7 +151,7 @@ func NewClient(cfg Config, polygonBridgeAddr, polygonZkEVMGlobalExitRootAddress,
 		return nil, err
 	}
 	// Create smc clients
-	polygonBridge, err := polygonzkevmbridge.NewPolygonzkevmbridge(polygonBridgeAddr, ethClient)
+	polygonBridgeV2, err := polygonzkevmbridgev2.NewPolygonzkevmbridgev2(polygonBridgeAddr, ethClient)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func NewClient(cfg Config, polygonBridgeAddr, polygonZkEVMGlobalExitRootAddress,
 	return &Client{
 		logger:                     logger,
 		EtherClient:                ethClient,
-		PolygonBridge:              polygonBridge,
+		PolygonBridgeV2:            polygonBridgeV2,
 		OldPolygonBridge:           oldpolygonBridge,
 		PolygonZkEVMGlobalExitRoot: polygonZkEVMGlobalExitRoot,
 		PolygonRollupManager:       polygonRollupManager,
@@ -190,7 +190,7 @@ func NewL2Client(url string, polygonBridgeAddress, claimCompressorAddress, polyg
 		return nil, err
 	}
 	// Create smc clients
-	bridge, err := polygonzkevmbridge.NewPolygonzkevmbridge(polygonBridgeAddress, ethClient)
+	bridge, err := polygonzkevmbridgev2.NewPolygonzkevmbridgev2(polygonBridgeAddress, ethClient)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,7 @@ func NewL2Client(url string, polygonBridgeAddress, claimCompressorAddress, polyg
 	return &Client{
 		logger:              logger,
 		EtherClient:         ethClient,
-		PolygonBridge:       bridge,
+		PolygonBridgeV2:     bridge,
 		OldPolygonBridge:    oldpolygonBridge,
 		SCAddresses:         scAddresses,
 		ClaimCompressor:     claimCompressor,
@@ -553,7 +553,7 @@ func (etherMan *Client) processUpdateGlobalExitRootEvent(ctx context.Context, ma
 
 func (etherMan *Client) depositEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("Deposit event detected. Processing...")
-	d, err := etherMan.PolygonBridge.ParseBridgeEvent(vLog)
+	d, err := etherMan.PolygonBridgeV2.ParseBridgeEvent(vLog)
 	if err != nil {
 		return err
 	}
@@ -602,7 +602,7 @@ func (etherMan *Client) oldClaimEvent(ctx context.Context, vLog types.Log, block
 
 func (etherMan *Client) newClaimEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("New claim event detected. Processing...")
-	c, err := etherMan.PolygonBridge.ParseClaimEvent(vLog)
+	c, err := etherMan.PolygonBridgeV2.ParseClaimEvent(vLog)
 	if err != nil {
 		return err
 	}
@@ -649,7 +649,7 @@ func (etherMan *Client) claimEvent(ctx context.Context, vLog types.Log, blocks *
 
 func (etherMan *Client) tokenWrappedEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("TokenWrapped event detected. Processing...")
-	tw, err := etherMan.PolygonBridge.ParseNewWrappedToken(vLog)
+	tw, err := etherMan.PolygonBridgeV2.ParseNewWrappedToken(vLog)
 	if err != nil {
 		return err
 	}

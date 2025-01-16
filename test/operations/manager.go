@@ -20,7 +20,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/0xPolygonHermez/zkevm-node/encoding"
 	erc20 "github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/pol"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmbridge"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
 	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/0xPolygonHermez/zkevm-node/test/contracts/bin/ERC20"
 	"github.com/0xPolygonHermez/zkevm-node/test/operations"
@@ -718,7 +718,7 @@ func (m *Manager) GetLatestGlobalExitRootFromL1(ctx context.Context) (*etherman.
 // GetCurrentGlobalExitRootFromSmc reads the globalexitroot from the smc
 func (m *Manager) GetCurrentGlobalExitRootFromSmc(ctx context.Context) (*etherman.GlobalExitRoot, error) {
 	client := m.clients[L1]
-	br, err := polygonzkevmbridge.NewPolygonzkevmbridge(common.HexToAddress(l1BridgeAddr), client)
+	br, err := polygonzkevmbridgev2.NewPolygonzkevmbridgev2(common.HexToAddress(l1BridgeAddr), client)
 	if err != nil {
 		return nil, err
 	}
