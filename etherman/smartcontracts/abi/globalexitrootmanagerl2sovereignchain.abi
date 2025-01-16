@@ -32,6 +32,11 @@
     },
     {
         "inputs": [],
+        "name": "OnlyGlobalExitRootRemover",
+        "type": "error"
+    },
+    {
+        "inputs": [],
         "name": "OnlyGlobalExitRootUpdater",
         "type": "error"
     },
@@ -75,6 +80,32 @@
         "type": "event"
     },
     {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newGlobalExitRootRemover",
+                "type": "address"
+            }
+        ],
+        "name": "SetGlobalExitRootRemover",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newGlobalExitRootUpdater",
+                "type": "address"
+            }
+        ],
+        "name": "SetGlobalExitRootUpdater",
+        "type": "event"
+    },
+    {
         "inputs": [],
         "name": "bridgeAddress",
         "outputs": [
@@ -108,6 +139,19 @@
     },
     {
         "inputs": [],
+        "name": "globalExitRootRemover",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "globalExitRootUpdater",
         "outputs": [
             {
@@ -124,6 +168,11 @@
             {
                 "internalType": "address",
                 "name": "_globalExitRootUpdater",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_globalExitRootRemover",
                 "type": "address"
             }
         ],
@@ -180,6 +229,32 @@
             }
         ],
         "name": "removeLastGlobalExitRoots",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_globalExitRootRemover",
+                "type": "address"
+            }
+        ],
+        "name": "setGlobalExitRootRemover",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_globalExitRootUpdater",
+                "type": "address"
+            }
+        ],
+        "name": "setGlobalExitRootUpdater",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"

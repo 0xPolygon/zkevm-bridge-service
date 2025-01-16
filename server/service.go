@@ -210,7 +210,7 @@ func (s *bridgeService) GetClaimProofbyGER(depositCnt, networkID uint32, GER com
 		}
 	}
 
-	globalExitRoot, err := s.storage.GetExitRootByGER(ctx, GER, dbTx)
+	globalExitRoot, err := s.storage.GetL1ExitRootByGER(ctx, GER, dbTx)
 	if err != nil {
 		err = fmt.Errorf("error getting GlobalExitRoot data for GER: %s. Err: %w", GER.String(), err)
 		return nil, nil, nil, err
@@ -259,7 +259,7 @@ func (s *bridgeService) GetClaimProofForCompressed(ger common.Hash, depositCnt, 
 		}
 	}
 
-	globalExitRoot, err := s.storage.GetExitRootByGER(ctx, ger, dbTx)
+	globalExitRoot, err := s.storage.GetL1ExitRootByGER(ctx, ger, dbTx)
 	if err != nil {
 		return nil, nil, nil, err
 	}

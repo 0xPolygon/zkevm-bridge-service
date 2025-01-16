@@ -12,12 +12,12 @@ import (
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl/pb"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/mocksmartcontracts/BridgeMessageReceiver"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/mocksmartcontracts/erc20permitmock"
 	zkevmtypes "github.com/0xPolygonHermez/zkevm-node/config/types"
 	"github.com/0xPolygonHermez/zkevm-node/encoding"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmbridge"
 	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/0xPolygonHermez/zkevm-node/test/contracts/bin/ERC20"
 	ops "github.com/0xPolygonHermez/zkevm-node/test/operations"
@@ -44,7 +44,7 @@ const (
 type Client struct {
 	// Client ethclient
 	*ethclient.Client
-	Bridge       *polygonzkevmbridge.Polygonzkevmbridge
+	Bridge       *polygonzkevmbridgev2.Polygonzkevmbridgev2
 	BridgeSCAddr common.Address
 	NodeURL      string
 }
@@ -55,9 +55,9 @@ func NewClient(ctx context.Context, nodeURL string, bridgeSCAddr common.Address)
 	if err != nil {
 		return nil, err
 	}
-	var br *polygonzkevmbridge.Polygonzkevmbridge
+	var br *polygonzkevmbridgev2.Polygonzkevmbridgev2
 	if bridgeSCAddr != (common.Address{}) {
-		br, err = polygonzkevmbridge.NewPolygonzkevmbridge(bridgeSCAddr, client)
+		br, err = polygonzkevmbridgev2.NewPolygonzkevmbridgev2(bridgeSCAddr, client)
 	}
 	return &Client{
 		Client:       client,
@@ -271,7 +271,7 @@ func (c *Client) SendClaim(ctx context.Context, deposit *pb.Deposit, smtProof [m
 	if deposit.LeafType == uint32(LeafTypeAsset) {
 		tx, err = c.Bridge.ClaimAsset(auth, smtProof, smtRollupProof, globalIndex, globalExitRoot.ExitRoots[0], globalExitRoot.ExitRoots[1], deposit.OrigNet, common.HexToAddress(deposit.OrigAddr), deposit.DestNet, common.HexToAddress(deposit.DestAddr), amount, common.FromHex(deposit.Metadata))
 		if err != nil {
-			a, _ := polygonzkevmbridge.PolygonzkevmbridgeMetaData.GetAbi()
+			a, _ := polygonzkevmbridgev2.Polygonzkevmbridgev2MetaData.GetAbi()
 			input, err3 := a.Pack("claimAsset", smtProof, smtRollupProof, globalIndex, globalExitRoot.ExitRoots[0], globalExitRoot.ExitRoots[1], deposit.OrigNet, common.HexToAddress(deposit.OrigAddr), deposit.DestNet, common.HexToAddress(deposit.DestAddr), amount, common.FromHex(deposit.Metadata))
 			if err3 != nil {
 				log.Error("error packing call. Error: ", err3)
@@ -309,7 +309,7 @@ func WaitTxToBeMined(ctx context.Context, client *ethclient.Client, tx *types.Tr
 }
 
 func (c *Client) GetGlobalExitRootFromSmc(ctx context.Context) (*etherman.GlobalExitRoot, error) {
-	br, err := polygonzkevmbridge.NewPolygonzkevmbridge(c.BridgeSCAddr, c.Client)
+	br, err := polygonzkevmbridgev2.NewPolygonzkevmbridgev2(c.BridgeSCAddr, c.Client)
 	if err != nil {
 		return nil, err
 	}

@@ -206,7 +206,7 @@ func deploySovereignChainSMC(ctx *cli.Context) error {
 		log.Error("error: ", err)
 		return err
 	}
-	_, err = ger.Initialize(auth, auth.From)
+	_, err = ger.Initialize(auth, auth.From, auth.From)
 	if err != nil {
 		log.Error("error: ", err)
 		return err
