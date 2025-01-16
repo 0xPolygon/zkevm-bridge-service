@@ -793,7 +793,7 @@ func (p *PostgresStorage) AddRemoveL2GER(ctx context.Context, globalExitRoot eth
 // GetDepositCountByGER gets the deposit count by the GER.
 func (p *PostgresStorage) GetDepositCountByGER(ctx context.Context, ger common.Hash, network uint32, rollupsTree bool, dbTx pgx.Tx) (uint64, uint32, error) {
 	var (
-		depositID  				uint64
+		depositID               uint64
 		depositCnt, rootNetwork uint32
 	)
 	arrayIndex := 1
