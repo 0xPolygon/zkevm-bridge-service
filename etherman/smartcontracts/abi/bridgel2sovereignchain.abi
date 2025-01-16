@@ -16,7 +16,17 @@
 	},
 	{
 		"inputs": [],
+		"name": "ClaimNotSet",
+		"type": "error"
+	},
+	{
+		"inputs": [],
 		"name": "DestinationNetworkInvalid",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "EmergencyStateNotAllowed",
 		"type": "error"
 	},
 	{
@@ -92,11 +102,6 @@
 	{
 		"inputs": [],
 		"name": "NotValidAmount",
-		"type": "error"
-	},
-	{
-		"inputs": [],
-		"name": "NotValidBridgeManager",
 		"type": "error"
 	},
 	{
@@ -417,6 +422,25 @@
 			}
 		],
 		"name": "SetSovereignWETHAddress",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint32",
+				"name": "leafIndex",
+				"type": "uint32"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint32",
+				"name": "sourceBridgeNetwork",
+				"type": "uint32"
+			}
+		],
+		"name": "UnsetClaim",
 		"type": "event"
 	},
 	{
@@ -1172,7 +1196,7 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "sovereignTokenAddress",
+				"name": "legacySovereignTokenAddress",
 				"type": "address"
 			}
 		],
@@ -1225,34 +1249,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint32",
-				"name": "originNetwork",
-				"type": "uint32"
-			},
-			{
-				"internalType": "address",
-				"name": "originTokenAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "sovereignTokenAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "bool",
-				"name": "isNotMintable",
-				"type": "bool"
-			}
-		],
-		"name": "setSovereignTokenAddress",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "address",
 				"name": "sovereignWETHTokenAddress",
 				"type": "address"
@@ -1285,6 +1281,24 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint32[]",
+				"name": "leafIndexes",
+				"type": "uint32[]"
+			},
+			{
+				"internalType": "uint32[]",
+				"name": "sourceBridgeNetworks",
+				"type": "uint32[]"
+			}
+		],
+		"name": "unsetMultipleClaimedBitmap",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{

@@ -25,7 +25,7 @@ func TestGetClaimProofbyGER(t *testing.T) {
 	exitRoot := etherman.GlobalExitRoot{
 		ExitRoots: []common.Hash{{}, {}},
 	}
-	mockStorage.EXPECT().GetExitRootByGER(mock.Anything, GER, mock.Anything).Return(&exitRoot, nil)
+	mockStorage.EXPECT().GetL1ExitRootByGER(mock.Anything, GER, mock.Anything).Return(&exitRoot, nil)
 	node := [][]byte{{}, {}}
 	mockStorage.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(node, nil)
 	smtProof, smtRollupProof, globaExitRoot, err := sut.GetClaimProofbyGER(depositCnt, networkID, GER, nil)

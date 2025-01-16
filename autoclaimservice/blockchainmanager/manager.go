@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/claimcompressor"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	zkevmtypes "github.com/0xPolygonHermez/zkevm-node/config/types"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmbridge"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
@@ -31,7 +31,7 @@ const (
 // Client is a simple implementation of EtherMan.
 type Client struct {
 	EtherClient     *ethclient.Client
-	PolygonBridge   *polygonzkevmbridge.Polygonzkevmbridge
+	PolygonBridge   *polygonzkevmbridgev2.Polygonzkevmbridgev2
 	ClaimCompressor *claimcompressor.Claimcompressor
 	NetworkID       uint32
 	cfg             *Config
@@ -49,7 +49,7 @@ func NewClient(ctx context.Context, cfg *Config) (*Client, error) {
 		return nil, err
 	}
 	// Create smc clients
-	bridge, err := polygonzkevmbridge.NewPolygonzkevmbridge(cfg.PolygonBridgeAddress, ethClient)
+	bridge, err := polygonzkevmbridgev2.NewPolygonzkevmbridgev2(cfg.PolygonBridgeAddress, ethClient)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +143,7 @@ func (bm *Client) SendClaim(leafType, origNet uint32,
 	if leafType == LeafTypeAsset {
 		tx, err = bm.PolygonBridge.ClaimAsset(bm.auth, smtProof, smtRollupProof, globalIndex, mainnetExitRoot, rollupExitRoot, origNet, origAddr, destNet, destAddr, amount, metadata)
 		if err != nil {
-			a, _ := polygonzkevmbridge.PolygonzkevmbridgeMetaData.GetAbi()
+			a, _ := polygonzkevmbridgev2.Polygonzkevmbridgev2MetaData.GetAbi()
 			input, err3 := a.Pack("claimAsset", smtProof, smtRollupProof, globalIndex, mainnetExitRoot, rollupExitRoot, origNet, origAddr, destNet, destAddr, amount, metadata)
 			if err3 != nil {
 				bm.logger.Error("error packing call. Error: ", err3)

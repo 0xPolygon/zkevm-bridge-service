@@ -15,7 +15,6 @@ import (
 type ethermanInterface interface {
 	HeaderByNumber(ctx context.Context, number *big.Int) (*types.Header, error)
 	GetRollupInfoByBlockRange(ctx context.Context, fromBlock uint64, toBlock *uint64) ([]etherman.Block, map[common.Hash][]etherman.Order, error)
-	EthBlockByNumber(ctx context.Context, blockNumber uint64) (*types.Block, error)
 	GetNetworkID() uint32
 }
 
@@ -35,9 +34,10 @@ type storageInterface interface {
 	AddTrustedGlobalExitRoot(ctx context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx pgx.Tx) (bool, error)
 	GetLatestL1SyncedExitRoot(ctx context.Context, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error)
 	CheckIfRootExists(ctx context.Context, root []byte, network uint32, dbTx pgx.Tx) (bool, error)
-	GetExitRootByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error)
+	GetL1ExitRootByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error)
 	GetL2ExitRootsByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) ([]etherman.GlobalExitRoot, error)
 	UpdateL2GER(ctx context.Context, ger etherman.GlobalExitRoot, dbTx pgx.Tx) error
+	AddRemoveL2GER(ctx context.Context, globalExitRoot etherman.GlobalExitRoot, dbTx pgx.Tx) error
 }
 
 type bridgectrlInterface interface {

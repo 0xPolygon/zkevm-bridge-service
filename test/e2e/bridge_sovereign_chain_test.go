@@ -14,6 +14,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/operations"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,6 +27,7 @@ func TestSovereignChainE2E(t *testing.T) {
 	ctx := context.Background()
 	// rpcURL := "http://localhost:8123"
 	// bridgeAddress := common.HexToAddress("0x71C95911E9a5D330f4D621842EC243EE1343292e")
+	l2PolygonZkEVMGlobalExitRootAddress := common.HexToAddress("0x712516e61C8B383dF4A63CFe83d7701Bce54B03e")
 	opsCfg := &operations.Config{
 		L1NetworkURL: "http://localhost:8545",
 		L2NetworkURL: "http://localhost:8123",
@@ -146,5 +148,31 @@ func TestSovereignChainE2E(t *testing.T) {
 		// require.NoError(t, err)
 		// require.True(t, big.NewInt(9000000000000000000).Cmp(balance) > 0)
 		log.Debug("L1-L2 eth bridge end")
+	})
+	t.Run("Remove GER bridge", func(t *testing.T) {
+		// Check globalExitRoot
+		var networkID uint32 = 1
+		globalExitRoot, err := opsman.GetTrustedGlobalExitRootSynced(ctx, networkID)
+		require.NoError(t, err)
+
+		// Remove GER bridge transaction
+		err = opsman.RemoveL2GER(ctx, l2PolygonZkEVMGlobalExitRootAddress, []common.Hash{globalExitRoot.GlobalExitRoot}, networkID, operations.L222)
+		require.NoError(t, err)
+
+		globalExitRoot2, err := opsman.GetTrustedGlobalExitRootSynced(ctx, networkID)
+		require.NoError(t, err)
+		require.NotEqual(t, globalExitRoot.ExitRoots[0], globalExitRoot2.ExitRoots[0])
+		require.Equal(t, globalExitRoot.ExitRoots[1], globalExitRoot2.ExitRoots[1])
+		require.NotEqual(t, globalExitRoot.GlobalExitRoot, globalExitRoot2.GlobalExitRoot)
+
+		// Get Bridge Info By DestAddr
+		destAddr := common.HexToAddress("0xc949254d682d8c9ad5682521675b8f43b102aec4")
+		deposits, err := opsman.GetBridgeInfoByDestAddr(ctx, &destAddr)
+		require.NoError(t, err)
+		assert.Equal(t, 1, len(deposits))
+		assert.Equal(t, false, deposits[0].ReadyForClaim)
+		assert.Equal(t, "0xC949254d682D8c9ad5682521675b8F43b102aec4", deposits[0].DestAddr)
+
+		log.Debug("Remove GER bridge end")
 	})
 }
