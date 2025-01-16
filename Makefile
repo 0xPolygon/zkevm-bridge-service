@@ -479,7 +479,7 @@ test-e2ecompress: build-docker stop run-multi-single-bridge ## Runs all tests ch
 	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -v -failfast -race -p 1 -timeout 2400s ./test/e2e/... -count 1 -tags='e2ecompress'
 
 .PHONY: test-sovereignchain
-test-sovereignchain: build-docker stop run-multi-single-bridge ## Runs all tests checking race conditions
+test-sovereignchain: build-docker stop run-sovereign-chain ## Runs all tests checking race conditions
 	sleep 3
 	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -v -failfast -race -p 1 -timeout 2400s ./test/e2e/... -count 1 -tags='sovereignchain'
 
