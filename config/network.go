@@ -13,7 +13,7 @@ type NetworkConfig struct {
 	PolygonRollupManagerAddress           common.Address
 	L2ClaimCompressorAddress              common.Address
 	L2PolygonBridgeAddresses              []common.Address
-	SovereignChains                       []bool
+	RequireSovereignChainSmcs             []bool
 	L2PolygonZkEVMGlobalExitRootAddresses []common.Address
 }
 
@@ -31,7 +31,7 @@ var (
 			PolygonRollupManagerAddress:           common.HexToAddress("0x0000000000000000000000000000000000000000"),
 			L2ClaimCompressorAddress:              common.HexToAddress("0x0000000000000000000000000000000000000000"),
 			L2PolygonBridgeAddresses:              []common.Address{common.HexToAddress("0x2a3DD3EB832aF982ec71669E178424b10Dca2EDe")},
-			SovereignChains:                       []bool{false},
+			RequireSovereignChainSmcs:             []bool{false},
 			L2PolygonZkEVMGlobalExitRootAddresses: []common.Address{common.HexToAddress("0x0000000000000000000000000000000000000000")},
 		},
 
@@ -42,7 +42,7 @@ var (
 			PolygonRollupManagerAddress:           common.HexToAddress("0x0000000000000000000000000000000000000000"),
 			L2ClaimCompressorAddress:              common.HexToAddress("0x0000000000000000000000000000000000000000"),
 			L2PolygonBridgeAddresses:              []common.Address{common.HexToAddress("0xF6BEEeBB578e214CA9E23B0e9683454Ff88Ed2A7")},
-			SovereignChains:                       []bool{false},
+			RequireSovereignChainSmcs:             []bool{false},
 			L2PolygonZkEVMGlobalExitRootAddresses: []common.Address{common.HexToAddress("0x0000000000000000000000000000000000000000")},
 		},
 		"internaltestnet": {
@@ -52,7 +52,7 @@ var (
 			PolygonRollupManagerAddress:           common.HexToAddress("0x0000000000000000000000000000000000000000"),
 			L2ClaimCompressorAddress:              common.HexToAddress("0x0000000000000000000000000000000000000000"),
 			L2PolygonBridgeAddresses:              []common.Address{common.HexToAddress("0xfC5b0c5F677a3f3E29DB2e98c9eD455c7ACfCf03")},
-			SovereignChains:                       []bool{false},
+			RequireSovereignChainSmcs:             []bool{false},
 			L2PolygonZkEVMGlobalExitRootAddresses: []common.Address{common.HexToAddress("0x0000000000000000000000000000000000000000")},
 		},
 		"local": {
@@ -62,7 +62,7 @@ var (
 			PolygonRollupManagerAddress:           common.HexToAddress("0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"),
 			L2ClaimCompressorAddress:              common.HexToAddress("0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"),
 			L2PolygonBridgeAddresses:              []common.Address{common.HexToAddress("0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E")},
-			SovereignChains:                       []bool{false},
+			RequireSovereignChainSmcs:             []bool{false},
 			L2PolygonZkEVMGlobalExitRootAddresses: []common.Address{common.HexToAddress("0xa40d5f56745a118d0906a34e69aec8c0db1cb8fa")},
 		},
 	}
