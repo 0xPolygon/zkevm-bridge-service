@@ -113,7 +113,10 @@ func start(ctx *cli.Context) error {
 		for {
 			select {
 			case netID := <-chSynced:
-				log.Debug("NetworkID synced: ", netID)
+				log.Debug("L1 Network synced. NetowrkID: ", netID)
+				for _, ch := range chsSyncedL2 {
+					ch <- netID
+				}
 			case <-ctx.Done():
 				log.Debug("Stopping goroutine that listen new GER updates")
 				return
