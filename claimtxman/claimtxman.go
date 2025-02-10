@@ -43,7 +43,7 @@ type ClaimTxManager struct {
 	auth            *bind.TransactOpts
 	rollupID        uint32
 	l2Synced        bool
-	l1Synced		bool
+	l1Synced        bool
 	nonceCache      *NonceCache
 	monitorTxs      types.TxMonitorer
 }
