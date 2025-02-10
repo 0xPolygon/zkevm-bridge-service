@@ -110,7 +110,7 @@ func (tm *ClaimTxManager) Start() {
 				tm.l2Synced = true
 			}
 			if netID == 0 && !tm.l1Synced {
-				log.Info("RollupID: %d, L1 network synced. GERs ready for ClaimTxManager", tm.rollupID)
+				log.Infof("RollupID: %d, L1 network synced. GERs ready for ClaimTxManager", tm.rollupID)
 				tm.l1Synced = true
 			}
 		case ger = <-tm.chExitRootEvent:
