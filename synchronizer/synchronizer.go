@@ -412,7 +412,7 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 		for _, element := range order[blocks[i].BlockHash] {
 			switch element.Name {
 			case etherman.GlobalExitRootsOrder:
-				if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 2 {
+				if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 2 { //nolint:gomnd
 					isNewL1Ger = true
 				} else if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 0 {
 					isNewL2Ger = true
