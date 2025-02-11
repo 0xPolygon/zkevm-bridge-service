@@ -796,6 +796,66 @@ func (_c *storageMock_GetLatestL1SyncedExitRoot_Call) RunAndReturn(run func(cont
 	return _c
 }
 
+// GetLatestTrustedExitRoot provides a mock function with given fields: ctx, networkID, dbTx
+func (_m *storageMock) GetLatestTrustedExitRoot(ctx context.Context, networkID uint32, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error) {
+	ret := _m.Called(ctx, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestTrustedExitRoot")
+	}
+
+	var r0 *etherman.GlobalExitRoot
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, pgx.Tx) (*etherman.GlobalExitRoot, error)); ok {
+		return rf(ctx, networkID, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, pgx.Tx) *etherman.GlobalExitRoot); ok {
+		r0 = rf(ctx, networkID, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*etherman.GlobalExitRoot)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, pgx.Tx) error); ok {
+		r1 = rf(ctx, networkID, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// storageMock_GetLatestTrustedExitRoot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLatestTrustedExitRoot'
+type storageMock_GetLatestTrustedExitRoot_Call struct {
+	*mock.Call
+}
+
+// GetLatestTrustedExitRoot is a helper method to define mock.On call
+//   - ctx context.Context
+//   - networkID uint32
+//   - dbTx pgx.Tx
+func (_e *storageMock_Expecter) GetLatestTrustedExitRoot(ctx interface{}, networkID interface{}, dbTx interface{}) *storageMock_GetLatestTrustedExitRoot_Call {
+	return &storageMock_GetLatestTrustedExitRoot_Call{Call: _e.mock.On("GetLatestTrustedExitRoot", ctx, networkID, dbTx)}
+}
+
+func (_c *storageMock_GetLatestTrustedExitRoot_Call) Run(run func(ctx context.Context, networkID uint32, dbTx pgx.Tx)) *storageMock_GetLatestTrustedExitRoot_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *storageMock_GetLatestTrustedExitRoot_Call) Return(_a0 *etherman.GlobalExitRoot, _a1 error) *storageMock_GetLatestTrustedExitRoot_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *storageMock_GetLatestTrustedExitRoot_Call) RunAndReturn(run func(context.Context, uint32, pgx.Tx) (*etherman.GlobalExitRoot, error)) *storageMock_GetLatestTrustedExitRoot_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetNumberDeposits provides a mock function with given fields: ctx, origNetworkID, blockNumber, dbTx
 func (_m *storageMock) GetNumberDeposits(ctx context.Context, origNetworkID uint32, blockNumber uint64, dbTx pgx.Tx) (uint32, error) {
 	ret := _m.Called(ctx, origNetworkID, blockNumber, dbTx)

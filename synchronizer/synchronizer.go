@@ -386,7 +386,7 @@ func removeBlockElement(slice []etherman.Block, s int) []etherman.Block {
 
 func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order map[common.Hash][]etherman.Order) error {
 	// New info has to be included into the db using the state
-	var isNewGer bool
+	var isNewL1Ger, isNewL2Ger bool
 	for i := range blocks {
 		// Begin db transaction
 		dbTx, err := s.storage.BeginDBTransaction(s.ctx)
@@ -412,7 +412,11 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 		for _, element := range order[blocks[i].BlockHash] {
 			switch element.Name {
 			case etherman.GlobalExitRootsOrder:
-				isNewGer = true
+				if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 2 { //nolint:gomnd
+					isNewL1Ger = true
+				} else if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 0 {
+					isNewL2Ger = true
+				}
 				err = s.processGlobalExitRoot(blocks[i].GlobalExitRoots[element.Pos], blockID, dbTx)
 				if err != nil {
 					return err
@@ -457,7 +461,7 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 			return err
 		}
 	}
-	if isNewGer {
+	if isNewL1Ger {
 		// Send latest GER stored to claimTxManager
 		ger, err := s.storage.GetLatestL1SyncedExitRoot(s.ctx, nil)
 		if err != nil {
@@ -471,6 +475,16 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				ch <- ger
 			}
 		}
+	}
+	if isNewL2Ger {
+		// Send latest GER synced in L2 to claimTxManager
+		ger, err := s.storage.GetLatestTrustedExitRoot(s.ctx, s.networkID, nil)
+		if err != nil {
+			log.Errorf("networkID: %d, error getting latest GER stored on database. Error: %v", s.networkID, err)
+			return err
+		}
+		log.Infof("networkID: %d, adding L2 ger to the channel. GER: %s", s.networkID, ger.GlobalExitRoot.String())
+		s.chExitRootEventL2 <- ger
 	}
 	return nil
 }
@@ -735,8 +749,6 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 			}
 			return err
 		}
-		log.Infof("networkID: %d, adding L2 ger to the channel. GER: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
-		s.chExitRootEventL2 <- &globalExitRoot
 	} else {
 		return fmt.Errorf("networkID: %d, error exitRoots have a wrong length. Length: %d", s.networkID, len(globalExitRoot.ExitRoots))
 	}
