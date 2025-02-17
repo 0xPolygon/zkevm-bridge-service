@@ -15,7 +15,7 @@ type Config struct {
 	// MaxPageLimit is the maximum page limit for pagination
 	MaxPageLimit uint32 `mapstructure:"MaxPageLimit"`
 	// Version is the version of the bridge service
-	BridgeVersion string `mapstructure:"BridgeVersion"`
+	BridgeVersion string
 	// DB is the database config
 	DB db.Config `mapstructure:"DB"`
 }
