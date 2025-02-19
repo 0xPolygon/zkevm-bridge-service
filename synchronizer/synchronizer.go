@@ -631,6 +631,7 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock, syncedBlock *etherman
 				return nil, err
 			}
 			reorgedBlock = *lb
+			metrics.ReorgedBlockCounter()
 		} else {
 			log.Debugf("networkID: %d, checkReorg: Block %d hashOk %t parentHashOk %t", s.networkID, reorgedBlock.BlockNumber, block.BlockHash == reorgedBlock.BlockHash, block.ParentHash == reorgedBlock.ParentHash)
 			break
@@ -641,6 +642,7 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock, syncedBlock *etherman
 	if latestStoredEthBlock.BlockHash != reorgedBlock.BlockHash {
 		latestStoredBlock = &reorgedBlock
 		log.Info("NetworkID: ", s.networkID, ", reorg detected in block: ", latestStoredEthBlock.BlockNumber, " last block OK: ", latestStoredBlock.BlockNumber)
+		metrics.ReorgCounter()
 		return latestStoredBlock, nil
 	}
 	log.Debugf("NetworkID: %d, no reorg detected in block: %d. BlockHash: %s", s.networkID, latestStoredEthBlock.BlockNumber, latestStoredEthBlock.BlockHash.String())

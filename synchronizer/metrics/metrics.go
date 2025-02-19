@@ -50,6 +50,12 @@ const (
 
 	// ClaimCounterName is the name of the label to count the processed claims.
 	ClaimCounterName = "processed_claim_counter"
+
+	// ReorgCounterName is the name of the label to count the reorgs.
+	ReorgCounterName = "reorg_counter"
+
+	// ReorgCounterName is the name of the label to count the block reorgs.
+	ReorgedBlockCounterName = "reorged_block_counter"
 )
 
 var Prefix string
@@ -82,6 +88,14 @@ func Register(networkID uint32) {
 		{
 			Name: Prefix + ClaimCounterName,
 			Help: "[SYNCHRONIZER] count processed claim events",
+		},
+		{
+			Name: Prefix + ReorgCounterName,
+			Help: "[SYNCHRONIZER] count the number of reorgs",
+		},
+		{
+			Name: Prefix + ReorgedBlockCounterName,
+			Help: "[SYNCHRONIZER] count the reorged blocks",
 		},
 	}
 	histograms := []prometheus.HistogramOpts{
@@ -199,4 +213,14 @@ func L2GERCounter() {
 // L1GERCounter increases the counter for the processed L1GER
 func L1GERCounter() {
 	metrics.CounterInc(Prefix + L1GERCounterName)
+}
+
+// ReorgCounter increases the counter each reorg
+func ReorgCounter() {
+	metrics.CounterInc(Prefix + ReorgCounterName)
+}
+
+// ReorgedBlockCounter increases the counter for the processed Reorged Block
+func ReorgedBlockCounter() {
+	metrics.CounterInc(Prefix + ReorgedBlockCounterName)
 }
