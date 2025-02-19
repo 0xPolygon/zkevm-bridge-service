@@ -11,6 +11,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/metrics"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
@@ -25,6 +26,8 @@ type Config struct {
 	Synchronizer     synchronizer.Config
 	BridgeController bridgectrl.Config
 	BridgeServer     server.Config
+	// Configuration of the metrics service where metrics will be published
+	Metrics metrics.Config
 	NetworkConfig
 }
 

@@ -69,6 +69,11 @@ BridgeVersion = "v1"
     Host = "zkevm-bridge-db"
     Port = "5432"
     MaxConns = 20
+
+[Metrics]
+Enabled = false
+Host = "0.0.0.0"
+Port = 9091
 `
 
 // Default parses the default configuration values.

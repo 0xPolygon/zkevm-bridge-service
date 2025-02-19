@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"net"
+	"net/http"
 	"runtime"
+	"time"
 
 	zkevmbridgeservice "github.com/0xPolygonHermez/zkevm-bridge-service"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl"
@@ -15,10 +18,12 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/metrics"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/0xPolygonHermez/zkevm-node/jsonrpc/client"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/urfave/cli/v2"
 )
 
@@ -47,6 +52,10 @@ func start(ctx *cli.Context) error {
 	if err != nil {
 		log.Error(err)
 		return err
+	}
+	if c.Metrics.Enabled {
+		metrics.Init()
+		go startMetricsHttpServer(c.Metrics)
 	}
 
 	l1Etherman, l2Ethermans, err := newEthermans(c)
@@ -255,5 +264,32 @@ func runSynchronizer(ctx context.Context, genBlockNumber uint64, brdigeCtrl *bri
 	}
 	if err := sy.Sync(); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func startMetricsHttpServer(c metrics.Config) {
+	const ten = 10
+	mux := http.NewServeMux()
+	address := fmt.Sprintf("%s:%d", c.Host, c.Port)
+	lis, err := net.Listen("tcp", address)
+	if err != nil {
+		log.Errorf("failed to create tcp listener for metrics: %v", err)
+		return
+	}
+	mux.Handle(metrics.Endpoint, promhttp.Handler())
+
+	metricsServer := &http.Server{
+		Handler:           mux,
+		ReadHeaderTimeout: ten * time.Second,
+		ReadTimeout:       ten * time.Second,
+	}
+	log.Infof("metrics server listening on port %d", c.Port)
+	if err := metricsServer.Serve(lis); err != nil {
+		if err == http.ErrServerClosed {
+			log.Warnf("http server for metrics stopped")
+			return
+		}
+		log.Errorf("closed http connection for metrics server: %v", err)
+		return
 	}
 }
