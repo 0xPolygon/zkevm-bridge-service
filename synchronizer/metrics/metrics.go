@@ -56,6 +56,9 @@ const (
 
 	// ReorgCounterName is the name of the label to count the block reorgs.
 	ReorgedBlockCounterName = "reorged_block_counter"
+
+	// WrappedTokensCounterName is the name of the label to count the wrapped tokens.
+	WrappedTokensCounterName = "processed_wrapped_tokens_counter"
 )
 
 var Prefix string
@@ -96,6 +99,10 @@ func Register(networkID uint32) {
 		{
 			Name: Prefix + ReorgedBlockCounterName,
 			Help: "[SYNCHRONIZER] count the reorged blocks",
+		},
+		{
+			Name: Prefix + WrappedTokensCounterName,
+			Help: "[SYNCHRONIZER] count the wrapped tokens",
 		},
 	}
 	histograms := []prometheus.HistogramOpts{
@@ -221,6 +228,11 @@ func ReorgCounter() {
 }
 
 // ReorgedBlockCounter increases the counter for the processed Reorged Block
-func ReorgedBlockCounter() {
+func ReorgedBlocksCounter() {
 	metrics.CounterInc(Prefix + ReorgedBlockCounterName)
+}
+
+// WrappedTokensCounter increases the counter for the processed wrappedTokens
+func WrappedTokensCounter() {
+	metrics.CounterInc(Prefix + WrappedTokensCounterName)
 }

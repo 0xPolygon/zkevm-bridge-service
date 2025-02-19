@@ -631,7 +631,7 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock, syncedBlock *etherman
 				return nil, err
 			}
 			reorgedBlock = *lb
-			metrics.ReorgedBlockCounter()
+			metrics.ReorgedBlocksCounter()
 		} else {
 			log.Debugf("networkID: %d, checkReorg: Block %d hashOk %t parentHashOk %t", s.networkID, reorgedBlock.BlockNumber, block.BlockHash == reorgedBlock.BlockHash, block.ParentHash == reorgedBlock.ParentHash)
 			break
@@ -844,6 +844,7 @@ func (s *ClientSynchronizer) processTokenWrapped(tokenWrapped etherman.TokenWrap
 		}
 		return err
 	}
+	metrics.WrappedTokensCounter()
 	return nil
 }
 
