@@ -65,6 +65,12 @@ const (
 
 	// WrappedTokensCounterName is the name of the label to count the wrapped tokens.
 	WrappedTokensCounterName = "processed_wrapped_tokens_counter"
+
+	// CurrentPendingBridgesToClaimName is the name of the label to count the current pending bridges to claim.
+	CurrentPendingBridgesToClaimName = "current_pending_bridges_to_claim"
+
+	// LatestBlockSyncedName is the name of the label to get the latest block synced.
+	LatestBlockSyncedName = "latest_block_synced"
 )
 
 var Prefix string
@@ -73,6 +79,17 @@ var Prefix string
 func Register(networkID uint32) {
 	// Prefix for the metrics of the synchronizer package.
 	Prefix = "synchronizer_networkID_" + fmt.Sprintf("%d", networkID) + "_"
+
+	gauges := []prometheus.GaugeOpts{
+		{
+			Name: Prefix + CurrentPendingBridgesToClaimName,
+			Help: "[SYNCHRONIZER] current pending deposits to claim",
+		},
+		{
+			Name: Prefix + LatestBlockSyncedName,
+			Help: "[SYNCHRONIZER] latest block synced",
+		},
+	}
 	counters := []prometheus.CounterOpts{
 		{
 			Name: Prefix + DepositCounterName,
@@ -156,6 +173,27 @@ func Register(networkID uint32) {
 
 	metrics.RegisterHistograms(histograms...)
 	metrics.RegisterCounters(counters...)
+	metrics.RegisterGauges(gauges...)
+}
+
+// LatestBlockSynced sets the latest block synced on the gauge.
+func LatestBlockSynced(blockNumber uint64) {
+	// Be careful, this uint64 to float64 converion can overflow
+	metrics.GaugeSet(Prefix + LatestBlockSyncedName, float64(blockNumber))
+}
+
+// IncrementsPendingBridgesToClaim increments the current pending bridges to claim on the gauge.
+func IncrementsPendingBridgesToClaim(destNetwork uint32) {
+	// This method modify the metric on the destination network.
+	// It won't do nothing if the dest network is not synced and the metrics in the dest network are not registered.
+	prefixKey := "synchronizer_networkID_" + fmt.Sprintf("%d", destNetwork) + "_"
+	metrics.GaugeInc(prefixKey + CurrentPendingBridgesToClaimName)
+}
+
+// DecrementsPendingBridgesToClaim decrements the current pending bridges to claim on the gauge.
+func DecrementsPendingBridgesToClaim() {
+	// Decrements the current pending bridges to claim on the network that received the claim.
+	metrics.GaugeDec(Prefix + CurrentPendingBridgesToClaimName)
 }
 
 // DepositCntValue observes the value of the depositCnt on the histogram.
