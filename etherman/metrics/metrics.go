@@ -69,25 +69,25 @@ func Register(networkID uint32) {
 // ReadAndProcessAllEventsTime observes the time read and process all event on the histogram.
 func ReadAndProcessAllEventsTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + ReadAndProcessAllEventsTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+ReadAndProcessAllEventsTimeName, execTimeInSeconds)
 }
 
 // ProcessAllEventTime observes the time to process all event on the histogram.
 func ProcessAllEventTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + ProcessAllEventTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+ProcessAllEventTimeName, execTimeInSeconds)
 }
 
 // ProcessSingleEventTime observes the time to process a single event on the histogram.
 func ProcessSingleEventTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + ProcessSingleEventTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+ProcessSingleEventTimeName, execTimeInSeconds)
 }
 
 // GetEventsTime observes the time to get the events from L1 on the histogram.
 func GetEventsTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + GetEventsTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+GetEventsTimeName, execTimeInSeconds)
 }
 
 // EventCounter increases the counter for the processed events

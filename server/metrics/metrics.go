@@ -85,7 +85,7 @@ func Register(networkID uint32) {
 		{
 			Name: GetPendingBridgesToClaimCounterName,
 			Help: "[API] count the number of requests to GetPendingBridgesToClaim endpoint",
-		},	
+		},
 	}
 
 	histograms = []prometheus.HistogramOpts{
@@ -131,36 +131,43 @@ func CheckAPILatency(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
 	metrics.HistogramObserve(CheckAPILatencyName, execTimeInSeconds)
 }
+
 // GetBridgesLatency observes the latency of the endpoint and shows it on the histogram.
 func GetBridgesLatency(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
 	metrics.HistogramObserve(GetBridgesLatencyName, execTimeInSeconds)
 }
+
 // GetClaimsLatency observes the latency of the endpoint and shows it on the histogram.
 func GetClaimsLatency(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
 	metrics.HistogramObserve(GetClaimsLatencyName, execTimeInSeconds)
 }
+
 // GetProofLatency observes the latency of the endpoint and shows it on the histogram.
 func GetProofLatency(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
 	metrics.HistogramObserve(GetProofLatencyName, execTimeInSeconds)
 }
+
 // GetBridgeLatency observes the latency of the endpoint and shows it on the histogram.
 func GetBridgeLatency(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
 	metrics.HistogramObserve(GetBridgeLatencyName, execTimeInSeconds)
 }
+
 // GetTokenWrappedLatency observes the latency of the endpoint and shows it on the histogram.
 func GetTokenWrappedLatency(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
 	metrics.HistogramObserve(GetTokenWrappedLatencyName, execTimeInSeconds)
 }
+
 // GetProofByGERLatency observes the latency of the endpoint and shows it on the histogram.
 func GetProofByGERLatency(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
 	metrics.HistogramObserve(GetProofByGERLatencyName, execTimeInSeconds)
 }
+
 // GetPendingBridgesToClaimLatency observes the latency of the endpoint and shows it on the histogram.
 func GetPendingBridgesToClaimLatency(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
@@ -171,30 +178,37 @@ func GetPendingBridgesToClaimLatency(lastProcessTime time.Duration) {
 func CheckAPICounter() {
 	metrics.CounterInc(CheckAPICounterName)
 }
+
 // GetBridgesCounter increases the counter for the GetBridges endpoint
 func GetBridgesCounter() {
 	metrics.CounterInc(GetBridgesCounterName)
 }
+
 // GetClaimsCounter increases the counter for the GetClaims endpoint
 func GetClaimsCounter() {
 	metrics.CounterInc(GetClaimsCounterName)
 }
+
 // GetProofCounter increases the counter for the GetProof endpoint
 func GetProofCounter() {
 	metrics.CounterInc(GetProofCounterName)
 }
+
 // GetBridgeCounter increases the counter for the GetBridge endpoint
 func GetBridgeCounter() {
 	metrics.CounterInc(GetBridgeCounterName)
 }
+
 // GetTokenWrappedCounter increases the counter for the GetTokenWrapped endpoint
 func GetTokenWrappedCounter() {
 	metrics.CounterInc(GetTokenWrappedCounterName)
 }
+
 // GetProofByGERCounter increases the counter for the GetProofByGER endpoint
 func GetProofByGERCounter() {
 	metrics.CounterInc(GetProofByGERCounterName)
 }
+
 // GetPendingBridgesToClaimCounter increases the counter for the GetPendingBridgesToClaim endpoint
 func GetPendingBridgesToClaimCounter() {
 	metrics.CounterInc(GetPendingBridgesToClaimCounterName)

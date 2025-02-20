@@ -179,7 +179,7 @@ func Register(networkID uint32) {
 // LatestBlockSynced sets the latest block synced on the gauge.
 func LatestBlockSynced(blockNumber uint64) {
 	// Be careful, this uint64 to float64 converion can overflow
-	metrics.GaugeSet(Prefix + LatestBlockSyncedName, float64(blockNumber))
+	metrics.GaugeSet(Prefix+LatestBlockSyncedName, float64(blockNumber))
 }
 
 // IncrementsPendingBridgesToClaim increments the current pending bridges to claim on the gauge.
@@ -198,60 +198,60 @@ func DecrementsPendingBridgesToClaim() {
 
 // DepositCntValue observes the value of the depositCnt on the histogram.
 func DepositCntValue(depositCnt uint32) {
-	metrics.HistogramObserve(Prefix + DepositCntValueName, float64(depositCnt))
+	metrics.HistogramObserve(Prefix+DepositCntValueName, float64(depositCnt))
 }
 
 // ClaimIndexValue observes the value of the ClaimIndex on the histogram.
 func ClaimIndexValue(index uint32) {
-	metrics.HistogramObserve(Prefix + ClaimIndexValueName, float64(index))
+	metrics.HistogramObserve(Prefix+ClaimIndexValueName, float64(index))
 }
 
 // InitializationTime observes the time initializing the synchronizer on the histogram.
 func InitializationTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + InitializationTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+InitializationTimeName, execTimeInSeconds)
 }
 
 // FullTrustedSyncTime observes the time for synchronize the trusted state on the histogram.
 func FullTrustedSyncTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + FullTrustedSyncTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+FullTrustedSyncTimeName, execTimeInSeconds)
 }
 
 // FullL1SyncTime observes the time for synchronize the trusted state on the histogram.
 func FullL1SyncTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + FullL1SyncTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+FullL1SyncTimeName, execTimeInSeconds)
 }
 
 // FullSyncIterationTime observes the time for synchronize the trusted state on the histogram.
 func FullSyncIterationTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + FullSyncIterationTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+FullSyncIterationTimeName, execTimeInSeconds)
 }
 
 // ReadL1DataTime observes the time for synchronize the trusted state on the histogram.
 func ReadL1DataTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + ReadL1DataTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+ReadL1DataTimeName, execTimeInSeconds)
 }
 
 // ProcessL1DataTime observes the time for synchronize the trusted state on the histogram.
 func ProcessL1DataTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + ProcessL1DataTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+ProcessL1DataTimeName, execTimeInSeconds)
 }
 
 // GetTrustedGerTime observes the time for synchronize the trusted state on the histogram.
 func GetTrustedGerTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + GetTrustedGerTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+GetTrustedGerTimeName, execTimeInSeconds)
 }
 
 // GetTrustedExitRootsTime observes the time for synchronize the trusted state on the histogram.
 func GetTrustedExitRootsTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix + GetTrustedExitRootsTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(Prefix+GetTrustedExitRootsTimeName, execTimeInSeconds)
 }
 
 // DepositCounter increases the counter for the processed deposits
