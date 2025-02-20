@@ -33,6 +33,12 @@ const (
 	// GetTrustedExitRootsTimeName is the name of the label to get trusted ExitRoots.
 	GetTrustedExitRootsTimeName = "get_trusted_exitroots_time"
 
+	// DepositCntValueName is the name of the label that gets the deposit counter value.
+	DepositCntValueName = "deposit_cnt_value"
+
+	// ClaimIndexValueName is the name of the label that gets the claim index value.
+	ClaimIndexValueName = "claim_index_value"
+
 	// DepositCounterName is the name of the label to count the processed deposits.
 	DepositCounterName = "processed_deposit_counter"
 
@@ -138,10 +144,28 @@ func Register(networkID uint32) {
 			Name: Prefix + GetTrustedExitRootsTimeName,
 			Help: "[SYNCHRONIZER] get trusted ExitRoots time",
 		},
+		{
+			Name: Prefix + DepositCntValueName,
+			Help: "[SYNCHRONIZER] deposit counter value",
+		},
+		{
+			Name: Prefix + ClaimIndexValueName,
+			Help: "[SYNCHRONIZER] claim index value",
+		},
 	}
 
 	metrics.RegisterHistograms(histograms...)
 	metrics.RegisterCounters(counters...)
+}
+
+// DepositCntValue observes the value of the depositCnt on the histogram.
+func DepositCntValue(depositCnt uint32) {
+	metrics.HistogramObserve(Prefix + DepositCntValueName, float64(depositCnt))
+}
+
+// ClaimIndexValue observes the value of the ClaimIndex on the histogram.
+func ClaimIndexValue(index uint32) {
+	metrics.HistogramObserve(Prefix + ClaimIndexValueName, float64(index))
 }
 
 // InitializationTime observes the time initializing the synchronizer on the histogram.
