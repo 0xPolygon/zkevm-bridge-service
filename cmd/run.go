@@ -89,6 +89,7 @@ func start(ctx *cli.Context) error {
 		log.Error(err)
 		return err
 	}
+	c.BridgeServer.BridgeVersion = zkevmbridgeservice.Version
 	bridgeService := server.NewBridgeService(c.BridgeServer, c.BridgeController.Height, networkIDs, apiStorage)
 	err = server.RunServer(c.BridgeServer, bridgeService)
 	if err != nil {
