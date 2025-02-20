@@ -73,7 +73,7 @@ BridgeVersion = "v1"
 [Metrics]
 Enabled = false
 Host = "0.0.0.0"
-Port = 9091
+Port = 8090
 `
 
 // Default parses the default configuration values.

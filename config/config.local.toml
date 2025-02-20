@@ -71,4 +71,4 @@ L2PolygonZkEVMGlobalExitRootAddresses = ["0xa40d5f56745a118d0906a34e69aec8c0db1c
 [Metrics]
 Enabled = false
 Host = "0.0.0.0"
-Port = 9091
+Port = 8090
