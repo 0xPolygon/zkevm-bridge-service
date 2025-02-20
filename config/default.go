@@ -60,7 +60,6 @@ HTTPPort = "8080"
 DefaultPageLimit = 25
 CacheSize = 100000
 MaxPageLimit = 100
-BridgeVersion = "v1"
     [BridgeServer.DB]
     Database = "postgres"
     User = "test_user"
