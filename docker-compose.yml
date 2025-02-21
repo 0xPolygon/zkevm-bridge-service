@@ -190,6 +190,7 @@ services:
     ports:
       - 8080:8080
       - 9090:9090
+      - 8090:8090
     environment:
       - ZKEVM_BRIDGE_SYNCDB_USER=test_user
       - ZKEVM_BRIDGE_SYNCDB_PASSWORD=test_password
@@ -217,6 +218,7 @@ services:
     ports:
       - 8080:8080
       - 9090:9090
+      - 8090:8090
     environment:
       - ZKEVM_BRIDGE_SYNCDB_USER=test_user
       - ZKEVM_BRIDGE_SYNCDB_PASSWORD=test_password
@@ -394,6 +396,7 @@ services:
     ports:
       - 8080:8080
       - 9090:9090
+      - 8090:8090
     environment:
       - ZKEVM_BRIDGE_SYNCDB_USER=test_user
       - ZKEVM_BRIDGE_SYNCDB_PASSWORD=test_password
@@ -458,6 +461,7 @@ services:
     ports:
       - 8080:8080
       - 9090:9090
+      - 8090:8090
     environment:
       - ZKEVM_BRIDGE_SYNCDB_USER=test_user
       - ZKEVM_BRIDGE_SYNCDB_PASSWORD=test_password
@@ -495,6 +499,7 @@ services:
     ports:
       - 8080:8080
       - 9090:9090
+      - 8090:8090
     environment:
       - ZKEVM_BRIDGE_SYNCDB_USER=test_user
       - ZKEVM_BRIDGE_SYNCDB_PASSWORD=test_password
