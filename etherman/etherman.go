@@ -8,6 +8,7 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/metrics"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/claimcompressor"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/globalexitrootmanagerl2sovereignchain"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
@@ -171,6 +172,8 @@ func NewClient(cfg Config, polygonBridgeAddr, polygonZkEVMGlobalExitRootAddress,
 	var scAddresses []common.Address
 	scAddresses = append(scAddresses, polygonZkEVMGlobalExitRootAddress, polygonBridgeAddr, polygonRollupManagerAddress)
 
+	metrics.Register(0)
+
 	return &Client{
 		logger:                     logger,
 		EtherClient:                ethClient,
@@ -224,6 +227,9 @@ func NewL2Client(url string, polygonBridgeAddress, claimCompressorAddress, polyg
 		}
 		scAddresses = append(scAddresses, polygonZkEVMGlobalExitRootAddress)
 	}
+
+	metrics.Register(networkID)
+
 	return &Client{
 		logger:              logger,
 		EtherClient:         ethClient,
@@ -262,19 +268,27 @@ type Order struct {
 }
 
 func (etherMan *Client) readEvents(ctx context.Context, query ethereum.FilterQuery) ([]Block, map[common.Hash][]Order, error) {
+	start := time.Now()
 	logs, err := etherMan.EtherClient.FilterLogs(ctx, query)
+	metrics.GetEventsTime(time.Since(start))
 	if err != nil {
 		return nil, nil, err
 	}
 	var blocks []Block
 	blocksOrder := make(map[common.Hash][]Order)
+	startProcess := time.Now()
 	for _, vLog := range logs {
+		startProcessSingleEvent := time.Now()
 		err := etherMan.processEvent(ctx, vLog, &blocks, &blocksOrder)
+		metrics.ProcessSingleEventTime(time.Since(startProcessSingleEvent))
+		metrics.EventCounter()
 		if err != nil {
 			etherMan.logger.Warnf("error processing event. Retrying... Error: %s. vLog: %+v", err.Error(), vLog)
 			return nil, nil, err
 		}
 	}
+	metrics.ProcessAllEventTime(time.Since(startProcess))
+	metrics.ReadAndProcessAllEventsTime(time.Since(start))
 	return blocks, blocksOrder, nil
 }
 

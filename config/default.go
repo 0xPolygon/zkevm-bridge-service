@@ -68,6 +68,11 @@ MaxPageLimit = 100
     Host = "zkevm-bridge-db"
     Port = "5432"
     MaxConns = 20
+
+[Metrics]
+Enabled = false
+Host = "0.0.0.0"
+Port = 8090
 `
 
 // Default parses the default configuration values.
