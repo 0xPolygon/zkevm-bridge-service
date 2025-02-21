@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"fmt"
+	"math/big"
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/metrics"
@@ -33,11 +34,11 @@ const (
 	// GetTrustedExitRootsTimeName is the name of the label to get trusted ExitRoots.
 	GetTrustedExitRootsTimeName = "get_trusted_exitroots_time"
 
-	// DepositCntValueName is the name of the label that gets the deposit counter value.
-	DepositCntValueName = "deposit_cnt_value"
+	// DepositAmountName is the name of the label that gets the deposit amount.
+	DepositAmountName = "deposit_amount"
 
-	// ClaimIndexValueName is the name of the label that gets the claim index value.
-	ClaimIndexValueName = "claim_index_value"
+	// ClaimAmountName is the name of the label that gets the claim amount.
+	ClaimAmountName = "claim_amount"
 
 	// DepositCounterName is the name of the label to count the processed deposits.
 	DepositCounterName = "processed_deposit_counter"
@@ -162,12 +163,12 @@ func Register(networkID uint32) {
 			Help: "[SYNCHRONIZER] get trusted ExitRoots time",
 		},
 		{
-			Name: Prefix + DepositCntValueName,
-			Help: "[SYNCHRONIZER] deposit counter value",
+			Name: Prefix + DepositAmountName,
+			Help: "[SYNCHRONIZER] deposit amount",
 		},
 		{
-			Name: Prefix + ClaimIndexValueName,
-			Help: "[SYNCHRONIZER] claim index value",
+			Name: Prefix + ClaimAmountName,
+			Help: "[SYNCHRONIZER] claim amount",
 		},
 	}
 
@@ -196,14 +197,16 @@ func DecrementsPendingBridgesToClaim() {
 	metrics.GaugeDec(Prefix + CurrentPendingBridgesToClaimName)
 }
 
-// DepositCntValue observes the value of the depositCnt on the histogram.
-func DepositCntValue(depositCnt uint32) {
-	metrics.HistogramObserve(Prefix+DepositCntValueName, float64(depositCnt))
+// DepositAmount observes the value of the deposit amount on the histogram.
+func DepositAmount(amount *big.Int) {
+	a, _ := amount.Float64()
+	metrics.HistogramObserve(Prefix+DepositAmountName, a)
 }
 
-// ClaimIndexValue observes the value of the ClaimIndex on the histogram.
-func ClaimIndexValue(index uint32) {
-	metrics.HistogramObserve(Prefix+ClaimIndexValueName, float64(index))
+// ClaimAmount observes the value of the Claim amount on the histogram.
+func ClaimAmount(amount *big.Int) {
+	a, _ := amount.Float64()
+	metrics.HistogramObserve(Prefix+ClaimAmountName, a)
 }
 
 // InitializationTime observes the time initializing the synchronizer on the histogram.

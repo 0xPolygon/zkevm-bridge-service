@@ -810,7 +810,7 @@ func (s *ClientSynchronizer) processDeposit(deposit etherman.Deposit, blockID ui
 		}
 		return err
 	}
-	metrics.DepositCntValue(deposit.DepositCount)
+	metrics.DepositAmount(deposit.Amount)
 	return nil
 }
 
@@ -828,7 +828,7 @@ func (s *ClientSynchronizer) processClaim(claim etherman.Claim, blockID uint64, 
 		}
 		return err
 	}
-	metrics.ClaimIndexValue(claim.Index)
+	metrics.ClaimAmount(claim.Amount)
 	return nil
 }
 
