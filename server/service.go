@@ -4,11 +4,13 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl/pb"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/server/metrics"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
 	lru "github.com/hashicorp/golang-lru/v2"
@@ -320,6 +322,11 @@ func (s *bridgeService) GetDepositStatus(ctx context.Context, depositCount, orig
 // CheckAPI returns api version.
 // Bridge rest API endpoint
 func (s *bridgeService) CheckAPI(ctx context.Context, req *pb.CheckAPIRequest) (*pb.CheckAPIResponse, error) {
+	metrics.CheckAPICounter()
+	start := time.Now()
+	defer func() {
+		metrics.CheckAPILatency(time.Since(start))
+	}()
 	return &pb.CheckAPIResponse{
 		Api: s.version,
 	}, nil
@@ -328,6 +335,11 @@ func (s *bridgeService) CheckAPI(ctx context.Context, req *pb.CheckAPIRequest) (
 // GetBridges returns bridges for the destination address both in L1 and L2.
 // Bridge rest API endpoint
 func (s *bridgeService) GetBridges(ctx context.Context, req *pb.GetBridgesRequest) (*pb.GetBridgesResponse, error) {
+	metrics.GetBridgesCounter()
+	start := time.Now()
+	defer func() {
+		metrics.GetBridgesLatency(time.Since(start))
+	}()
 	limit := req.Limit
 	if limit == 0 {
 		limit = s.defaultPageLimit
@@ -385,6 +397,11 @@ func (s *bridgeService) GetBridges(ctx context.Context, req *pb.GetBridgesReques
 // GetClaims returns claims for the specific smart contract address both in L1 and L2.
 // Bridge rest API endpoint
 func (s *bridgeService) GetClaims(ctx context.Context, req *pb.GetClaimsRequest) (*pb.GetClaimsResponse, error) {
+	metrics.GetClaimsCounter()
+	start := time.Now()
+	defer func() {
+		metrics.GetClaimsLatency(time.Since(start))
+	}()
 	limit := req.Limit
 	if limit == 0 {
 		limit = s.defaultPageLimit
@@ -426,6 +443,11 @@ func (s *bridgeService) GetClaims(ctx context.Context, req *pb.GetClaimsRequest)
 // GetProof returns the merkle proof for the given deposit.
 // Bridge rest API endpoint
 func (s *bridgeService) GetProof(ctx context.Context, req *pb.GetProofRequest) (*pb.GetProofResponse, error) {
+	metrics.GetProofCounter()
+	start := time.Now()
+	defer func() {
+		metrics.GetProofLatency(time.Since(start))
+	}()
 	globalExitRoot, merkleProof, rollupMerkleProof, err := s.GetClaimProof(req.DepositCnt, req.NetId, nil)
 	if err != nil {
 		return nil, err
@@ -455,6 +477,11 @@ func (s *bridgeService) GetProof(ctx context.Context, req *pb.GetProofRequest) (
 // GetBridge returns the bridge  with status whether it is able to send a claim transaction or not.
 // Bridge rest API endpoint
 func (s *bridgeService) GetBridge(ctx context.Context, req *pb.GetBridgeRequest) (*pb.GetBridgeResponse, error) {
+	metrics.GetBridgeCounter()
+	start := time.Now()
+	defer func() {
+		metrics.GetBridgeLatency(time.Since(start))
+	}()
 	deposit, err := s.storage.GetDeposit(ctx, req.DepositCnt, req.NetId, nil)
 	if err != nil {
 		return nil, err
@@ -494,6 +521,11 @@ func (s *bridgeService) GetBridge(ctx context.Context, req *pb.GetBridgeRequest)
 // GetTokenWrapped returns the token wrapped created for a specific network
 // Bridge rest API endpoint
 func (s *bridgeService) GetTokenWrapped(ctx context.Context, req *pb.GetTokenWrappedRequest) (*pb.GetTokenWrappedResponse, error) {
+	metrics.GetTokenWrappedCounter()
+	start := time.Now()
+	defer func() {
+		metrics.GetTokenWrappedLatency(time.Since(start))
+	}()
 	tokenWrapped, err := s.storage.GetTokenWrapped(ctx, req.OrigNet, common.HexToAddress(req.OrigTokenAddr), nil)
 	if err != nil {
 		return nil, err
@@ -512,6 +544,11 @@ func (s *bridgeService) GetTokenWrapped(ctx context.Context, req *pb.GetTokenWra
 }
 
 func (s *bridgeService) GetProofByGER(ctx context.Context, req *pb.GetProofByGERRequest) (*pb.GetProofResponse, error) {
+	metrics.GetProofByGERCounter()
+	start := time.Now()
+	defer func() {
+		metrics.GetProofByGERLatency(time.Since(start))
+	}()
 	ger := common.HexToHash(req.Ger)
 	globalExitRoot, merkleProof, rollupMerkleProof, err := s.GetClaimProofbyGER(req.DepositCnt, req.NetId, ger, nil)
 	if err != nil {
@@ -542,6 +579,11 @@ func (s *bridgeService) GetProofByGER(ctx context.Context, req *pb.GetProofByGER
 // GetPendingBridgesToClaim returns the pending bridges to claim by destination address, destination network and leaf type in L1 and L2's.
 // Bridge rest API endpoint
 func (s *bridgeService) GetPendingBridgesToClaim(ctx context.Context, req *pb.GetPendingBridgesRequest) (*pb.GetBridgesResponse, error) {
+	metrics.GetPendingBridgesToClaimCounter()
+	start := time.Now()
+	defer func() {
+		metrics.GetPendingBridgesToClaimLatency(time.Since(start))
+	}()
 	limit := req.Limit
 	if limit == 0 {
 		limit = s.defaultPageLimit

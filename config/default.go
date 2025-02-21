@@ -60,7 +60,6 @@ HTTPPort = "8080"
 DefaultPageLimit = 25
 CacheSize = 100000
 MaxPageLimit = 100
-BridgeVersion = "v1"
     [BridgeServer.DB]
     Database = "postgres"
     User = "test_user"
@@ -69,6 +68,11 @@ BridgeVersion = "v1"
     Host = "zkevm-bridge-db"
     Port = "5432"
     MaxConns = 20
+
+[Metrics]
+Enabled = false
+Host = "0.0.0.0"
+Port = 8090
 `
 
 // Default parses the default configuration values.
