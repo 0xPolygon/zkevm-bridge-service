@@ -276,14 +276,24 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 
 	for {
 		if toBlock > lastKnownBlock.Uint64() {
-			log.Debugf("NetworkID: %d, Setting toBlock to the lastKnownBlock: %s", s.networkID, lastKnownBlock.String())
-			toBlock = lastKnownBlock.Uint64()
-			if !s.synced {
-				fromBlock = lastBlockSynced.BlockNumber
-				log.Infof("NetworkID %d Synced!", s.networkID)
-				waitDuration = s.cfg.SyncInterval.Duration
-				s.synced = true
-				s.chSynced <- s.networkID
+			log.Debugf("NetworkID: %d, Checking lastKnownBlock again to see if it has changed during the sync process", s.networkID)
+			header, err := s.etherMan.HeaderByNumber(s.ctx, nil)
+			if err != nil {
+				return lastBlockSynced, err
+			}
+			lastKnownBlock = header.Number
+			if toBlock > lastKnownBlock.Uint64() {
+				log.Debugf("NetworkID: %d, Setting toBlock to the lastKnownBlock: %s", s.networkID, lastKnownBlock.String())
+				toBlock = lastKnownBlock.Uint64()
+				if !s.synced {
+					fromBlock = lastBlockSynced.BlockNumber
+					log.Infof("NetworkID %d Synced!", s.networkID)
+					waitDuration = s.cfg.SyncInterval.Duration
+					s.synced = true
+					s.chSynced <- s.networkID
+				}
+			} else {
+				log.Debugf("NetworkID: %d, New lastKnownBlock (%d) has changed and now is higher than toBlock (%d)", s.networkID, lastKnownBlock.Uint64(), toBlock)
 			}
 		}
 		if fromBlock > toBlock {
@@ -315,11 +325,11 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 		}
 		if s.synced {
 			var initBlockReceived *etherman.Block
-			if len(blocks) != 0 {
+			if len(blocks) != 0 && !s.cfg.ForceSyncChunk {
 				initBlockReceived = &blocks[0]
 				// First position of the array must be deleted
 				blocks = removeBlockElement(blocks, 0)
-			} else {
+			} else if !s.cfg.ForceSyncChunk{
 				// Reorg detected
 				log.Infof("NetworkID: %d, reorg detected in block %d while querying GetRollupInfoByBlockRange. Rolling back to at least the previous block", s.networkID, fromBlock)
 				prevBlock, err := s.storage.GetPreviousBlock(s.ctx, s.networkID, 1, nil)
@@ -345,7 +355,9 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 				}
 				return blockReorged, nil
 			}
-			// Check reorg again to be sure that the chain has not changed between the previous checkReorg and the call GetRollupInfoByBlockRange
+			// Check reorg again to be sure that the chain has not changed between the previous checkReorg and the call GetRollupInfoByBlockRange.
+			// If ForceSyncChunk is set, initBlockReceived is nil. If not, it contains the initblock received from GetRollupInfoByBlockRange with
+			// data that was already synced in previous iterations.
 			block, err := s.checkReorg(lastBlockSynced, initBlockReceived)
 			if err != nil {
 				log.Errorf("networkID: %d, error checking reorgs. Retrying... Err: %v", s.networkID, err)
@@ -372,6 +384,20 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 			for i := range blocks {
 				log.Debug("NetworkID: ", s.networkID, ", Position: ", i, ". BlockNumber: ", blocks[i].BlockNumber, ". BlockHash: ", blocks[i].BlockHash)
 			}
+		} else if len(blocks) == 0 && s.cfg.ForceSyncChunk { // If there is no events in the checked blocks range and lastKnownBlock > fromBlock and ForceSyncChunk is enabled.
+			// Store in memory the latest block of the block range if the range is empty. This avoids the need of use query ranges higher than the syncChunck.
+			// It's not stored in the db and if the service is restarted, it will query the same blocks again.
+			fb, err := s.etherMan.HeaderByNumber(s.ctx, big.NewInt(0).SetUint64(toBlock))
+			if err != nil {
+				return lastBlockSynced, err
+			}
+			lastBlockSynced = &etherman.Block{
+				BlockNumber: fb.Number.Uint64(),
+				BlockHash:   fb.Hash(),
+				ParentHash:  fb.ParentHash,
+				ReceivedAt:  time.Unix(int64(fb.Time), 0),
+			}
+			log.Debugf("NetworkID: %d, Keeping empty block in memory as lastBlockSynced. BlockNumber: %d. BlockHash: %s", s.networkID, lastBlockSynced.BlockNumber, lastBlockSynced.BlockHash.String())
 		}
 
 		if lastKnownBlock.Cmp(new(big.Int).SetUint64(toBlock)) < 1 { // lastKnownBlock <= toBlock
@@ -382,10 +408,14 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 				s.chSynced <- s.networkID
 			}
 			break
-		} else if !s.synced {
+		} else if !s.synced || s.cfg.ForceSyncChunk {
 			fromBlock = toBlock + 1
 			toBlock = fromBlock + s.cfg.SyncChunkSize
-			log.Debugf("NetworkID: %d, not synced yet. Avoid check the same interval. New interval: from block %d, to block %d", s.networkID, fromBlock, toBlock)
+			if s.cfg.ForceSyncChunk {
+				log.Debugf("NetworkID: %d, synced!. ForceSyncChunk is enabled. Syncing next chunk from block %d to block %d", s.networkID, fromBlock, toBlock)
+			} else {
+				log.Debugf("NetworkID: %d, not synced yet. Avoid check the same interval. New interval: from block %d, to block %d", s.networkID, fromBlock, toBlock)
+			}
 		} else {
 			fromBlock = lastBlockSynced.BlockNumber
 			toBlock = toBlock + s.cfg.SyncChunkSize
