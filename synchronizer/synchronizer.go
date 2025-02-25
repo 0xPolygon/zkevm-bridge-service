@@ -313,7 +313,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 			return lastBlockSynced, err
 		}
 
-		if fromBlock == s.genBlockNumber {
+		if fromBlock == s.genBlockNumber && !s.cfg.ForceSyncChunk{
 			if len(blocks) == 0 || (len(blocks) != 0 && blocks[0].BlockNumber != s.genBlockNumber) {
 				log.Debugf("NetworkID: %d. adding genesis empty block", s.networkID)
 				blocks = append([]etherman.Block{{}}, blocks...)
@@ -379,12 +379,12 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 		if err != nil {
 			return lastBlockSynced, err
 		}
-		if len(blocks) > 0 {
+		if len(blocks) > 0 && !s.cfg.ForceSyncChunk{
 			lastBlockSynced = &blocks[len(blocks)-1]
 			for i := range blocks {
 				log.Debug("NetworkID: ", s.networkID, ", Position: ", i, ". BlockNumber: ", blocks[i].BlockNumber, ". BlockHash: ", blocks[i].BlockHash)
 			}
-		} else if len(blocks) == 0 && s.cfg.ForceSyncChunk { // If there is no events in the checked blocks range and lastKnownBlock > fromBlock and ForceSyncChunk is enabled.
+		} else if s.cfg.ForceSyncChunk { // If there is no events in the checked blocks range and lastKnownBlock > fromBlock and ForceSyncChunk is enabled.
 			// Store in memory the latest block of the block range if the range is empty. This avoids the need of use query ranges higher than the syncChunck.
 			// It's not stored in the db and if the service is restarted, it will query the same blocks again.
 			fb, err := s.etherMan.HeaderByNumber(s.ctx, big.NewInt(0).SetUint64(toBlock))
