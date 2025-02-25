@@ -315,7 +315,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 			return lastBlockSynced, err
 		}
 
-		if fromBlock == s.genBlockNumber && !s.cfg.ForceSyncChunk{
+		if fromBlock == s.genBlockNumber && !s.cfg.ForceSyncChunk {
 			if len(blocks) == 0 || (len(blocks) != 0 && blocks[0].BlockNumber != s.genBlockNumber) {
 				log.Debugf("NetworkID: %d. adding genesis empty block", s.networkID)
 				blocks = append([]etherman.Block{{}}, blocks...)
@@ -331,7 +331,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 				initBlockReceived = &blocks[0]
 				// First position of the array must be deleted
 				blocks = removeBlockElement(blocks, 0)
-			} else if !s.cfg.ForceSyncChunk{
+			} else if !s.cfg.ForceSyncChunk {
 				// Reorg detected
 				log.Infof("NetworkID: %d, reorg detected in block %d while querying GetRollupInfoByBlockRange. Rolling back to at least the previous block", s.networkID, fromBlock)
 				prevBlock, err := s.storage.GetPreviousBlock(s.ctx, s.networkID, 1, nil)
@@ -381,7 +381,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 		if err != nil {
 			return lastBlockSynced, err
 		}
-		if len(blocks) > 0 && !s.cfg.ForceSyncChunk{
+		if len(blocks) > 0 && !s.cfg.ForceSyncChunk {
 			lastBlockSynced = &blocks[len(blocks)-1]
 			for i := range blocks {
 				log.Debug("NetworkID: ", s.networkID, ", Position: ", i, ". BlockNumber: ", blocks[i].BlockNumber, ". BlockHash: ", blocks[i].BlockHash)

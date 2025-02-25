@@ -1383,8 +1383,8 @@ func TestSyncGERUsingForcedSyncChunk(t *testing.T) {
 	setupMocks := func(m *mocks) Synchronizer {
 		genBlockNumber := uint64(0)
 		cfg := Config{
-			SyncInterval:  cfgTypes.Duration{Duration: 1 * time.Second},
-			SyncChunkSize: 2,
+			SyncInterval:   cfgTypes.Duration{Duration: 1 * time.Second},
+			SyncChunkSize:  2,
 			ForceSyncChunk: true,
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
@@ -1413,14 +1413,16 @@ func TestSyncGERUsingForcedSyncChunk(t *testing.T) {
 		parentHash := common.HexToHash("0x111")
 		ethHeader0 := &types.Header{Number: big.NewInt(0), ParentHash: parentHash}
 		ethHeader1 := &types.Header{Number: big.NewInt(1), ParentHash: ethHeader0.Hash()}
-		ethHeader2 := &types.Header{Number: big.NewInt(2), ParentHash: ethHeader0.Hash()}
-		ethHeader5 := &types.Header{Number: big.NewInt(5), ParentHash: ethHeader0.Hash()}
+		ethHeader2 := &types.Header{Number: big.NewInt(2), ParentHash: ethHeader1.Hash()}
+		ethHeader3 := &types.Header{Number: big.NewInt(3), ParentHash: ethHeader2.Hash()}
+		ethHeader4 := &types.Header{Number: big.NewInt(4), ParentHash: ethHeader3.Hash()}
+		ethHeader5 := &types.Header{Number: big.NewInt(5), ParentHash: ethHeader4.Hash()}
+		ethHeader6 := &types.Header{Number: big.NewInt(6), ParentHash: ethHeader5.Hash()}
 		ethBlock0 := types.NewBlockWithHeader(ethHeader0)
 		ethBlock1 := types.NewBlockWithHeader(ethHeader1)
-		ethBlock5 := types.NewBlockWithHeader(ethHeader5)
+		ethBlock6 := types.NewBlockWithHeader(ethHeader6)
 		lastBlock := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64()}
 		var networkID uint32 = 0
-
 
 		m.Storage.
 			On("GetLastBlock", ctx, networkID, nil).
@@ -1430,7 +1432,7 @@ func TestSyncGERUsingForcedSyncChunk(t *testing.T) {
 		var n *big.Int
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
-			Return(ethHeader5, nil).
+			Return(ethHeader6, nil).
 			Once()
 
 		m.Etherman.
@@ -1462,10 +1464,10 @@ func TestSyncGERUsingForcedSyncChunk(t *testing.T) {
 			},
 		}
 
-		fromBlock := ethBlock0.NumberU64()
+		fromBlock := ethBlock0.NumberU64() + 1
 		toBlock := fromBlock + cfg.SyncChunkSize
-		if toBlock > ethBlock5.NumberU64() {
-			toBlock = ethBlock5.NumberU64()
+		if toBlock > ethBlock6.NumberU64() {
+			toBlock = ethBlock6.NumberU64()
 		}
 		m.Etherman.
 			On("GetRollupInfoByBlockRange", ctx, fromBlock, &toBlock).
@@ -1502,26 +1504,31 @@ func TestSyncGERUsingForcedSyncChunk(t *testing.T) {
 			On("GetLatestL1SyncedExitRoot", ctx, nil).
 			Return(&blocks[0].GlobalExitRoots[0], nil).
 			Once()
-		
+
 		m.Etherman.
 			On("HeaderByNumber", ctx, big.NewInt(0).SetUint64(toBlock)).
 			Return(ethHeader2, nil).
-			Twice()
-		
+			Once()
+
+		m.Etherman.
+			On("HeaderByNumber", ctx, big.NewInt(0).SetUint64(toBlock-1)).
+			Return(ethHeader2, nil).
+			Once()
+
 		fromBlock1 := toBlock + 1
 		toBlock1 := fromBlock1 + cfg.SyncChunkSize
-		if toBlock1 > ethBlock5.NumberU64() {
-			toBlock1 = ethBlock5.NumberU64()
+		if toBlock1 > ethBlock6.NumberU64() {
+			toBlock1 = ethBlock6.NumberU64()
 		}
 		m.Etherman.
 			On("GetRollupInfoByBlockRange", ctx, fromBlock1, &toBlock1).
 			Return([]etherman.Block{}, map[common.Hash][]etherman.Order{}, nil).
 			Once()
-		
+
 		m.Etherman.
 			On("HeaderByNumber", ctx, big.NewInt(0).SetUint64(toBlock1)).
 			Run(func(args mock.Arguments) { sync.Stop() }).
-			Return(ethHeader5, nil).
+			Return(ethHeader6, nil).
 			Once()
 
 		return sync
