@@ -269,7 +269,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 	log.Debugf("NetworkID: %d, after checkReorg: no reorg detected", s.networkID)
 
 	fromBlock := lastBlockSynced.BlockNumber + 1
-	if s.synced {
+	if s.synced && !s.cfg.ForceSyncChunk {
 		fromBlock = lastBlockSynced.BlockNumber
 	}
 	toBlock := fromBlock + s.cfg.SyncChunkSize
@@ -286,7 +286,9 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 				log.Debugf("NetworkID: %d, Setting toBlock to the lastKnownBlock: %s", s.networkID, lastKnownBlock.String())
 				toBlock = lastKnownBlock.Uint64()
 				if !s.synced {
-					fromBlock = lastBlockSynced.BlockNumber
+					if !s.cfg.ForceSyncChunk {
+						fromBlock = lastBlockSynced.BlockNumber
+					}
 					log.Infof("NetworkID %d Synced!", s.networkID)
 					waitDuration = s.cfg.SyncInterval.Duration
 					s.synced = true
@@ -739,7 +741,7 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 	globalExitRoot.BlockID = blockID
 	globalExitRoot.NetworkID = s.networkID
 	if len(globalExitRoot.ExitRoots) == 2 { //nolint:gomnd
-		log.Debugf("networkID: %d, Storing L1 Ger: ", s.networkID, globalExitRoot.GlobalExitRoot)
+		log.Debugf("networkID: %d, Storing L1 Ger: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
 		// Check if there is some globalExitRoot in L2. If so, it must be incompleted. It must be updated.
 		// A race condition between dbTxs (L1 dbTx and L2 dbTxs) is very unlikely because L1 sync takes usually takes more time than L2 sync.
 		gers, err := s.storage.GetL2ExitRootsByGER(s.ctx, globalExitRoot.GlobalExitRoot, nil)
