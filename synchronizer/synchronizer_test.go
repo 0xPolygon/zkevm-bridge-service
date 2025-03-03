@@ -1325,8 +1325,8 @@ func TestSyncL2GERUsingForcedSyncChunk(t *testing.T) {
 	setupMocks := func(m *mocks) Synchronizer {
 		genBlockNumber := uint64(0)
 		cfg := Config{
-			SyncInterval:   cfgTypes.Duration{Duration: 1 * time.Second},
-			SyncChunkSize:  2,
+			SyncInterval:     cfgTypes.Duration{Duration: 1 * time.Second},
+			SyncChunkSize:    2,
 			ForceL2SyncChunk: true,
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
@@ -1391,10 +1391,10 @@ func TestSyncL2GERUsingForcedSyncChunk(t *testing.T) {
 			GlobalExitRoot: common.HexToHash("0xb14c74e4dddf25627a745f46cae6ac98782e2783c3ccc28107c8210e60d58864"),
 		}
 		globalExitRootL2Full := etherman.GlobalExitRoot{
-			BlockID: 1,
-			BlockNumber:    ethBlock1.NumberU64(),
-			NetworkID:      networkID,
-			ExitRoots:      []common.Hash{
+			BlockID:     1,
+			BlockNumber: ethBlock1.NumberU64(),
+			NetworkID:   networkID,
+			ExitRoots: []common.Hash{
 				common.HexToHash("0xc14c74e4dddf25627a745f46cae6ac98782e2783c3ccc28107c8210e60d58865"),
 				common.HexToHash("0xd14c74e4dddf25627a745f46cae6ac98782e2783c3ccc28107c8210e60d58866"),
 			},
