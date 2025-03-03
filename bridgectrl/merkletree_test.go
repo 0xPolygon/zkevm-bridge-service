@@ -168,7 +168,6 @@ func TestMTGetProof(t *testing.T) {
 				block := &etherman.Block{
 					BlockNumber: uint64(li + 1),
 					BlockHash:   common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9fc"),
-					ParentHash:  common.Hash{},
 				}
 				blockID, err := store.AddBlock(context.TODO(), block, nil)
 				require.NoError(t, err)

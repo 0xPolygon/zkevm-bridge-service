@@ -4,7 +4,6 @@ import (
 	"context"
 	"math/big"
 	"testing"
-	"time"
 
 	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
@@ -117,9 +116,7 @@ func TestUpdateDepositStatus(t *testing.T) {
 	block := &etherman.Block{
 		BlockNumber: 1,
 		BlockHash:   common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"),
-		ParentHash:  common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f2"),
 		NetworkID:   0,
-		ReceivedAt:  time.Now(),
 	}
 	blockID, err := pg.AddBlock(ctx, block, nil)
 	require.NoError(t, err)
@@ -144,9 +141,7 @@ func TestUpdateDepositStatus(t *testing.T) {
 	block = &etherman.Block{
 		BlockNumber: 1,
 		BlockHash:   common.HexToHash("0xb4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30"),
-		ParentHash:  common.HexToHash("0xb4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30"),
 		NetworkID:   1,
-		ReceivedAt:  time.Now(),
 	}
 	blockID, err = pg.AddBlock(ctx, block, nil)
 	require.NoError(t, err)
@@ -216,9 +211,7 @@ func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 	block1 := &etherman.Block{
 		BlockNumber: 1,
 		BlockHash:   common.HexToHash("0xb4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30"),
-		ParentHash:  common.HexToHash("0xb4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30"),
 		NetworkID:   1,
-		ReceivedAt:  time.Now(),
 	}
 	blockID1, err := pg.AddBlock(ctx, block1, nil)
 	require.NoError(t, err)
@@ -245,9 +238,7 @@ func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 	block2 := &etherman.Block{
 		BlockNumber: 1,
 		BlockHash:   common.HexToHash("0x90c89934975cc71a021a11dbe78cb2008d77e018dfffcc629b8d6d4dc905ac5c"),
-		ParentHash:  common.HexToHash("0x90c89934975cc71a021a11dbe78cb2008d77e018dfffcc629b8d6d4dc905ac5c"),
 		NetworkID:   2,
-		ReceivedAt:  time.Now(),
 	}
 	blockID2, err := pg.AddBlock(ctx, block2, nil)
 	require.NoError(t, err)

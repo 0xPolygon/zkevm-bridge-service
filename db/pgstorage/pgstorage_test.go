@@ -15,11 +15,11 @@ import (
 
 func TestGetLeaves(t *testing.T) {
 	data := `INSERT INTO sync.block
-	(id, block_num, block_hash, parent_hash, network_id, received_at)
-	VALUES(1, 1, decode('5C7831','hex'), decode('5C7830','hex'), 0, '1970-01-01 01:00:00.000');
+	(id, block_num, block_hash, network_id)
+	VALUES(1, 1, decode('5C7831','hex'), 0);
 	INSERT INTO sync.block
-	(id, block_num, block_hash, parent_hash, network_id, received_at)
-	VALUES(2, 2, decode('5C7832','hex'), decode('5C7831','hex'), 0, '1970-01-01 01:00:00.000');
+	(id, block_num, block_hash, network_id)
+	VALUES(2, 2, decode('5C7832','hex'), 0);
 	
 	INSERT INTO mt.rollup_exit
 	(leaf, rollup_id, root, block_id)
@@ -90,8 +90,8 @@ func TestGetLeaves(t *testing.T) {
 
 func TestIsRollupExitRoot(t *testing.T) {
 	data := `INSERT INTO sync.block
-	(id, block_num, block_hash, parent_hash, network_id, received_at)
-	VALUES(1, 1, decode('5C7831','hex'), decode('5C7830','hex'), 0, '1970-01-01 01:00:00.000');
+	(id, block_num, block_hash, network_id)
+	VALUES(1, 1, decode('5C7831','hex'), 0);
 	
 	INSERT INTO mt.rollup_exit
 	(leaf, rollup_id, root, block_id)
@@ -167,8 +167,8 @@ func TestAddMonitoredTxsGroup(t *testing.T) {
 
 func TestGetPendingDepositsToClaim(t *testing.T) {
 	data := `INSERT INTO sync.block
-	(id, block_num, block_hash, parent_hash, network_id, received_at)
-	VALUES(1, 1, decode('5C7831','hex'), decode('5C7830','hex'), 0, '1970-01-01 01:00:00.000');
+	(id, block_num, block_hash, network_id)
+	VALUES(1, 1, decode('5C7831','hex'), 0);
 	
 	INSERT INTO sync.deposit
 	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
