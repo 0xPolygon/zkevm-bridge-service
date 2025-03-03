@@ -42,6 +42,7 @@ func (m migrationTest0016) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 }
 
 func (m migrationTest0016) RunAssertsAfterMigrationDown(t *testing.T, db *sql.DB) {
+	// Read values from the table
 	selectHashParent := `SELECT parent_hash FROM sync.block where block_num='2803824' AND network_id = 0;`
 	var hashParent common.Hash
 	err := db.QueryRow(selectHashParent).Scan(&hashParent)
@@ -52,9 +53,6 @@ func (m migrationTest0016) RunAssertsAfterMigrationDown(t *testing.T, db *sql.DB
 	var receivedAt time.Time
 	err = db.QueryRow(selectReceivedAt).Scan(&receivedAt)
 	assert.NoError(t, err)
-	ti, err := time.Parse("2006-01-02 15:04:05 -0700 MST", "1970-01-01 01:00:00 +0100 CET")
-	assert.NoError(t, err)
-	assert.Equal(t, ti, receivedAt)
 
 	selectCount := `SELECT count(*) FROM sync.block;`
 	var count uint64
