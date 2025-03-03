@@ -81,7 +81,6 @@ func initServer(b *testing.B, bench benchmark) *bridgectrl.BridgeController {
 		id, err := store.AddBlock(context.TODO(), &etherman.Block{
 			BlockNumber: uint64(i),
 			BlockHash:   utils.GenerateRandomHash(),
-			ParentHash:  utils.GenerateRandomHash(),
 		}, dbTx)
 		require.NoError(b, err)
 		deposit := randDeposit(r, counts[networkID], id, networkID)

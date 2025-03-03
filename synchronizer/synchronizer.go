@@ -598,7 +598,6 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock, syncedBlock *etherman
 			block = &etherman.Block{
 				BlockNumber: b.Number.Uint64(),
 				BlockHash:   b.Hash(),
-				ParentHash:  b.ParentHash,
 			}
 			if block.BlockNumber != reorgedBlock.BlockNumber {
 				err := fmt.Errorf("networkID: %d, wrong ethereum block retrieved from blockchain. Block numbers don't match. BlockNumber stored: %d. BlockNumber retrieved: %d",
@@ -609,13 +608,11 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock, syncedBlock *etherman
 		}
 
 		// Compare hashes
-		if (block.BlockHash != reorgedBlock.BlockHash || block.ParentHash != reorgedBlock.ParentHash) && reorgedBlock.BlockNumber > s.genBlockNumber {
+		if (block.BlockHash != reorgedBlock.BlockHash) && reorgedBlock.BlockNumber > s.genBlockNumber {
 			log.Info("NetworkID: ", s.networkID, ", [checkReorg function] => reorgedBlockNumber: ", reorgedBlock.BlockNumber)
 			log.Info("NetworkID: ", s.networkID, ", [checkReorg function] => reorgedBlockHash: ", reorgedBlock.BlockHash)
-			log.Info("NetworkID: ", s.networkID, ", [checkReorg function] => reorgedBlockHashParent: ", reorgedBlock.ParentHash)
 			log.Info("NetworkID: ", s.networkID, ", [checkReorg function] => BlockNumber: ", reorgedBlock.BlockNumber, block.BlockNumber)
 			log.Info("NetworkID: ", s.networkID, ", [checkReorg function] => BlockHash: ", block.BlockHash)
-			log.Info("NetworkID: ", s.networkID, ", [checkReorg function] => BlockHashParent: ", block.ParentHash)
 			depth++
 			log.Info("NetworkID: ", s.networkID, ", REORG: Looking for the latest correct ethereum block. Depth: ", depth)
 			// Reorg detected. Getting previous block
@@ -633,7 +630,7 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock, syncedBlock *etherman
 			reorgedBlock = *lb
 			metrics.ReorgedBlocksCounter()
 		} else {
-			log.Debugf("networkID: %d, checkReorg: Block %d hashOk %t parentHashOk %t", s.networkID, reorgedBlock.BlockNumber, block.BlockHash == reorgedBlock.BlockHash, block.ParentHash == reorgedBlock.ParentHash)
+			log.Debugf("networkID: %d, checkReorg: Block %d hashOk %t", s.networkID, reorgedBlock.BlockNumber, block.BlockHash == reorgedBlock.BlockHash)
 			break
 		}
 		// This forces to get the block from L1 in the next iteration of the loop
