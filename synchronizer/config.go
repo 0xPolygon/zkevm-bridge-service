@@ -12,6 +12,6 @@ type Config struct {
 	// SyncChunkSize is the number of blocks to sync on each chunk
 	SyncChunkSize uint64 `mapstructure:"SyncChunkSize"`
 
-	// ForceSyncChunk is a flag to force the synchronizer to sync a chunk. This will disable part of the reorg protection
-	ForceSyncChunk bool `mapstructure:"ForceSyncChunk"`
+	// ForceL2SyncChunk is a flag to force the L2 synchronizer to sync a chunk. This will disable part of the reorg protection
+	ForceL2SyncChunk bool `mapstructure:"ForceL2SyncChunk"`
 }

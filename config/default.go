@@ -49,7 +49,7 @@ L2URLs = [""]
 [Synchronizer]
 SyncInterval = "2s"
 SyncChunkSize = 100
-ForceSyncChunk = false
+ForceL2SyncChunk = false
 
 [BridgeController]
 Store = "postgres"

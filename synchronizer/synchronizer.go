@@ -39,6 +39,7 @@ type ClientSynchronizer struct {
 	l1RollupExitRoot  common.Hash
 	allNetworkIDs     []uint32
 	sovereignChain    bool
+	forceSyncChunk    bool
 }
 
 // NewSynchronizer creates and initializes an instance of Synchronizer
@@ -81,6 +82,7 @@ func NewSynchronizer(
 			chsExitRootEvent: chsExitRootEvent,
 			l1RollupExitRoot: ger.ExitRoots[1],
 			allNetworkIDs:    allNetworkIDs,
+			forceSyncChunk:   false,
 		}, nil
 	}
 	return &ClientSynchronizer{
@@ -96,6 +98,7 @@ func NewSynchronizer(
 		chExitRootEventL2: chExitRootEventL2,
 		networkID:         networkID,
 		sovereignChain:    sovereignChain,
+		forceSyncChunk:    cfg.ForceL2SyncChunk,
 	}, nil
 }
 
@@ -269,7 +272,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 	log.Debugf("NetworkID: %d, after checkReorg: no reorg detected", s.networkID)
 
 	fromBlock := lastBlockSynced.BlockNumber + 1
-	if s.synced && !s.cfg.ForceSyncChunk {
+	if s.synced && !s.forceSyncChunk {
 		fromBlock = lastBlockSynced.BlockNumber
 	}
 	toBlock := fromBlock + s.cfg.SyncChunkSize
@@ -286,7 +289,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 				log.Debugf("NetworkID: %d, Setting toBlock to the lastKnownBlock: %s", s.networkID, lastKnownBlock.String())
 				toBlock = lastKnownBlock.Uint64()
 				if !s.synced {
-					if !s.cfg.ForceSyncChunk {
+					if !s.forceSyncChunk {
 						fromBlock = lastBlockSynced.BlockNumber
 					}
 					log.Infof("NetworkID %d Synced!", s.networkID)
@@ -315,7 +318,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 			return lastBlockSynced, err
 		}
 
-		if fromBlock == s.genBlockNumber && !s.cfg.ForceSyncChunk {
+		if fromBlock == s.genBlockNumber && !s.forceSyncChunk {
 			if len(blocks) == 0 || (len(blocks) != 0 && blocks[0].BlockNumber != s.genBlockNumber) {
 				log.Debugf("NetworkID: %d. adding genesis empty block", s.networkID)
 				blocks = append([]etherman.Block{{}}, blocks...)
@@ -327,11 +330,11 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 		}
 		if s.synced {
 			var initBlockReceived *etherman.Block
-			if len(blocks) != 0 && !s.cfg.ForceSyncChunk {
+			if len(blocks) != 0 && !s.forceSyncChunk {
 				initBlockReceived = &blocks[0]
 				// First position of the array must be deleted
 				blocks = removeBlockElement(blocks, 0)
-			} else if !s.cfg.ForceSyncChunk {
+			} else if !s.forceSyncChunk {
 				// Reorg detected
 				log.Infof("NetworkID: %d, reorg detected in block %d while querying GetRollupInfoByBlockRange. Rolling back to at least the previous block", s.networkID, fromBlock)
 				prevBlock, err := s.storage.GetPreviousBlock(s.ctx, s.networkID, 1, nil)
@@ -381,12 +384,12 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 		if err != nil {
 			return lastBlockSynced, err
 		}
-		if len(blocks) > 0 && !s.cfg.ForceSyncChunk {
+		if len(blocks) > 0 && !s.forceSyncChunk {
 			lastBlockSynced = &blocks[len(blocks)-1]
 			for i := range blocks {
 				log.Debug("NetworkID: ", s.networkID, ", Position: ", i, ". BlockNumber: ", blocks[i].BlockNumber, ". BlockHash: ", blocks[i].BlockHash)
 			}
-		} else if s.cfg.ForceSyncChunk { // If there is no events in the checked blocks range and lastKnownBlock > fromBlock and ForceSyncChunk is enabled.
+		} else if s.forceSyncChunk { // If there is no events in the checked blocks range and lastKnownBlock > fromBlock and ForceSyncChunk is enabled.
 			// Store in memory the latest block of the block range if the range is empty. This avoids the need of use query ranges higher than the syncChunck.
 			// It's not stored in the db and if the service is restarted, it will query the same blocks again.
 			fb, err := s.etherMan.HeaderByNumber(s.ctx, big.NewInt(0).SetUint64(toBlock))
@@ -410,10 +413,10 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 				s.chSynced <- s.networkID
 			}
 			break
-		} else if !s.synced || s.cfg.ForceSyncChunk {
+		} else if !s.synced || s.forceSyncChunk {
 			fromBlock = toBlock + 1
 			toBlock = fromBlock + s.cfg.SyncChunkSize
-			if s.cfg.ForceSyncChunk {
+			if s.forceSyncChunk {
 				log.Debugf("NetworkID: %d, synced!. ForceSyncChunk is enabled. Syncing next chunk from block %d to block %d", s.networkID, fromBlock, toBlock)
 			} else {
 				log.Debugf("NetworkID: %d, not synced yet. Avoid check the same interval. New interval: from block %d, to block %d", s.networkID, fromBlock, toBlock)
