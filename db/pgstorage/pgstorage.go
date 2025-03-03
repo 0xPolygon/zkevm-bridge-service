@@ -89,7 +89,7 @@ func (p *PostgresStorage) AddBlock(ctx context.Context, block *etherman.Block, d
 	var blockID uint64
 	const addBlockSQL = `WITH block_id AS 
 		(INSERT INTO sync.block (block_num, block_hash, network_id) 
-		VALUES ($1, $2, $3, $4, $5) ON CONFLICT (block_hash) DO NOTHING RETURNING id)
+		VALUES ($1, $2, $3) ON CONFLICT (block_hash) DO NOTHING RETURNING id)
 		SELECT * from block_id
 		UNION ALL
 		SELECT id FROM sync.block WHERE block_hash = $2;`
