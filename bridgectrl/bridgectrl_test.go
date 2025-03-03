@@ -58,7 +58,6 @@ func TestBridgeTree(t *testing.T) {
 			block := &etherman.Block{
 				BlockNumber: uint64(i + 1),
 				BlockHash:   utils.GenerateRandomHash(),
-				ParentHash:  common.Hash{},
 			}
 			blockID, err := store.AddBlock(context.TODO(), block, nil)
 			require.NoError(t, err)

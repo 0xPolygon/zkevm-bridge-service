@@ -72,10 +72,10 @@ func (p *PostgresStorage) BeginDBTransaction(ctx context.Context) (pgx.Tx, error
 // GetLastBlock gets the last block.
 func (p *PostgresStorage) GetLastBlock(ctx context.Context, networkID uint32, dbTx pgx.Tx) (*etherman.Block, error) {
 	var block etherman.Block
-	const getLastBlockSQL = "SELECT id, block_num, block_hash, parent_hash, network_id, received_at FROM sync.block where network_id = $1 ORDER BY block_num DESC LIMIT 1"
+	const getLastBlockSQL = "SELECT id, block_num, block_hash, network_id FROM sync.block where network_id = $1 ORDER BY block_num DESC LIMIT 1"
 
 	e := p.getExecQuerier(dbTx)
-	err := e.QueryRow(ctx, getLastBlockSQL, networkID).Scan(&block.ID, &block.BlockNumber, &block.BlockHash, &block.ParentHash, &block.NetworkID, &block.ReceivedAt)
+	err := e.QueryRow(ctx, getLastBlockSQL, networkID).Scan(&block.ID, &block.BlockNumber, &block.BlockHash, &block.NetworkID)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, gerror.ErrStorageNotFound
@@ -88,13 +88,13 @@ func (p *PostgresStorage) GetLastBlock(ctx context.Context, networkID uint32, db
 func (p *PostgresStorage) AddBlock(ctx context.Context, block *etherman.Block, dbTx pgx.Tx) (uint64, error) {
 	var blockID uint64
 	const addBlockSQL = `WITH block_id AS 
-		(INSERT INTO sync.block (block_num, block_hash, parent_hash, network_id, received_at) 
+		(INSERT INTO sync.block (block_num, block_hash, network_id) 
 		VALUES ($1, $2, $3, $4, $5) ON CONFLICT (block_hash) DO NOTHING RETURNING id)
 		SELECT * from block_id
 		UNION ALL
 		SELECT id FROM sync.block WHERE block_hash = $2;`
 	e := p.getExecQuerier(dbTx)
-	err := e.QueryRow(ctx, addBlockSQL, block.BlockNumber, block.BlockHash, block.ParentHash, block.NetworkID, block.ReceivedAt).Scan(&blockID)
+	err := e.QueryRow(ctx, addBlockSQL, block.BlockNumber, block.BlockHash, block.NetworkID).Scan(&blockID)
 
 	if err == pgx.ErrNoRows {
 		err = nil
@@ -176,9 +176,9 @@ func (p *PostgresStorage) Reset(ctx context.Context, blockNumber uint64, network
 // GetPreviousBlock gets the offset previous L1 block respect to latest.
 func (p *PostgresStorage) GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (*etherman.Block, error) {
 	var block etherman.Block
-	const getPreviousBlockSQL = "SELECT block_num, block_hash, parent_hash, network_id, received_at FROM sync.block WHERE network_id = $1 ORDER BY block_num DESC LIMIT 1 OFFSET $2"
+	const getPreviousBlockSQL = "SELECT block_num, block_hash, network_id FROM sync.block WHERE network_id = $1 ORDER BY block_num DESC LIMIT 1 OFFSET $2"
 	e := p.getExecQuerier(dbTx)
-	err := e.QueryRow(ctx, getPreviousBlockSQL, networkID, offset).Scan(&block.BlockNumber, &block.BlockHash, &block.ParentHash, &block.NetworkID, &block.ReceivedAt)
+	err := e.QueryRow(ctx, getPreviousBlockSQL, networkID, offset).Scan(&block.BlockNumber, &block.BlockHash, &block.NetworkID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, gerror.ErrStorageNotFound
 	}
