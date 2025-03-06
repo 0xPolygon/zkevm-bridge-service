@@ -630,3 +630,37 @@ func (s *bridgeService) GetPendingBridgesToClaim(ctx context.Context, req *pb.Ge
 		TotalCnt: totalDeposits,
 	}, nil
 }
+
+// GetProofV2 returns the merkle proof for the given deposit. It is compatible with Apps Team bridge
+// Bridge rest API endpoint
+func (s *bridgeService) GetProofV2(ctx context.Context, req *pb.GetProofV2Request) (*pb.GetProofResponse, error) {
+	metrics.GetProofCounter()
+	start := time.Now()
+	defer func() {
+		metrics.GetProofLatency(time.Since(start))
+	}()
+	globalExitRoot, merkleProof, rollupMerkleProof, err := s.GetClaimProof(req.DepositCount, req.NetworkId, nil)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		proof       []string
+		rollupProof []string
+	)
+	if len(proof) != len(rollupProof) {
+		return nil, fmt.Errorf("proofs have different lengths. MerkleProof: %d. RollupMerkleProof: %d", len(merkleProof), len(rollupMerkleProof))
+	}
+	for i := 0; i < len(merkleProof); i++ {
+		proof = append(proof, "0x"+hex.EncodeToString(merkleProof[i][:]))
+		rollupProof = append(rollupProof, "0x"+hex.EncodeToString(rollupMerkleProof[i][:]))
+	}
+
+	return &pb.GetProofResponse{
+		Proof: &pb.Proof{
+			RollupMerkleProof: rollupProof,
+			MerkleProof:       proof,
+			MainExitRoot:      globalExitRoot.ExitRoots[0].Hex(),
+			RollupExitRoot:    globalExitRoot.ExitRoots[1].Hex(),
+		},
+	}, nil
+}
