@@ -65,6 +65,13 @@ service BridgeService {
             get: "/pending-bridges"
         };
     }
+
+    /// Get the merkle proof for the specific deposit. It is compatible with Apps Team bridge
+    rpc GetProofV2(GetProofV2Request) returns (GetProofResponse) {
+        option (google.api.http) = {
+            get: "/v2/merkle-proof"
+        };
+    }
 }
 
 // TokenWrapped message
@@ -139,6 +146,11 @@ message GetPendingBridgesRequest {
 message GetProofRequest {
     uint32 net_id = 1;
     uint32 deposit_cnt = 2;
+}
+
+message GetProofV2Request {
+    uint32 network_id = 1;
+    uint32 deposit_count = 2;
 }
 
 message GetProofByGERRequest {
