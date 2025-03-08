@@ -37,7 +37,7 @@ func NewSynchronizerTest(
 	chSynced chan uint32,
 	cfg Config) (Synchronizer, error) {
 	ctx, cancel := context.WithCancel(parentCtx)
-	waitDuration = time.Duration(1*time.Second)
+	waitDuration = time.Duration(1 * time.Second)
 	networkID := ethMan.GetNetworkID()
 	ger, err := storage.(storageInterface).GetLatestL1SyncedExitRoot(ctx, nil)
 	if err != nil {
@@ -1295,7 +1295,6 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 			Return(nil).
 			Run(func(args mock.Arguments) {
 				sync.Stop()
-				return
 			}).
 			Once()
 
