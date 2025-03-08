@@ -152,7 +152,7 @@ func (m *Manager) claimChecker(ctx context.Context, deposit *pb.Deposit) (bool, 
 	if err != nil {
 		return false, err
 	}
-	idx, succ := big.NewInt(0).SetString(deposit.GlobalIndex, 10) //nolint:gomnd
+	idx, succ := big.NewInt(0).SetString(deposit.GlobalIndex, 10) //nolint:mnd
 	if !succ {
 		return false, errors.New("error setting big int")
 	}
@@ -184,7 +184,7 @@ func (m *Manager) claimChecker(ctx context.Context, deposit *pb.Deposit) (bool, 
 	}
 	claimFound = false
 	for _, d := range bridges.Deposits {
-		dIdx, succ := big.NewInt(0).SetString(deposit.GlobalIndex, 10) //nolint:gomnd
+		dIdx, succ := big.NewInt(0).SetString(deposit.GlobalIndex, 10) //nolint:mnd
 		if !succ {
 			return false, errors.New("error setting big int")
 		}
@@ -966,7 +966,7 @@ func (m *Manager) GetL2Balance(ctx context.Context, originalNetwork uint32, orig
 }
 
 func GetOpsman(ctx context.Context, l2NetworkURL, dbName, bridgeServiceHTTPPort, bridgeServiceGRPCPort, port string, networkID uint32) (*Manager, error) {
-	//nolint:gomnd
+	//nolint:mnd
 	opsCfg := &Config{
 		L1NetworkURL: "http://localhost:8545",
 		L2NetworkURL: l2NetworkURL,

@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/jsonrpcclient/types"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 )
 
 const jsonRPCVersion = "2.0"
@@ -49,7 +50,12 @@ func JSONRPCCall(url, method string, parameters ...interface{}) (types.Response,
 	if err != nil {
 		return types.Response{}, err
 	}
-	defer httpRes.Body.Close()
+	defer func() {
+		err := httpRes.Body.Close()
+		if err != nil {
+			log.Errorf("error closing response body in rpc call. Request: %+v", request)
+		}
+	}()
 
 	if httpRes.StatusCode != http.StatusOK {
 		return types.Response{}, fmt.Errorf("%v - %v", httpRes.StatusCode, string(resBody))
@@ -67,53 +73,6 @@ func JSONRPCCall(url, method string, parameters ...interface{}) (types.Response,
 type BatchCall struct {
 	Method     string
 	Parameters []interface{}
-}
-
-// JSONRPCBatchCall executes a 2.0 JSON RPC HTTP Post Batch Request to the provided URL with
-// the provided method and parameters groups, which is compatible with the Ethereum
-// JSON RPC Server.
-func JSONRPCBatchCall(url string, calls ...BatchCall) ([]types.Response, error) {
-	requests := []types.Request{}
-
-	for i, call := range calls {
-		params, err := json.Marshal(call.Parameters)
-		if err != nil {
-			return nil, err
-		}
-
-		req := types.Request{
-			JSONRPC: jsonRPCVersion,
-			ID:      float64(i),
-			Method:  call.Method,
-			Params:  params,
-		}
-
-		requests = append(requests, req)
-	}
-
-	httpRes, err := sendJSONRPC_HTTPRequest(url, requests)
-	if err != nil {
-		return nil, err
-	}
-
-	resBody, err := io.ReadAll(httpRes.Body)
-	if err != nil {
-		return nil, err
-	}
-	defer httpRes.Body.Close()
-
-	if httpRes.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("%v - %v", httpRes.StatusCode, string(resBody))
-	}
-
-	var res []types.Response
-	err = json.Unmarshal(resBody, &res)
-	if err != nil {
-		errorMessage := string(resBody)
-		return nil, fmt.Errorf(errorMessage)
-	}
-
-	return res, nil
 }
 
 func sendJSONRPC_HTTPRequest(url string, payload interface{}) (*http.Response, error) {

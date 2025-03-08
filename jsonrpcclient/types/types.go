@@ -14,7 +14,7 @@ type ArgUint64 uint64
 
 // MarshalText marshals into text
 func (b ArgUint64) MarshalText() ([]byte, error) {
-	buf := make([]byte, 2) //nolint:gomnd
+	buf := make([]byte, 2) //nolint:mnd
 	copy(buf, `0x`)
 	buf = strconv.AppendUint(buf, uint64(b), hex.Base)
 	return buf, nil

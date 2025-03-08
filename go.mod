@@ -1,6 +1,8 @@
 module github.com/0xPolygonHermez/zkevm-bridge-service
 
-go 1.23.7
+go 1.23.0
+
+toolchain go1.23.5
 
 require (
 	github.com/barkimedes/go-deepcopy v0.0.0-20220514131651-17c30cfc62df
@@ -24,7 +26,7 @@ require (
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
-	github.com/urfave/cli/v2 v2.27.5
+	github.com/urfave/cli/v2 v2.27.6
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.32.0
 	golang.org/x/exp v0.0.0-20231110203233-9a3e6036ecaa

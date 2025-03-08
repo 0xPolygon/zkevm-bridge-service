@@ -14,7 +14,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	clientUtils "github.com/0xPolygonHermez/zkevm-bridge-service/test/client"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
-	"github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -103,7 +103,7 @@ func main() {
 		log.Fatal("error converting metadata to bytes. Error: ", err)
 	}
 	e := etherman.Deposit{
-		LeafType:           uint8(bridgeData.LeafType),
+		LeafType:           uint8(bridgeData.LeafType), // nolint:gosec
 		OriginalNetwork:    bridgeData.OrigNet,
 		OriginalAddress:    common.HexToAddress(bridgeData.OrigAddr),
 		Amount:             a,
@@ -140,7 +140,7 @@ func main() {
 	}
 	encoded := hex.EncodeToHex(b)
 	log.Info("tx encoded: ", encoded)
-	byt, err := EncodeTransaction(*tx, maxEffectivePercentage, forkID)
+	byt, err := EncodeTransaction(tx, maxEffectivePercentage, forkID)
 	if err != nil {
 		log.Fatal("error: ", err)
 	}
@@ -220,7 +220,7 @@ func main() {
 }
 
 // EncodeTransactions RLP encodes the given transactions
-func EncodeTransactions(txs []types.Transaction, effectivePercentages []uint8, forkID uint64) ([]byte, error) {
+func EncodeTransactions(txs []*types.Transaction, effectivePercentages []uint8, forkID uint64) ([]byte, error) {
 	var batchL2Data []byte
 
 	for i, tx := range txs {
@@ -242,7 +242,7 @@ func EncodeTransactions(txs []types.Transaction, effectivePercentages []uint8, f
 	return batchL2Data, nil
 }
 
-func prepareRPLTxData(tx types.Transaction) ([]byte, error) {
+func prepareRPLTxData(tx *types.Transaction) ([]byte, error) {
 	v, r, s := tx.RawSignatureValues()
 	sign := 1 - (v.Uint64() & 1)
 
@@ -268,7 +268,7 @@ func prepareRPLTxData(tx types.Transaction) ([]byte, error) {
 		return nil, err
 	}
 
-	newV := new(big.Int).Add(big.NewInt(ether155V), big.NewInt(int64(sign)))
+	newV := new(big.Int).Add(big.NewInt(ether155V), big.NewInt(int64(sign))) // nolint:gosec
 	newRPadded := fmt.Sprintf("%064s", r.Text(hex.Base))
 	newSPadded := fmt.Sprintf("%064s", s.Text(hex.Base))
 	newVPadded := fmt.Sprintf("%02s", newV.Text(hex.Base))
@@ -281,14 +281,14 @@ func prepareRPLTxData(tx types.Transaction) ([]byte, error) {
 
 // IsPreEIP155Tx checks if the tx is a tx that has a chainID as zero and
 // V field is either 27 or 28
-func IsPreEIP155Tx(tx types.Transaction) bool {
+func IsPreEIP155Tx(tx *types.Transaction) bool {
 	v, _, _ := tx.RawSignatureValues()
 	return tx.ChainId().Uint64() == 0 && (v.Uint64() == 27 || v.Uint64() == 28)
 }
 
 // EncodeTransaction RLP encodes the given transaction
-func EncodeTransaction(tx types.Transaction, effectivePercentage uint8, forkID uint64) ([]byte, error) {
-	return EncodeTransactions([]types.Transaction{tx}, []uint8{effectivePercentage}, forkID)
+func EncodeTransaction(tx *types.Transaction, effectivePercentage uint8, forkID uint64) ([]byte, error) {
+	return EncodeTransactions([]*types.Transaction{tx}, []uint8{effectivePercentage}, forkID)
 }
 
 // GetAuth configures and returns an auth object.

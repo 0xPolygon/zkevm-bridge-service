@@ -19,7 +19,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/mocksmartcontracts/BridgeMessageReceiver"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/mocksmartcontracts/erc20permitmock"
-	"github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
@@ -72,7 +72,7 @@ func (c *Client) GetSigner(ctx context.Context, accHexPrivateKey string) (*bind.
 	if err != nil {
 		return nil, err
 	}
-	chainID, err := c.ChainID(ctx)
+	chainID, err := c.Client.ChainID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (c *Client) GetSignerFromKeystore(ctx context.Context, ks zkevmtypes.Keysto
 	if err != nil {
 		return nil, err
 	}
-	chainID, err := c.ChainID(ctx)
+	chainID, err := c.Client.ChainID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (c *Client) GetKeyFromKeystore(ctx context.Context, ks zkevmtypes.KeystoreF
 	if err != nil {
 		return nil, nil, err
 	}
-	chainID, err := c.ChainID(ctx)
+	chainID, err := c.Client.ChainID(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -115,7 +115,7 @@ func (c *Client) GetKeyFromKeystore(ctx context.Context, ks zkevmtypes.KeystoreF
 
 // CheckTxWasMined check if a tx was already mined
 func (c *Client) CheckTxWasMined(ctx context.Context, txHash common.Hash) (bool, *types.Receipt, error) {
-	receipt, err := c.TransactionReceipt(ctx, txHash)
+	receipt, err := c.Client.TransactionReceipt(ctx, txHash)
 	if errors.Is(err, ethereum.NotFound) {
 		return false, nil, nil
 	} else if err != nil {

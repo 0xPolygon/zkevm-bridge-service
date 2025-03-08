@@ -39,7 +39,7 @@ type ConfigGroupingClaims struct {
 	// TriggerRetainedClaimPeriod is maximum time that a claim can be retainer before creating a group
 	TriggerRetainedClaimPeriod types.Duration `mapstructure:"TriggerRetainedClaimPeriod"`
 	// MaxRetries is the maximum number of retries to send a compressed claim tx
-	MaxRetries int `mapstructure:"MaxRetries"`
+	MaxRetries int32 `mapstructure:"MaxRetries"`
 	// RetryInterval is time between each retry
 	RetryInterval types.Duration `mapstructure:"RetryInterval"`
 	// RetryTimeout is the maximum time to wait for a claim tx to be mined

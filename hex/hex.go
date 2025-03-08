@@ -67,7 +67,7 @@ func DecodeUint64(str string) uint64 {
 
 // EncodeUint64 encodes a number as a hex string with 0x prefix.
 func EncodeUint64(i uint64) string {
-	enc := make([]byte, 2, 10) //nolint:gomnd
+	enc := make([]byte, 2, 10) //nolint:mnd
 	copy(enc, "0x")
 	return string(strconv.AppendUint(enc, i, Base))
 }
@@ -81,9 +81,9 @@ func DecodeNibble(in byte) uint64 {
 	case in >= '0' && in <= '9':
 		return uint64(in - '0')
 	case in >= 'A' && in <= 'F':
-		return uint64(in - 'A' + 10) //nolint:gomnd
+		return uint64(in - 'A' + 10) //nolint:mnd
 	case in >= 'a' && in <= 'f':
-		return uint64(in - 'a' + 10) //nolint:gomnd
+		return uint64(in - 'a' + 10) //nolint:mnd
 	default:
 		return BadNibble
 	}
