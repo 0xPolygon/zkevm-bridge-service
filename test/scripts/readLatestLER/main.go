@@ -1,8 +1,8 @@
 package main
 
 import (
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"

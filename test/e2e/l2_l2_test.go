@@ -46,7 +46,6 @@ func TestL2L2(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("Final L2 Bridge Balance in origin network 1: %v", l2Balance)
 
-
 		// Get Bridge Info By DestAddr
 		deposits, err := opsman1.GetBridgeInfoByDestAddr(ctx, &address)
 		require.NoError(t, err)
@@ -62,7 +61,7 @@ func TestL2L2(t *testing.T) {
 		require.NoError(t, err)
 		v, _ := big.NewInt(0).SetString("99999999216985000000000", 10)
 		t.Log("balance: ", balance)
-		require.Equal(t, 0,  v.Cmp(balance))
+		require.Equal(t, 0, v.Cmp(balance))
 		// Get the claim data
 		smtProof, smtRollupProof, globaExitRoot, err := opsman1.GetClaimData(ctx, deposits[0].NetworkId, deposits[0].DepositCnt)
 		require.NoError(t, err)

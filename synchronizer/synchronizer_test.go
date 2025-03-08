@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
+	cfgTypes "github.com/0xPolygonHermez/zkevm-bridge-service/config/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	rpcTypes "github.com/0xPolygonHermez/zkevm-bridge-service/jsonrpcclient/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
-	cfgTypes "github.com/0xPolygonHermez/zkevm-node/config/types"
-	rpcTypes "github.com/0xPolygonHermez/zkevm-node/jsonrpc/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/mock"

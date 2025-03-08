@@ -11,7 +11,6 @@ import (
 	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
-	"github.com/0xPolygonHermez/zkevm-node/state/runtime"
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -275,7 +274,7 @@ func (tm *MonitorTxs) ReviewMonitoredTx(ctx context.Context, mTx *ctmtypes.Monit
 		Data:  mTx.Data,
 	}
 	gas, err := tm.l2Node.EstimateGas(ctx, tx)
-	for i := 1; err != nil && err.Error() != runtime.ErrExecutionReverted.Error() && i < tm.cfg.RetryNumber; i++ {
+	for i := 1; err != nil && err.Error() != ErrExecutionReverted.Error() && i < tm.cfg.RetryNumber; i++ {
 		mTxLog.Warnf("error during gas estimation. Retrying... Error: %v, Data: %s", err, common.Bytes2Hex(tx.Data))
 		time.Sleep(tm.cfg.RetryInterval.Duration)
 		gas, err = tm.l2Node.EstimateGas(tm.ctx, tx)
