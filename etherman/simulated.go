@@ -5,19 +5,19 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/mockpolygonrollupmanager"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/mockverifier"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/pol"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonrollupmanager"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevm"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmglobalexitroot"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/proxy"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	mockbridge "github.com/0xPolygonHermez/zkevm-bridge-service/test/mocksmartcontracts/polygonzkevmbridge"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/mockpolygonrollupmanager"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/mockverifier"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/pol"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonrollupmanager"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevm"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmglobalexitroot"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/proxy"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
+	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient/simulated"
 )
@@ -30,19 +30,19 @@ func NewSimulatedEtherman(cfg Config, auth *bind.TransactOpts) (*Client, *simula
 		return &Client{}, nil, common.Address{}, nil, nil, nil
 	}
 	// 10000000 ETH in wei
-	balance, _ := new(big.Int).SetString("10000000000000000000000000", 10) //nolint:gomnd
+	balance, _ := new(big.Int).SetString("10000000000000000000000000", 10) //nolint:mnd
 	address := auth.From
-	genesisAlloc := map[common.Address]core.GenesisAccount{
+	genesisAlloc := map[common.Address]types.Account{
 		address: {
 			Balance: balance,
 		},
 	}
-	blockGasLimit := uint64(999999999999999999) //nolint:gomnd
+	blockGasLimit := uint64(999999999999999999) //nolint:mnd
 	client := simulated.NewBackend(genesisAlloc, simulated.WithBlockGasLimit(blockGasLimit))
 
 	// Deploy contracts
 	const polDecimalPlaces = 18
-	totalSupply, _ := new(big.Int).SetString("10000000000000000000000000000", 10) //nolint:gomnd
+	totalSupply, _ := new(big.Int).SetString("10000000000000000000000000000", 10) //nolint:mnd
 	polAddr, _, polContract, err := pol.DeployPol(auth, client.Client(), "Pol Token", "POL", polDecimalPlaces, totalSupply)
 	if err != nil {
 		log.Error("error: ", err)
@@ -115,13 +115,13 @@ func NewSimulatedEtherman(cfg Config, auth *bind.TransactOpts) (*Client, *simula
 		return nil, nil, common.Address{}, nil, nil, err
 	}
 	client.Commit()
-	_, err = mockRollupManager.Initialize(auth, auth.From, 10000, 10000, auth.From, auth.From, auth.From, common.Address{}, common.Address{}, 0, 0) //nolint:gomnd
+	_, err = mockRollupManager.Initialize(auth, auth.From, 10000, 10000, auth.From, auth.From, auth.From, common.Address{}, common.Address{}, 0, 0) //nolint:mnd
 	if err != nil {
 		log.Error("error: ", err)
 		return nil, nil, common.Address{}, nil, nil, err
 	}
 	client.Commit()
-	_, err = mockRollupManager.AddNewRollupType(auth, initZkevmAddr, rollupVerifierAddr, 6, 0, genesis, "PolygonZkEvm Rollup") //nolint:gomnd
+	_, err = mockRollupManager.AddNewRollupType(auth, initZkevmAddr, rollupVerifierAddr, 6, 0, genesis, "PolygonZkEvm Rollup") //nolint:mnd
 	if err != nil {
 		log.Error("error: ", err)
 		return nil, nil, common.Address{}, nil, nil, err
@@ -171,7 +171,7 @@ func NewSimulatedEtherman(cfg Config, auth *bind.TransactOpts) (*Client, *simula
 	}
 
 	// Approve the bridge and zkevm to spend 10000 pol tokens.
-	approvedAmount, _ := new(big.Int).SetString("10000000000000000000000", 10) //nolint:gomnd
+	approvedAmount, _ := new(big.Int).SetString("10000000000000000000000", 10) //nolint:mnd
 	_, err = polContract.Approve(auth, bridgeAddr, approvedAmount)
 	if err != nil {
 		log.Error("error: ", err)

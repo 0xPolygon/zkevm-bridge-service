@@ -561,7 +561,7 @@ func TestE2E(t *testing.T) {
 		require.NoError(t, err)
 		log.Debug("Bridge Message Authorized Account Test end")
 	})
-	t.Run("Claim by ger Test", func(t *testing.T){
+	t.Run("Claim by ger Test", func(t *testing.T) {
 		t.Log("Sending L2Deposit to generate a new globalExitRoot and get ClaimByGER")
 		tokenAddr := common.Address{} // This means is eth
 		amount := new(big.Int).SetUint64(10000000000000000)

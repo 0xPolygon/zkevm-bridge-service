@@ -7,7 +7,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
-	"github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v4"
 )
 
 const (
@@ -30,7 +30,7 @@ func NewBridgeController(ctx context.Context, cfg Config, networkIDs []uint32, m
 	)
 
 	for i, networkID := range networkIDs {
-		merkleTreeIDs[networkID] = uint8(i)
+		merkleTreeIDs[networkID] = uint8(i) // nolint:gosec
 		mt, err := NewMerkleTree(ctx, mtStore.(merkleTreeStore), cfg.Height, networkID)
 		if err != nil {
 			return nil, err

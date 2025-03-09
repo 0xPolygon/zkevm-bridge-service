@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/0xPolygonHermez/zkevm-node/test/scripts/cmd/dependencies"
-	"github.com/urfave/cli/v2"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/scripts/cmd/dependencies"
+	cli "github.com/urfave/cli/v2"
 )
 
 func updateDeps(ctx *cli.Context) error {

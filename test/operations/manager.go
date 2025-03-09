@@ -14,17 +14,15 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/ERC20"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/globalexitrootmanagerl2sovereignchain"
+	erc20 "github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/pol"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
-	"github.com/0xPolygonHermez/zkevm-node/encoding"
-	erc20 "github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/pol"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmglobalexitroot"
-	"github.com/0xPolygonHermez/zkevm-node/test/contracts/bin/ERC20"
-	"github.com/0xPolygonHermez/zkevm-node/test/operations"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -58,6 +56,9 @@ const (
 
 	MtHeight = 32
 	rollupID = 1
+
+	// Base10 decimal base
+	Base10 = 10
 )
 
 var accHexPrivateKeys = map[NetworkSID]string{
@@ -137,7 +138,7 @@ func NewManager(ctx context.Context, cfg *Config) (*Manager, error) {
 
 // CheckClaim checks if the claim is already in the network
 func (m *Manager) CheckClaim(ctx context.Context, deposit *pb.Deposit) error {
-	return operations.Poll(defaultInterval, defaultDeadline, func() (bool, error) {
+	return Poll(defaultInterval, defaultDeadline, func() (bool, error) {
 		return m.claimChecker(ctx, deposit)
 	})
 }
@@ -151,7 +152,7 @@ func (m *Manager) claimChecker(ctx context.Context, deposit *pb.Deposit) (bool, 
 	if err != nil {
 		return false, err
 	}
-	idx, succ := big.NewInt(0).SetString(deposit.GlobalIndex, 10) //nolint:gomnd
+	idx, succ := big.NewInt(0).SetString(deposit.GlobalIndex, 10) //nolint:mnd
 	if !succ {
 		return false, errors.New("error setting big int")
 	}
@@ -183,7 +184,7 @@ func (m *Manager) claimChecker(ctx context.Context, deposit *pb.Deposit) (bool, 
 	}
 	claimFound = false
 	for _, d := range bridges.Deposits {
-		dIdx, succ := big.NewInt(0).SetString(deposit.GlobalIndex, 10) //nolint:gomnd
+		dIdx, succ := big.NewInt(0).SetString(deposit.GlobalIndex, 10) //nolint:mnd
 		if !succ {
 			return false, errors.New("error setting big int")
 		}
@@ -205,7 +206,7 @@ func (m *Manager) claimChecker(ctx context.Context, deposit *pb.Deposit) (bool, 
 
 // CustomCheckClaim checks if the claim is already in the L2 network.
 func (m *Manager) CustomCheckClaim(ctx context.Context, deposit *pb.Deposit, interval, deadline time.Duration) error {
-	return operations.Poll(interval, deadline, func() (bool, error) {
+	return Poll(interval, deadline, func() (bool, error) {
 		return m.claimChecker(ctx, deposit)
 	})
 }
@@ -425,7 +426,7 @@ func (m *Manager) AddFunds(ctx context.Context) error {
 	}
 	const gasLimit = 21000
 	toAddress := common.HexToAddress(sequencerAddress)
-	ethAmount, _ := big.NewInt(0).SetString("200000000000000000000", encoding.Base10)
+	ethAmount, _ := big.NewInt(0).SetString("200000000000000000000", Base10)
 	tx := types.NewTransaction(nonce, toAddress, ethAmount, gasLimit, gasPrice, nil)
 	signedTx, err := auth.Signer(auth.From, tx)
 	if err != nil {
@@ -447,14 +448,14 @@ func (m *Manager) AddFunds(ctx context.Context) error {
 	// Create pol polTokenSC sc instance
 	log.Infof("Loading pol token SC instance")
 	polAddr := common.HexToAddress(PolTokenAddress)
-	polTokenSC, err := operations.NewToken(polAddr, client)
+	polTokenSC, err := NewToken(polAddr, client)
 	if err != nil {
 		return err
 	}
 
 	// Send pol to sequencer
 	log.Infof("Transferring pol tokens to sequencer")
-	polAmount, _ := big.NewInt(0).SetString("200000000000000000000000", encoding.Base10)
+	polAmount, _ := big.NewInt(0).SetString("200000000000000000000000", Base10)
 	tx, err = polTokenSC.Transfer(auth, toAddress, polAmount)
 	if err != nil {
 		return err
@@ -800,7 +801,7 @@ func (m *Manager) ApproveERC20(ctx context.Context, erc20Addr, bridgeAddr common
 // GetTokenWrapped get token wrapped info
 func (m *Manager) GetTokenWrapped(ctx context.Context, originNetwork uint32, originalTokenAddr common.Address, isCreated bool) (*etherman.TokenWrapped, error) {
 	if isCreated {
-		if err := operations.Poll(defaultInterval, defaultDeadline, func() (bool, error) {
+		if err := Poll(defaultInterval, defaultDeadline, func() (bool, error) {
 			wrappedToken, err := m.storage.GetTokenWrapped(ctx, originNetwork, originalTokenAddr, nil)
 			if err != nil {
 				return false, err
@@ -826,7 +827,7 @@ func (m *Manager) WaitExitRootToBeSynced(ctx context.Context, orgExitRoot *ether
 			ExitRoots: []common.Hash{{}, {}},
 		}
 	}
-	return operations.Poll(defaultInterval, waitRootSyncDeadline, func() (bool, error) {
+	return Poll(defaultInterval, waitRootSyncDeadline, func() (bool, error) {
 		exitRoot, err := m.storage.GetLatestExitRoot(ctx, networkID, destNetwork, nil)
 		if err != nil {
 			if err == gerror.ErrStorageNotFound {
@@ -965,7 +966,7 @@ func (m *Manager) GetL2Balance(ctx context.Context, originalNetwork uint32, orig
 }
 
 func GetOpsman(ctx context.Context, l2NetworkURL, dbName, bridgeServiceHTTPPort, bridgeServiceGRPCPort, port string, networkID uint32) (*Manager, error) {
-	//nolint:gomnd
+	//nolint:mnd
 	opsCfg := &Config{
 		L1NetworkURL: "http://localhost:8545",
 		L2NetworkURL: l2NetworkURL,

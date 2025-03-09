@@ -7,8 +7,8 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/gobuffalo/packr/v2"
-	"github.com/jackc/pgx/v4"
+	packr "github.com/gobuffalo/packr/v2"
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	migrate "github.com/rubenv/sql-migrate"
 )

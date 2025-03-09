@@ -13,11 +13,10 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
-	"github.com/0xPolygonHermez/zkevm-node/state/runtime"
-	"github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v4"
 )
 
 const (
@@ -25,6 +24,11 @@ const (
 	keyLen          = 32
 	mtHeight        = 32
 	LeafTypeMessage = uint8(1)
+)
+
+var (
+	// ErrExecutionReverted indicates the execution has been reverted
+	ErrExecutionReverted = errors.New("execution reverted")
 )
 
 // ClaimTxManager is the claim transaction manager for L2.
@@ -293,7 +297,7 @@ func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *
 		Data:  data,
 	}
 	gas, err := tm.l2Node.EstimateGas(tm.ctx, tx)
-	for i := 1; err != nil && err.Error() != runtime.ErrExecutionReverted.Error() && i < tm.cfg.RetryNumber; i++ {
+	for i := 1; err != nil && err.Error() != ErrExecutionReverted.Error() && i < tm.cfg.RetryNumber; i++ {
 		log.Warnf("rollupID: %d, error while doing gas estimation. Retrying... Error: %v, Data: %s", tm.rollupID, err, common.Bytes2Hex(data))
 		time.Sleep(tm.cfg.RetryInterval.Duration)
 		gas, err = tm.l2Node.EstimateGas(tm.ctx, tx)
@@ -360,7 +364,7 @@ func (tm *ClaimTxManager) ReviewMonitoredTx(ctx context.Context, mTx *ctmtypes.M
 		Data:  mTx.Data,
 	}
 	gas, err := tm.l2Node.EstimateGas(ctx, tx)
-	for i := 1; err != nil && err.Error() != runtime.ErrExecutionReverted.Error() && i < tm.cfg.RetryNumber; i++ {
+	for i := 1; err != nil && err.Error() != ErrExecutionReverted.Error() && i < tm.cfg.RetryNumber; i++ {
 		mTxLog.Warnf("error during gas estimation. Retrying... Error: %v, Data: %s", err, common.Bytes2Hex(tx.Data))
 		time.Sleep(tm.cfg.RetryInterval.Duration)
 		gas, err = tm.l2Node.EstimateGas(tm.ctx, tx)

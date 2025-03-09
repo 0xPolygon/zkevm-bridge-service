@@ -5,17 +5,17 @@ import (
 	"os"
 	"time"
 
+	"github.com/0xPolygonHermez/zkevm-bridge-service/config/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/bridgel2sovereignchain"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/claimcompressor"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/globalexitrootmanagerl2sovereignchain"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/proxy"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
-	"github.com/0xPolygonHermez/zkevm-node/config/types"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/proxy"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	gethTypes "github.com/ethereum/go-ethereum/core/types"
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 )
 
 const (
@@ -163,7 +163,7 @@ func deploySovereignChainSMC(ctx *cli.Context) error {
 		return err
 	}
 	log.Info("ImplementationBridgeAddr: ", implementationBridgeAddr)
-	time.Sleep(3 * time.Second) //nolint:gomnd
+	time.Sleep(3 * time.Second) //nolint:mnd
 
 	bridgeAddr, _, _, err := proxy.DeployProxy(auth, c.Client, implementationBridgeAddr, implementationBridgeAddr, []byte{})
 	if err != nil {
@@ -171,7 +171,7 @@ func deploySovereignChainSMC(ctx *cli.Context) error {
 		return err
 	}
 	log.Info("BridgeAddr: ", bridgeAddr)
-	time.Sleep(3 * time.Second) //nolint:gomnd
+	time.Sleep(3 * time.Second) //nolint:mnd
 
 	implementationGERManagerAddr, _, _, err := globalexitrootmanagerl2sovereignchain.DeployGlobalexitrootmanagerl2sovereignchain(auth, c.Client, bridgeAddr)
 	if err != nil {
@@ -179,7 +179,7 @@ func deploySovereignChainSMC(ctx *cli.Context) error {
 		return err
 	}
 	log.Info("ImplementationGERManagerAddr: ", implementationGERManagerAddr)
-	time.Sleep(3 * time.Second) //nolint:gomnd
+	time.Sleep(3 * time.Second) //nolint:mnd
 
 	globalExitRootAddr, _, _, err := proxy.DeployProxy(auth, c.Client, implementationGERManagerAddr, implementationGERManagerAddr, []byte{})
 	if err != nil {
@@ -187,7 +187,7 @@ func deploySovereignChainSMC(ctx *cli.Context) error {
 		return err
 	}
 	log.Info("GlobalExitRootAddr: ", globalExitRootAddr)
-	time.Sleep(3 * time.Second) //nolint:gomnd
+	time.Sleep(3 * time.Second) //nolint:mnd
 
 	br, err := bridgel2sovereignchain.NewBridgel2sovereignchain(bridgeAddr, c.Client)
 	if err != nil {
@@ -199,7 +199,7 @@ func deploySovereignChainSMC(ctx *cli.Context) error {
 		log.Error("error: ", err)
 		return err
 	}
-	time.Sleep(3 * time.Second) //nolint:gomnd
+	time.Sleep(3 * time.Second) //nolint:mnd
 
 	ger, err := globalexitrootmanagerl2sovereignchain.NewGlobalexitrootmanagerl2sovereignchain(globalExitRootAddr, c.Client)
 	if err != nil {
@@ -251,7 +251,7 @@ func sendETH(ctx *cli.Context) error {
 	}
 
 	value, _ := big.NewInt(0).SetString("20000000000000000000", 0) // in wei (20 eth)
-	gasLimit := uint64(21000)                                      //nolint:gomnd
+	gasLimit := uint64(21000)                                      //nolint:mnd
 	gasPrice, err := c.Client.SuggestGasPrice(ctx.Context)
 	if err != nil {
 		log.Fatal(err)
@@ -270,7 +270,7 @@ func sendETH(ctx *cli.Context) error {
 	}
 	log.Infof("tx sent: %s", signedTx.Hash().Hex())
 
-	time.Sleep(3 * time.Second) //nolint:gomnd
+	time.Sleep(3 * time.Second) //nolint:mnd
 	balance, err = c.Client.BalanceAt(ctx.Context, destAddr, nil)
 	if err != nil {
 		log.Error("Error: ", err)
