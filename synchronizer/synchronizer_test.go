@@ -35,7 +35,9 @@ func NewSynchronizerTest(
 	chExitRootEventL2 chan *etherman.GlobalExitRoot,
 	chsExitRootEvent []chan *etherman.GlobalExitRoot,
 	chSynced chan uint32,
-	cfg Config) (Synchronizer, error) {
+	cfg Config,
+	allNetworkIDs []uint32,
+	sovereignChain bool) (Synchronizer, error) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	waitDuration = time.Duration(1 * time.Second)
 	networkID := ethMan.GetNetworkID()
@@ -61,7 +63,9 @@ func NewSynchronizerTest(
 			chsExitRootEvent: chsExitRootEvent,
 			chSynced:         chSynced,
 			l1RollupExitRoot: ger.ExitRoots[1],
+			allNetworkIDs:    allNetworkIDs,
 			synced:           true,
+			forceSyncChunk:   false,
 		}, nil
 	}
 	return &ClientSynchronizer{
@@ -77,6 +81,8 @@ func NewSynchronizerTest(
 		zkEVMClient:       zkEVMClient,
 		networkID:         networkID,
 		synced:            true,
+		sovereignChain:    sovereignChain,
+		forceSyncChunk:    cfg.ForceL2SyncChunk,
 	}, nil
 }
 
@@ -93,7 +99,7 @@ func TestSyncGer(t *testing.T) {
 		chEvent := make(chan *etherman.GlobalExitRoot)
 		chSynced := make(chan uint32)
 		parentCtx := context.Background()
-		sync, err := NewSynchronizerTest(parentCtx, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
+		sync, err := NewSynchronizerTest(parentCtx, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg, []uint32{}, false)
 		require.NoError(t, err)
 
 		go func() {
@@ -131,7 +137,7 @@ func TestSyncGer(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader1, nil).
-			Once()
+			Twice()
 
 		globalExitRoot := etherman.GlobalExitRoot{
 			BlockID: 1,
@@ -234,7 +240,7 @@ func TestSyncTrustedGer(t *testing.T) {
 		chEvent := make(chan *etherman.GlobalExitRoot)
 		chSynced := make(chan uint32)
 		parentCtx := context.Background()
-		sync, err := NewSynchronizerTest(parentCtx, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
+		sync, err := NewSynchronizerTest(parentCtx, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg, []uint32{}, false)
 		require.NoError(t, err)
 
 		go func() {
@@ -272,7 +278,7 @@ func TestSyncTrustedGer(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader1, nil).
-			Once()
+			Twice()
 
 		ethermanBlock0 := etherman.Block{
 			BlockHash: ethBlock0.Hash(),
@@ -375,7 +381,7 @@ func TestReorg(t *testing.T) {
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
 		chSynced := make(chan uint32)
-		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
+		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg, []uint32{}, false)
 		require.NoError(t, err)
 
 		go func() {
@@ -419,7 +425,7 @@ func TestReorg(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader3bis, nil).
-			Once()
+			Twice()
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock1.Number()).
@@ -491,7 +497,7 @@ func TestReorg(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader3bis, nil).
-			Once()
+			Twice()
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock0.Number()).
@@ -604,7 +610,7 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
 		chSynced := make(chan uint32)
-		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
+		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg, []uint32{}, false)
 		require.NoError(t, err)
 
 		go func() {
@@ -642,7 +648,7 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader3, nil).
-			Once()
+			Twice()
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock1.Number()).
@@ -706,7 +712,7 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader3, nil).
-			Once()
+			Twice()
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock0.Number()).
@@ -758,7 +764,7 @@ func TestRegularReorg(t *testing.T) {
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
 		chSynced := make(chan uint32)
-		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
+		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg, []uint32{}, false)
 		require.NoError(t, err)
 
 		go func() {
@@ -798,7 +804,7 @@ func TestRegularReorg(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader2bis, nil).
-			Once()
+			Twice()
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock1.Number()).
@@ -954,7 +960,7 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
 		chSynced := make(chan uint32)
-		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
+		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg, []uint32{}, false)
 		require.NoError(t, err)
 
 		go func() {
@@ -993,7 +999,7 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader3, nil).
-			Once()
+			Twice()
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock2.Number()).
@@ -1071,7 +1077,7 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader3, nil).
-			Once()
+			Twice()
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock0.Number()).
@@ -1146,7 +1152,7 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
 		chEvent := make(chan *etherman.GlobalExitRoot)
 		chSynced := make(chan uint32)
-		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg)
+		sync, err := NewSynchronizerTest(parentContext, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg, []uint32{}, false)
 		require.NoError(t, err)
 
 		go func() {
@@ -1186,7 +1192,7 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader2bis, nil).
-			Once()
+			Twice()
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock1.Number()).
@@ -1258,7 +1264,7 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", mock.Anything, n).
 			Return(ethHeader2bis, nil).
-			Once()
+			Twice()
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock0.Number()).
@@ -1300,6 +1306,192 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 
 		return sync
 	}
+	m := mocks{
+		Etherman:    newEthermanMock(t),
+		BridgeCtrl:  newBridgectrlMock(t),
+		Storage:     newStorageMock(t),
+		DbTx:        newDbTxMock(t),
+		ZkEVMClient: newZkEVMClientMock(t),
+	}
+
+	// start synchronizing
+	t.Run("Sync Ger test", func(t *testing.T) {
+		sync := setupMocks(&m)
+		err := sync.Sync()
+		require.NoError(t, err)
+	})
+}
+
+func TestSyncL2GERUsingForcedSyncChunk(t *testing.T) {
+	setupMocks := func(m *mocks) Synchronizer {
+		genBlockNumber := uint64(0)
+		cfg := Config{
+			SyncInterval:     cfgTypes.Duration{Duration: 1 * time.Second},
+			SyncChunkSize:    2,
+			ForceL2SyncChunk: true,
+		}
+		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
+		m.Etherman.On("GetNetworkID").Return(uint32(1))
+		m.Storage.On("GetLatestL1SyncedExitRoot", ctx, nil).Return(&etherman.GlobalExitRoot{}, gerror.ErrStorageNotFound).Once()
+		chEvent := make(chan *etherman.GlobalExitRoot)
+		chSynced := make(chan uint32)
+		parentCtx := context.Background()
+		sync, err := NewSynchronizerTest(parentCtx, m.Storage, m.BridgeCtrl, m.Etherman, m.ZkEVMClient, genBlockNumber, chEvent, []chan *etherman.GlobalExitRoot{chEvent}, chSynced, cfg, []uint32{}, true)
+		require.NoError(t, err)
+
+		go func() {
+			for {
+				select {
+				case <-chEvent:
+					t.Log("New GER received")
+				case netID := <-chSynced:
+					t.Log("Synced networkID: ", netID)
+				case <-parentCtx.Done():
+					t.Log("Stopping parentCtx...")
+					return
+				}
+			}
+		}()
+
+		parentHash := common.HexToHash("0x111")
+		ethHeader0 := &types.Header{Number: big.NewInt(0), ParentHash: parentHash}
+		ethHeader1 := &types.Header{Number: big.NewInt(1), ParentHash: ethHeader0.Hash()}
+		ethHeader2 := &types.Header{Number: big.NewInt(2), ParentHash: ethHeader1.Hash()}
+		ethHeader3 := &types.Header{Number: big.NewInt(3), ParentHash: ethHeader2.Hash()}
+		ethHeader4 := &types.Header{Number: big.NewInt(4), ParentHash: ethHeader3.Hash()}
+		ethHeader5 := &types.Header{Number: big.NewInt(5), ParentHash: ethHeader4.Hash()}
+		ethHeader6 := &types.Header{Number: big.NewInt(6), ParentHash: ethHeader5.Hash()}
+		ethBlock0 := types.NewBlockWithHeader(ethHeader0)
+		ethBlock1 := types.NewBlockWithHeader(ethHeader1)
+		ethBlock6 := types.NewBlockWithHeader(ethHeader6)
+		lastBlock := &etherman.Block{BlockHash: ethBlock0.Hash(), BlockNumber: ethBlock0.Number().Uint64()}
+		var networkID uint32 = 1
+
+		m.Storage.
+			On("GetLastBlock", ctx, networkID, nil).
+			Return(lastBlock, nil).
+			Once()
+
+		var n *big.Int
+		m.Etherman.
+			On("HeaderByNumber", ctx, n).
+			Return(ethHeader6, nil).
+			Once()
+
+		m.Etherman.
+			On("HeaderByNumber", ctx, ethBlock0.Number()).
+			Return(ethHeader0, nil).
+			Twice()
+
+		globalExitRootL1 := etherman.GlobalExitRoot{
+			BlockNumber: 1,
+			ExitRoots: []common.Hash{
+				common.HexToHash("0xc14c74e4dddf25627a745f46cae6ac98782e2783c3ccc28107c8210e60d58865"),
+				common.HexToHash("0xd14c74e4dddf25627a745f46cae6ac98782e2783c3ccc28107c8210e60d58866"),
+			},
+			GlobalExitRoot: common.HexToHash("0xb14c74e4dddf25627a745f46cae6ac98782e2783c3ccc28107c8210e60d58864"),
+		}
+		globalExitRootL2Full := etherman.GlobalExitRoot{
+			BlockID:     1,
+			BlockNumber: ethBlock1.NumberU64(),
+			NetworkID:   networkID,
+			ExitRoots: []common.Hash{
+				common.HexToHash("0xc14c74e4dddf25627a745f46cae6ac98782e2783c3ccc28107c8210e60d58865"),
+				common.HexToHash("0xd14c74e4dddf25627a745f46cae6ac98782e2783c3ccc28107c8210e60d58866"),
+			},
+			GlobalExitRoot: common.HexToHash("0xb14c74e4dddf25627a745f46cae6ac98782e2783c3ccc28107c8210e60d58864"),
+		}
+		globalExitRootL2 := etherman.GlobalExitRoot{
+			BlockNumber:    ethBlock1.NumberU64(),
+			ExitRoots:      []common.Hash{},
+			GlobalExitRoot: common.HexToHash("0xb14c74e4dddf25627a745f46cae6ac98782e2783c3ccc28107c8210e60d58864"),
+		}
+		ethermanBlock1 := etherman.Block{
+			BlockNumber:     ethBlock1.NumberU64(),
+			BlockHash:       ethBlock1.Hash(),
+			GlobalExitRoots: []etherman.GlobalExitRoot{globalExitRootL2},
+			NetworkID:       0,
+		}
+		blocks := []etherman.Block{ethermanBlock1}
+		order := map[common.Hash][]etherman.Order{
+			ethBlock1.Hash(): {
+				{
+					Name: etherman.GlobalExitRootsOrder,
+					Pos:  0,
+				},
+			},
+		}
+
+		fromBlock := ethBlock0.NumberU64() + 1
+		toBlock := fromBlock + cfg.SyncChunkSize
+		if toBlock > ethBlock6.NumberU64() {
+			toBlock = ethBlock6.NumberU64()
+		}
+		m.Etherman.
+			On("GetRollupInfoByBlockRange", ctx, fromBlock, &toBlock).
+			Return(blocks, order, nil).
+			Once()
+
+		m.Storage.
+			On("BeginDBTransaction", ctx).
+			Return(m.DbTx, nil).
+			Once()
+
+		m.Storage.
+			On("AddBlock", ctx, &blocks[0], m.DbTx).
+			Return(uint64(1), nil).
+			Once()
+
+		m.Storage.
+			On("GetL1ExitRootByGER", ctx, blocks[0].GlobalExitRoots[0].GlobalExitRoot, nil).
+			Return(&globalExitRootL1, nil).
+			Once()
+
+		m.Storage.
+			On("AddGlobalExitRoot", ctx, &globalExitRootL2Full, m.DbTx).
+			Return(nil).
+			Once()
+
+		m.Storage.
+			On("Commit", ctx, m.DbTx).
+			Run(func(args mock.Arguments) { sync.Stop() }).
+			Return(nil).
+			Once()
+
+		m.Storage.
+			On("GetLatestTrustedExitRoot", ctx, networkID, nil).
+			Return(&globalExitRootL2Full, nil).
+			Once()
+
+		m.Etherman.
+			On("HeaderByNumber", ctx, big.NewInt(0).SetUint64(toBlock)).
+			Return(ethHeader2, nil).
+			Once()
+
+		m.Etherman.
+			On("HeaderByNumber", ctx, big.NewInt(0).SetUint64(toBlock-1)).
+			Return(ethHeader2, nil).
+			Once()
+
+		fromBlock1 := toBlock + 1
+		toBlock1 := fromBlock1 + cfg.SyncChunkSize
+		if toBlock1 > ethBlock6.NumberU64() {
+			toBlock1 = ethBlock6.NumberU64()
+		}
+		m.Etherman.
+			On("GetRollupInfoByBlockRange", ctx, fromBlock1, &toBlock1).
+			Return([]etherman.Block{}, map[common.Hash][]etherman.Order{}, nil).
+			Once()
+
+		m.Etherman.
+			On("HeaderByNumber", ctx, big.NewInt(0).SetUint64(toBlock1)).
+			Run(func(args mock.Arguments) { sync.Stop() }).
+			Return(ethHeader6, nil).
+			Once()
+
+		return sync
+	}
+
 	m := mocks{
 		Etherman:    newEthermanMock(t),
 		BridgeCtrl:  newBridgectrlMock(t),
