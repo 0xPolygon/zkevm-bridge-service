@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v4"
 )
 
 const (
@@ -272,7 +272,7 @@ func (tm *MonitorCompressedTxs) OutdateClaims(pendingTx *PendingTxs) error {
 				}
 			}
 		}
-		if group.DbEntry.NumRetries >= int32(tm.cfg.GroupingClaims.MaxRetries) {
+		if group.DbEntry.NumRetries >= tm.cfg.GroupingClaims.MaxRetries {
 			log.Infof("group_id:%d reached maximum retries (%d>=%d)", group.DbEntry.GroupID,
 				group.DbEntry.NumRetries, tm.cfg.GroupingClaims.MaxRetries)
 			tm.OnFailGroup(group)

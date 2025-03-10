@@ -7,8 +7,8 @@ import (
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/gobuffalo/packr/v2"
-	"github.com/jackc/pgx/v4"
+	packr "github.com/gobuffalo/packr/v2"
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	migrate "github.com/rubenv/sql-migrate"
 	"github.com/stretchr/testify/require"

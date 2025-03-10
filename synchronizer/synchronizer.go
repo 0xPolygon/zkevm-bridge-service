@@ -12,7 +12,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer/metrics"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v4"
 )
 
 // Synchronizer connects L1 and L2
@@ -430,7 +430,7 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 		for _, element := range order[blocks[i].BlockHash] {
 			switch element.Name {
 			case etherman.GlobalExitRootsOrder:
-				if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 2 { //nolint:gomnd
+				if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 2 { //nolint:mnd
 					isNewL1Ger = true
 				} else if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 0 {
 					isNewL2Ger = true
@@ -705,7 +705,7 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 	// Store GlobalExitRoot
 	globalExitRoot.BlockID = blockID
 	globalExitRoot.NetworkID = s.networkID
-	if len(globalExitRoot.ExitRoots) == 2 { //nolint:gomnd
+	if len(globalExitRoot.ExitRoots) == 2 { //nolint:mnd
 		log.Debugf("networkID: %d, Storing L1 Ger: ", s.networkID, globalExitRoot.GlobalExitRoot)
 		// Check if there is some globalExitRoot in L2. If so, it must be incompleted. It must be updated.
 		// A race condition between dbTxs (L1 dbTx and L2 dbTxs) is very unlikely because L1 sync takes usually takes more time than L2 sync.

@@ -144,7 +144,7 @@ func runRestServer(ctx context.Context, grpcPort, httpPort string) error {
 	}
 
 	srv := &http.Server{
-		ReadTimeout: 1 * time.Second, //nolint:gomnd
+		ReadTimeout: 1 * time.Second, //nolint:mnd
 		Addr:        ":" + httpPort,
 		Handler:     allowCORS(mux),
 	}
@@ -157,7 +157,7 @@ func runRestServer(ctx context.Context, grpcPort, httpPort string) error {
 			<-ctx.Done()
 		}
 
-		_, cancel := context.WithTimeout(ctx, 5*time.Second) //nolint:gomnd
+		_, cancel := context.WithTimeout(ctx, 5*time.Second) //nolint:mnd
 		defer cancel()
 
 		_ = srv.Shutdown(ctx)

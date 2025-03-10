@@ -14,7 +14,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
 	lru "github.com/hashicorp/golang-lru/v2"
-	"github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v4"
 )
 
 type bridgeService struct {
@@ -32,7 +32,7 @@ type bridgeService struct {
 func NewBridgeService(cfg Config, height uint8, networks []uint32, storage interface{}) *bridgeService {
 	var networkIDs = make(map[uint32]uint8)
 	for i, network := range networks {
-		networkIDs[network] = uint8(i)
+		networkIDs[network] = uint8(i) // nolint:gosec
 	}
 	cache, err := lru.New[string, [][]byte](cfg.CacheSize)
 	if err != nil {
@@ -413,7 +413,7 @@ func (s *bridgeService) GetClaims(ctx context.Context, req *pb.GetClaimsRequest)
 	if err != nil {
 		return nil, err
 	}
-	claims, err := s.storage.GetClaims(ctx, req.DestAddr, limit, req.Offset, nil) //nolint:gomnd
+	claims, err := s.storage.GetClaims(ctx, req.DestAddr, limit, req.Offset, nil) //nolint:mnd
 	if err != nil {
 		return nil, err
 	}
