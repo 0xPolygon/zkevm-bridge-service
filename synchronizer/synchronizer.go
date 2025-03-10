@@ -463,6 +463,9 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 		for _, element := range order[blocks[i].BlockHash] {
 			switch element.Name {
 			case etherman.GlobalExitRootsOrder:
+				if len(blocks[i].GlobalExitRoots) < element.Pos+1 {
+					return fmt.Errorf("networkID: %d, GlobalExitRoots event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+				}
 				if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 2 { //nolint:mnd
 					isNewL1Ger = true
 				} else if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 0 {
@@ -478,29 +481,44 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 					metrics.L2GERCounter()
 				}
 			case etherman.RemoveL2GEROrder:
+				if len(blocks[i].RemoveL2GER) < element.Pos+1 {
+					return fmt.Errorf("networkID: %d, RemoveL2GER event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+				}
 				err = s.processRemoveL2GlobalExitRoot(blocks[i].RemoveL2GER[element.Pos], blockID, dbTx)
 				if err != nil {
 					return err
 				}
 				metrics.RemoveL2GERCounter()
 			case etherman.DepositsOrder:
+				if len(blocks[i].Deposits) < element.Pos+1 {
+					return fmt.Errorf("networkID: %d, Deposits event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+				}
 				err = s.processDeposit(blocks[i].Deposits[element.Pos], blockID, dbTx)
 				if err != nil {
 					return err
 				}
 				metrics.DepositCounter()
 			case etherman.ClaimsOrder:
+				if len(blocks[i].Claims) < element.Pos+1 {
+					return fmt.Errorf("networkID: %d, Claims event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+				}
 				err = s.processClaim(blocks[i].Claims[element.Pos], blockID, dbTx)
 				if err != nil {
 					return err
 				}
 				metrics.ClaimCounter()
 			case etherman.TokensOrder:
+				if len(blocks[i].Tokens) < element.Pos+1 {
+					return fmt.Errorf("networkID: %d, Tokens event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+				}
 				err = s.processTokenWrapped(blocks[i].Tokens[element.Pos], blockID, dbTx)
 				if err != nil {
 					return err
 				}
 			case etherman.VerifyBatchOrder:
+				if len(blocks[i].VerifiedBatches) < element.Pos+1 {
+					return fmt.Errorf("networkID: %d, VerifiedBatches event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+				}
 				err = s.processVerifyBatch(blocks[i].VerifiedBatches[element.Pos], blockID, dbTx)
 				if err != nil {
 					return err
