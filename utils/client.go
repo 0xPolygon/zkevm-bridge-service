@@ -11,17 +11,16 @@ import (
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl/pb"
+	zkevmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/config/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/ERC20"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/mocksmartcontracts/BridgeMessageReceiver"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/mocksmartcontracts/erc20permitmock"
-	zkevmtypes "github.com/0xPolygonHermez/zkevm-node/config/types"
-	"github.com/0xPolygonHermez/zkevm-node/encoding"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmglobalexitroot"
-	"github.com/0xPolygonHermez/zkevm-node/test/contracts/bin/ERC20"
-	ops "github.com/0xPolygonHermez/zkevm-node/test/operations"
-	"github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"
@@ -73,7 +72,7 @@ func (c *Client) GetSigner(ctx context.Context, accHexPrivateKey string) (*bind.
 	if err != nil {
 		return nil, err
 	}
-	chainID, err := c.ChainID(ctx)
+	chainID, err := c.Client.ChainID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +89,7 @@ func (c *Client) GetSignerFromKeystore(ctx context.Context, ks zkevmtypes.Keysto
 	if err != nil {
 		return nil, err
 	}
-	chainID, err := c.ChainID(ctx)
+	chainID, err := c.Client.ChainID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +106,7 @@ func (c *Client) GetKeyFromKeystore(ctx context.Context, ks zkevmtypes.KeystoreF
 	if err != nil {
 		return nil, nil, err
 	}
-	chainID, err := c.ChainID(ctx)
+	chainID, err := c.Client.ChainID(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -116,7 +115,7 @@ func (c *Client) GetKeyFromKeystore(ctx context.Context, ks zkevmtypes.KeystoreF
 
 // CheckTxWasMined check if a tx was already mined
 func (c *Client) CheckTxWasMined(ctx context.Context, txHash common.Hash) (bool, *types.Receipt, error) {
-	receipt, err := c.TransactionReceipt(ctx, txHash)
+	receipt, err := c.Client.TransactionReceipt(ctx, txHash)
 	if errors.Is(err, ethereum.NotFound) {
 		return false, nil, nil
 	} else if err != nil {
@@ -262,7 +261,7 @@ func (c *Client) BuildSendClaim(ctx context.Context, deposit *etherman.Deposit, 
 
 // SendClaim sends a claim transaction.
 func (c *Client) SendClaim(ctx context.Context, deposit *pb.Deposit, smtProof [mtHeight][keyLen]byte, smtRollupProof [mtHeight][keyLen]byte, globalExitRoot *etherman.GlobalExitRoot, auth *bind.TransactOpts) error {
-	amount, _ := new(big.Int).SetString(deposit.Amount, encoding.Base10)
+	amount, _ := new(big.Int).SetString(deposit.Amount, 0)
 	var (
 		tx  *types.Transaction
 		err error
@@ -301,11 +300,6 @@ func (c *Client) SendClaim(ctx context.Context, deposit *pb.Deposit, smtProof [m
 	// wait transfer to be mined
 	const txTimeout = 60 * time.Second
 	return WaitTxToBeMined(ctx, c.Client, tx, txTimeout)
-}
-
-// WaitTxToBeMined waits until a tx is mined or forged.
-func WaitTxToBeMined(ctx context.Context, client *ethclient.Client, tx *types.Transaction, timeout time.Duration) error {
-	return ops.WaitTxToBeMined(ctx, client, tx, timeout)
 }
 
 func (c *Client) GetGlobalExitRootFromSmc(ctx context.Context) (*etherman.GlobalExitRoot, error) {
@@ -361,4 +355,69 @@ func (c *Client) MintPOL(ctx context.Context, polAddr common.Address, amount *bi
 	}
 	const txMinedTimeoutLimit = 60 * time.Second
 	return WaitTxToBeMined(ctx, c.Client, tx, txMinedTimeoutLimit)
+}
+
+type EthClienter interface {
+	ethereum.TransactionReader
+	ethereum.ContractCaller
+	bind.DeployBackend
+}
+
+// WaitTxToBeMined waits until a tx has been mined or the given timeout expires.
+func WaitTxToBeMined(parentCtx context.Context, client EthClienter, tx *types.Transaction, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(parentCtx, timeout)
+	defer cancel()
+	receipt, err := bind.WaitMined(ctx, client, tx)
+	if errors.Is(err, context.DeadlineExceeded) {
+		return err
+	} else if err != nil {
+		log.Errorf("error waiting tx %s to be mined: %w", tx.Hash(), err)
+		return err
+	}
+	if receipt.Status == types.ReceiptStatusFailed {
+		// Get revert reason
+		reason, reasonErr := RevertReason(ctx, client, tx, receipt.BlockNumber)
+		if reasonErr != nil {
+			reason = reasonErr.Error()
+		}
+		return fmt.Errorf("transaction has failed, reason: %s, receipt: %+v. tx: %+v, gas: %v", reason, receipt, tx, tx.Gas())
+	}
+	log.Debug("Transaction successfully mined: ", tx.Hash())
+	return nil
+}
+
+// RevertReason returns the revert reason for a tx that has a receipt with failed status
+func RevertReason(ctx context.Context, c EthClienter, tx *types.Transaction, blockNumber *big.Int) (string, error) {
+	if tx == nil {
+		return "", nil
+	}
+
+	from, err := types.Sender(types.NewEIP155Signer(tx.ChainId()), tx)
+	if err != nil {
+		signer := types.LatestSignerForChainID(tx.ChainId())
+		from, err = types.Sender(signer, tx)
+		if err != nil {
+			return "", err
+		}
+	}
+	msg := ethereum.CallMsg{
+		From: from,
+		To:   tx.To(),
+		Gas:  tx.Gas(),
+
+		Value: tx.Value(),
+		Data:  tx.Data(),
+	}
+	hex, err := c.CallContract(ctx, msg, blockNumber)
+	if err != nil {
+		return "", err
+	}
+
+	unpackedMsg, err := abi.UnpackRevert(hex)
+	if err != nil {
+		log.Warnf("failed to get the revert message for tx %v: %v", tx.Hash(), err)
+		return "", errors.New("execution reverted")
+	}
+
+	return unpackedMsg, nil
 }

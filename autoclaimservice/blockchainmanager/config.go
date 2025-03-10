@@ -1,7 +1,7 @@
 package blockchainmanager
 
 import (
-	"github.com/0xPolygonHermez/zkevm-node/config/types"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/config/types"
 	"github.com/ethereum/go-ethereum/common"
 )
 

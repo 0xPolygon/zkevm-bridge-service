@@ -10,11 +10,10 @@ import (
 	"testing"
 	"time"
 
+	erc20 "github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/pol"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/operations"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
-	erc20 "github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/pol"
-	ops "github.com/0xPolygonHermez/zkevm-node/test/operations"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
@@ -147,6 +146,6 @@ func assetERC20Generic(ctx context.Context, client *utils.Client, destNetwork ui
 		return common.Hash{}, err
 	}
 	fmt.Println("Tx: ", tx.Hash().Hex())
-	err = ops.WaitTxToBeMined(ctx, client.Client, tx, 60*time.Second)
+	err = WaitTxToBeMined(ctx, client.Client, tx, 60*time.Second)
 	return tx.Hash(), err
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/autoclaimservice/blockchainmanager"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/autoclaimservice/config"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 )
 
 const (

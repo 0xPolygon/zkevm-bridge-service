@@ -21,7 +21,7 @@ const (
 	defaultNetwork = "mainnet"
 )
 
-//nolint:gomnd
+//nolint:mnd
 var (
 	networkConfigs = map[string]NetworkConfig{
 		defaultNetwork: {

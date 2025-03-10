@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
+	cfgTypes "github.com/0xPolygonHermez/zkevm-bridge-service/config/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	rpcTypes "github.com/0xPolygonHermez/zkevm-bridge-service/jsonrpcclient/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
-	cfgTypes "github.com/0xPolygonHermez/zkevm-node/config/types"
-	rpcTypes "github.com/0xPolygonHermez/zkevm-node/jsonrpc/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/mock"
@@ -39,6 +39,7 @@ func NewSynchronizerTest(
 	allNetworkIDs []uint32,
 	sovereignChain bool) (Synchronizer, error) {
 	ctx, cancel := context.WithCancel(parentCtx)
+	waitDuration = time.Duration(1 * time.Second)
 	networkID := ethMan.GetNetworkID()
 	ger, err := storage.(storageInterface).GetLatestL1SyncedExitRoot(ctx, nil)
 	if err != nil {
@@ -198,13 +199,13 @@ func TestSyncGer(t *testing.T) {
 
 		m.Storage.
 			On("Commit", ctx, m.DbTx).
-			Run(func(args mock.Arguments) { sync.Stop() }).
 			Return(nil).
 			Once()
 
 		m.Storage.
 			On("GetLatestL1SyncedExitRoot", ctx, nil).
 			Return(&blocks[1].GlobalExitRoots[0], nil).
+			Run(func(args mock.Arguments) { sync.Stop() }).
 			Once()
 
 		return sync
@@ -315,7 +316,6 @@ func TestSyncTrustedGer(t *testing.T) {
 
 		m.Storage.
 			On("Commit", ctx, m.DbTx).
-			Run(func(args mock.Arguments) { sync.Stop() }).
 			Return(nil).
 			Once()
 
@@ -347,6 +347,7 @@ func TestSyncTrustedGer(t *testing.T) {
 		m.Storage.
 			On("AddTrustedGlobalExitRoot", ctx, ger, nil).
 			Return(false, nil).
+			Run(func(args mock.Arguments) { sync.Stop() }).
 			Once()
 
 		return sync

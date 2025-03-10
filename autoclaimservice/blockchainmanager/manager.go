@@ -7,10 +7,10 @@ import (
 	"os"
 	"path/filepath"
 
+	zkevmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/config/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/claimcompressor"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	zkevmtypes "github.com/0xPolygonHermez/zkevm-node/config/types"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/keystore"
 	"github.com/ethereum/go-ethereum/common"

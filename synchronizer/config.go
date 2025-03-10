@@ -1,7 +1,7 @@
 package synchronizer
 
 import (
-	"github.com/0xPolygonHermez/zkevm-node/config/types"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/config/types"
 )
 
 // Config represents the configuration of the synchronizer

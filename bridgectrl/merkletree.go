@@ -8,7 +8,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v4"
 )
 
 // zeroHashes is the pre-calculated zero hash array
@@ -191,7 +191,7 @@ func (mt *MerkleTree) updateLeaf(ctx context.Context, depositID uint64, leaves [
 		nodes [][][][]byte
 		ns    [][][]byte
 	)
-	initLeavesCount := uint32(len(leaves))
+	initLeavesCount := uint32(len(leaves)) // nolint:gosec
 	if len(leaves) == 0 {
 		leaves = append(leaves, zeroHashes[0])
 	}
@@ -329,7 +329,7 @@ func (mt MerkleTree) addRollupExitLeaf(ctx context.Context, rollupLeaf etherman.
 	for i := len(storedRollupLeaves); i < int(rollupLeaf.RollupId); i++ {
 		storedRollupLeaves = append(storedRollupLeaves, etherman.RollupExitLeaf{
 			BlockID:  rollupLeaf.BlockID,
-			RollupId: uint32(i + 1),
+			RollupId: uint32(i + 1), // nolint:gosec
 		})
 	}
 	if storedRollupLeaves[rollupLeaf.RollupId-1].RollupId == rollupLeaf.RollupId {
@@ -382,7 +382,7 @@ func ComputeSiblings(rollupIndex uint32, leaves [][KeyLen]byte, height uint8) ([
 		}
 		// Find the index of the leave in the next level of the tree.
 		// Divide the index by 2 to find the position in the upper level
-		index = uint32(float64(index) / 2) //nolint:gomnd
+		index = uint32(float64(index) / 2) //nolint:mnd
 		ns = nsi
 		leaves = hashes
 	}
