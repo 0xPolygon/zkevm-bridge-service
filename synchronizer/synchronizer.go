@@ -64,7 +64,9 @@ func NewSynchronizer(
 		if err == gerror.ErrStorageNotFound {
 			ger.ExitRoots = []common.Hash{{}, {}}
 		} else {
-			log.Fatal("error getting last L1 synced exitroot. Error: ", err)
+			log.Error("error getting last L1 synced exitroot. Error: ", err)
+			cancel()
+			return nil, err
 		}
 	}
 
@@ -122,7 +124,8 @@ func (s *ClientSynchronizer) Sync() error {
 			log.Warnf("networkID: %d, error getting the latest block. No data stored. Using initial block: %+v. Error: %s",
 				s.networkID, lastBlockSynced, err.Error())
 		} else {
-			log.Fatalf("networkID: %d, unexpected error getting the latest block. Error: %s", s.networkID, err.Error())
+			log.Errorf("networkID: %d, unexpected error getting the latest block. Error: %s", s.networkID, err.Error())
+			return err
 		}
 	}
 	metrics.InitializationTime(time.Since(startInitialization))
@@ -149,7 +152,8 @@ func (s *ClientSynchronizer) Sync() error {
 					log.Warnf("networkID: %d, error getting the latest block. No data stored. Using genesis as initial block: %+v. Error: %s",
 						s.networkID, lastBlockSynced, err.Error())
 				} else if err != nil {
-					log.Fatalf("networkID: %d, error getting lastBlockSynced to resume the synchronization... Error: ", s.networkID, err)
+					log.Errorf("networkID: %d, error getting lastBlockSynced to resume the synchronization... Error: ", s.networkID, err)
+					return err
 				}
 				if s.ctx.Err() != nil {
 					continue
@@ -171,7 +175,8 @@ func (s *ClientSynchronizer) Sync() error {
 				}
 				if lastBlockSynced.BlockNumber > lastKnownBlock {
 					if s.networkID == 0 {
-						log.Fatalf("networkID: %d, error: latest Synced BlockNumber (%d) is higher than the latest Proposed block (%d) in the network", s.networkID, lastBlockSynced.BlockNumber, lastKnownBlock)
+						log.Errorf("networkID: %d, error: latest Synced BlockNumber (%d) is higher than the latest Proposed block (%d) in the network", s.networkID, lastBlockSynced.BlockNumber, lastKnownBlock)
+						return fmt.Errorf("networkID: %d, error: latest Synced BlockNumber (%d) is higher than the latest Proposed block (%d) in the network", s.networkID, lastBlockSynced.BlockNumber, lastKnownBlock)
 					} else {
 						log.Errorf("networkID: %d, error: latest Synced BlockNumber (%d) is higher than the latest Proposed block (%d) in the network", s.networkID, lastBlockSynced.BlockNumber, lastKnownBlock)
 						err = s.resetState(lastKnownBlock)
@@ -464,7 +469,7 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 			switch element.Name {
 			case etherman.GlobalExitRootsOrder:
 				if len(blocks[i].GlobalExitRoots) < element.Pos+1 {
-					return fmt.Errorf("networkID: %d, GlobalExitRoots event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+					return fmt.Errorf("globalExitRoots event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
 				}
 				if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 2 { //nolint:mnd
 					isNewL1Ger = true
@@ -482,7 +487,7 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 			case etherman.RemoveL2GEROrder:
 				if len(blocks[i].RemoveL2GER) < element.Pos+1 {
-					return fmt.Errorf("networkID: %d, RemoveL2GER event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+					return fmt.Errorf("removeL2GER event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
 				}
 				err = s.processRemoveL2GlobalExitRoot(blocks[i].RemoveL2GER[element.Pos], blockID, dbTx)
 				if err != nil {
@@ -491,7 +496,7 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				metrics.RemoveL2GERCounter()
 			case etherman.DepositsOrder:
 				if len(blocks[i].Deposits) < element.Pos+1 {
-					return fmt.Errorf("networkID: %d, Deposits event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+					return fmt.Errorf("deposits event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
 				}
 				err = s.processDeposit(blocks[i].Deposits[element.Pos], blockID, dbTx)
 				if err != nil {
@@ -500,7 +505,7 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				metrics.DepositCounter()
 			case etherman.ClaimsOrder:
 				if len(blocks[i].Claims) < element.Pos+1 {
-					return fmt.Errorf("networkID: %d, Claims event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+					return fmt.Errorf("claims event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
 				}
 				err = s.processClaim(blocks[i].Claims[element.Pos], blockID, dbTx)
 				if err != nil {
@@ -509,7 +514,7 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				metrics.ClaimCounter()
 			case etherman.TokensOrder:
 				if len(blocks[i].Tokens) < element.Pos+1 {
-					return fmt.Errorf("networkID: %d, Tokens event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+					return fmt.Errorf("tokens event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
 				}
 				err = s.processTokenWrapped(blocks[i].Tokens[element.Pos], blockID, dbTx)
 				if err != nil {
@@ -517,7 +522,7 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 			case etherman.VerifyBatchOrder:
 				if len(blocks[i].VerifiedBatches) < element.Pos+1 {
-					return fmt.Errorf("networkID: %d, VerifiedBatches event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", s.networkID, blocks[i], order[blocks[i].BlockHash])
+					return fmt.Errorf("verifiedBatches event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
 				}
 				err = s.processVerifyBatch(blocks[i].VerifiedBatches[element.Pos], blockID, dbTx)
 				if err != nil {
