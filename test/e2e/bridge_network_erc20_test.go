@@ -146,6 +146,6 @@ func assetERC20Generic(ctx context.Context, client *utils.Client, destNetwork ui
 		return common.Hash{}, err
 	}
 	fmt.Println("Tx: ", tx.Hash().Hex())
-	err = WaitTxToBeMined(ctx, client.Client, tx, 60*time.Second)
+	err = operations.WaitTxToBeMined(ctx, client.Client, tx, 60*time.Second)
 	return tx.Hash(), err
 }
