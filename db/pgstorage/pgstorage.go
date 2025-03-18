@@ -174,15 +174,15 @@ func (p *PostgresStorage) Reset(ctx context.Context, blockNumber uint64, network
 }
 
 // GetPreviousBlock gets the offset previous L1 block respect to latest.
-func (p *PostgresStorage) GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (*etherman.Block, error) {
+func (p *PostgresStorage) GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (etherman.Block, error) {
 	var block etherman.Block
 	const getPreviousBlockSQL = "SELECT block_num, block_hash, network_id FROM sync.block WHERE network_id = $1 ORDER BY block_num DESC LIMIT 1 OFFSET $2"
 	e := p.getExecQuerier(dbTx)
 	err := e.QueryRow(ctx, getPreviousBlockSQL, networkID, offset).Scan(&block.BlockNumber, &block.BlockHash, &block.NetworkID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, gerror.ErrStorageNotFound
+		return etherman.Block{}, gerror.ErrStorageNotFound
 	}
-	return &block, err
+	return block, err
 }
 
 // GetNumberDeposits gets the number of  deposits.

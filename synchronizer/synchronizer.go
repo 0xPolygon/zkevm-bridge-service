@@ -40,6 +40,7 @@ type ClientSynchronizer struct {
 	allNetworkIDs     []uint32
 	sovereignChain    bool
 	forceSyncChunk    bool
+	waitDuration      time.Duration
 }
 
 // NewSynchronizer creates and initializes an instance of Synchronizer
@@ -64,7 +65,9 @@ func NewSynchronizer(
 		if err == gerror.ErrStorageNotFound {
 			ger.ExitRoots = []common.Hash{{}, {}}
 		} else {
-			log.Fatal("error getting last L1 synced exitroot. Error: ", err)
+			log.Error("error getting last L1 synced exitroot. Error: ", err)
+			cancel()
+			return nil, err
 		}
 	}
 
@@ -83,6 +86,7 @@ func NewSynchronizer(
 			l1RollupExitRoot: ger.ExitRoots[1],
 			allNetworkIDs:    allNetworkIDs,
 			forceSyncChunk:   false,
+			waitDuration:     time.Duration(0),
 		}, nil
 	}
 	return &ClientSynchronizer{
@@ -99,10 +103,9 @@ func NewSynchronizer(
 		networkID:         networkID,
 		sovereignChain:    sovereignChain,
 		forceSyncChunk:    cfg.ForceL2SyncChunk,
+		waitDuration:      time.Duration(0),
 	}, nil
 }
-
-var waitDuration = time.Duration(0)
 
 // Sync function will read the last state synced and will continue from that point.
 // Sync() will read blockchain events to detect rollup updates
@@ -122,7 +125,8 @@ func (s *ClientSynchronizer) Sync() error {
 			log.Warnf("networkID: %d, error getting the latest block. No data stored. Using initial block: %+v. Error: %s",
 				s.networkID, lastBlockSynced, err.Error())
 		} else {
-			log.Fatalf("networkID: %d, unexpected error getting the latest block. Error: %s", s.networkID, err.Error())
+			log.Errorf("networkID: %d, unexpected error getting the latest block. Error: %s", s.networkID, err.Error())
+			return err
 		}
 	}
 	metrics.InitializationTime(time.Since(startInitialization))
@@ -132,11 +136,11 @@ func (s *ClientSynchronizer) Sync() error {
 		case <-s.ctx.Done():
 			log.Debugf("NetworkID: %d, synchronizer ctx done", s.networkID)
 			return nil
-		case <-time.After(waitDuration):
+		case <-time.After(s.waitDuration):
 			start := time.Now()
 			log.Debugf("NetworkID: %d, syncing...", s.networkID)
 			//Sync L1Blocks
-			lastBlockSynced, err = s.syncBlocks(lastBlockSynced)
+			lastBlockSynced, err = s.syncBlocks(*lastBlockSynced)
 			metrics.FullL1SyncTime(time.Since(start))
 			if err != nil {
 				log.Warnf("networkID: %d, error syncing blocks: %v", s.networkID, err)
@@ -149,7 +153,8 @@ func (s *ClientSynchronizer) Sync() error {
 					log.Warnf("networkID: %d, error getting the latest block. No data stored. Using genesis as initial block: %+v. Error: %s",
 						s.networkID, lastBlockSynced, err.Error())
 				} else if err != nil {
-					log.Fatalf("networkID: %d, error getting lastBlockSynced to resume the synchronization... Error: ", s.networkID, err)
+					log.Errorf("networkID: %d, error getting lastBlockSynced to resume the synchronization... Error: ", s.networkID, err)
+					return err
 				}
 				if s.ctx.Err() != nil {
 					continue
@@ -165,13 +170,14 @@ func (s *ClientSynchronizer) Sync() error {
 				lastKnownBlock := header.Number.Uint64()
 				if lastBlockSynced.BlockNumber == lastKnownBlock && !s.synced {
 					log.Infof("NetworkID %d Synced!", s.networkID)
-					waitDuration = s.cfg.SyncInterval.Duration
+					s.waitDuration = s.cfg.SyncInterval.Duration
 					s.synced = true
 					s.chSynced <- s.networkID
 				}
 				if lastBlockSynced.BlockNumber > lastKnownBlock {
 					if s.networkID == 0 {
-						log.Fatalf("networkID: %d, error: latest Synced BlockNumber (%d) is higher than the latest Proposed block (%d) in the network", s.networkID, lastBlockSynced.BlockNumber, lastKnownBlock)
+						log.Errorf("networkID: %d, error: latest Synced BlockNumber (%d) is higher than the latest Proposed block (%d) in the network", s.networkID, lastBlockSynced.BlockNumber, lastKnownBlock)
+						return fmt.Errorf("networkID: %d, error: latest Synced BlockNumber (%d) is higher than the latest Proposed block (%d) in the network", s.networkID, lastBlockSynced.BlockNumber, lastKnownBlock)
 					} else {
 						log.Errorf("networkID: %d, error: latest Synced BlockNumber (%d) is higher than the latest Proposed block (%d) in the network", s.networkID, lastBlockSynced.BlockNumber, lastKnownBlock)
 						err = s.resetState(lastKnownBlock)
@@ -248,24 +254,24 @@ func (s *ClientSynchronizer) syncTrustedState() error {
 }
 
 // This function syncs the node from a specific block to the latest
-func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*etherman.Block, error) {
+func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherman.Block, error) {
 	// Call the blockchain to retrieve data
 	header, err := s.etherMan.HeaderByNumber(s.ctx, nil)
 	if err != nil {
-		return lastBlockSynced, err
+		return &lastBlockSynced, err
 	}
 	lastKnownBlock := header.Number
 	// This function will read events fromBlockNum to latestEthBlock. Check reorg to be sure that everything is ok.
 	block, err := s.checkReorg(lastBlockSynced, nil)
 	if err != nil {
 		log.Errorf("networkID: %d, error checking reorgs. Retrying... Err: %s", s.networkID, err.Error())
-		return lastBlockSynced, fmt.Errorf("networkID: %d, error checking reorgs", s.networkID)
+		return &lastBlockSynced, fmt.Errorf("networkID: %d, error checking reorgs", s.networkID)
 	}
 	if block != nil {
 		err = s.resetState(block.BlockNumber)
 		if err != nil {
 			log.Errorf("networkID: %d, error resetting the state to a previous block. Retrying... Error: %s", s.networkID, err.Error())
-			return lastBlockSynced, fmt.Errorf("networkID: %d, error resetting the state to a previous block", s.networkID)
+			return &lastBlockSynced, fmt.Errorf("networkID: %d, error resetting the state to a previous block", s.networkID)
 		}
 		return block, nil
 	}
@@ -282,7 +288,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 			log.Debugf("NetworkID: %d, Checking lastKnownBlock again to see if it has changed during the sync process", s.networkID)
 			header, err := s.etherMan.HeaderByNumber(s.ctx, nil)
 			if err != nil {
-				return lastBlockSynced, err
+				return &lastBlockSynced, err
 			}
 			lastKnownBlock = header.Number
 			if toBlock > lastKnownBlock.Uint64() {
@@ -293,7 +299,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 						fromBlock = lastBlockSynced.BlockNumber
 					}
 					log.Infof("NetworkID %d Synced!", s.networkID)
-					waitDuration = s.cfg.SyncInterval.Duration
+					s.waitDuration = s.cfg.SyncInterval.Duration
 					s.synced = true
 					s.chSynced <- s.networkID
 				}
@@ -303,7 +309,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 		}
 		if fromBlock > toBlock {
 			log.Debugf("NetworkID: %d, FromBlock is higher than toBlock. Skipping...", s.networkID)
-			return lastBlockSynced, nil
+			return &lastBlockSynced, nil
 		}
 
 		log.Debugf("NetworkID: %d, Getting bridge info from block %d to block %d", s.networkID, fromBlock, toBlock)
@@ -315,7 +321,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 		blocks, order, err := s.etherMan.GetRollupInfoByBlockRange(s.ctx, fromBlock, &toBlock)
 		metrics.ReadL1DataTime(time.Since(start))
 		if err != nil {
-			return lastBlockSynced, err
+			return &lastBlockSynced, err
 		}
 
 		if fromBlock == s.genBlockNumber && !s.forceSyncChunk {
@@ -326,7 +332,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 		} else if fromBlock < s.genBlockNumber {
 			err := fmt.Errorf("networkID: %d. fromBlock %d is lower than the genesisBlockNumber %d", s.networkID, fromBlock, s.genBlockNumber)
 			log.Warn(err)
-			return lastBlockSynced, err
+			return &lastBlockSynced, err
 		}
 		if s.synced {
 			var initBlockReceived *etherman.Block
@@ -340,23 +346,22 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 				prevBlock, err := s.storage.GetPreviousBlock(s.ctx, s.networkID, 1, nil)
 				if errors.Is(err, gerror.ErrStorageNotFound) {
 					log.Warnf("networkID: %d, error checking reorg: previous block not found in db: %v", s.networkID, err)
-					prevBlock = &etherman.Block{}
 				} else if err != nil {
 					log.Errorf("networkID: %d, error getting previousBlock from db. Error: %v", s.networkID, err)
-					return lastBlockSynced, err
+					return &lastBlockSynced, err
 				}
 				blockReorged, err := s.checkReorg(prevBlock, nil)
 				if err != nil {
 					log.Errorf("networkID: %d, error checking reorgs in previous blocks. Error: %v", s.networkID, err)
-					return lastBlockSynced, err
+					return &lastBlockSynced, err
 				}
 				if blockReorged == nil {
-					blockReorged = prevBlock
+					blockReorged = &prevBlock
 				}
 				err = s.resetState(blockReorged.BlockNumber)
 				if err != nil {
 					log.Errorf("networkID: %d, error resetting the state to a previous block. Retrying... Err: %v", s.networkID, err)
-					return lastBlockSynced, fmt.Errorf("error resetting the state to a previous block")
+					return &lastBlockSynced, fmt.Errorf("error resetting the state to a previous block")
 				}
 				return blockReorged, nil
 			}
@@ -366,13 +371,13 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 			block, err := s.checkReorg(lastBlockSynced, initBlockReceived)
 			if err != nil {
 				log.Errorf("networkID: %d, error checking reorgs. Retrying... Err: %v", s.networkID, err)
-				return lastBlockSynced, fmt.Errorf("networkID: %d, error checking reorgs", s.networkID)
+				return &lastBlockSynced, fmt.Errorf("networkID: %d, error checking reorgs", s.networkID)
 			}
 			if block != nil {
 				err = s.resetState(block.BlockNumber)
 				if err != nil {
 					log.Errorf("networkID: %d, error resetting the state to a previous block. Retrying... Err: %v", s.networkID, err)
-					return lastBlockSynced, fmt.Errorf("networkID: %d, error resetting the state to a previous block", s.networkID)
+					return &lastBlockSynced, fmt.Errorf("networkID: %d, error resetting the state to a previous block", s.networkID)
 				}
 				return block, nil
 			}
@@ -382,10 +387,10 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 		err = s.processBlockRange(blocks, order)
 		metrics.ProcessL1DataTime(time.Since(start))
 		if err != nil {
-			return lastBlockSynced, err
+			return &lastBlockSynced, err
 		}
 		if len(blocks) > 0 && !s.forceSyncChunk {
-			lastBlockSynced = &blocks[len(blocks)-1]
+			lastBlockSynced = blocks[len(blocks)-1]
 			for i := range blocks {
 				log.Debug("NetworkID: ", s.networkID, ", Position: ", i, ". BlockNumber: ", blocks[i].BlockNumber, ". BlockHash: ", blocks[i].BlockHash)
 			}
@@ -394,9 +399,9 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 			// It's not stored in the db and if the service is restarted, it will query the same blocks again.
 			fb, err := s.etherMan.HeaderByNumber(s.ctx, big.NewInt(0).SetUint64(toBlock))
 			if err != nil {
-				return lastBlockSynced, err
+				return &lastBlockSynced, err
 			}
-			lastBlockSynced = &etherman.Block{
+			lastBlockSynced = etherman.Block{
 				BlockNumber: fb.Number.Uint64(),
 				BlockHash:   fb.Hash(),
 			}
@@ -406,7 +411,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 		if lastKnownBlock.Cmp(new(big.Int).SetUint64(toBlock)) < 1 { // lastKnownBlock <= toBlock
 			if !s.synced {
 				log.Infof("NetworkID %d Synced!", s.networkID)
-				waitDuration = s.cfg.SyncInterval.Duration
+				s.waitDuration = s.cfg.SyncInterval.Duration
 				s.synced = true
 				s.chSynced <- s.networkID
 			}
@@ -426,7 +431,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced *etherman.Block) (*ether
 		}
 	}
 
-	return lastBlockSynced, nil
+	return &lastBlockSynced, nil
 }
 
 func removeBlockElement(slice []etherman.Block, s int) []etherman.Block {
@@ -463,6 +468,9 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 		for _, element := range order[blocks[i].BlockHash] {
 			switch element.Name {
 			case etherman.GlobalExitRootsOrder:
+				if len(blocks[i].GlobalExitRoots) < element.Pos+1 {
+					return fmt.Errorf("globalExitRoots event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
 				if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 2 { //nolint:mnd
 					isNewL1Ger = true
 				} else if len(blocks[i].GlobalExitRoots[element.Pos].ExitRoots) == 0 {
@@ -478,29 +486,44 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 					metrics.L2GERCounter()
 				}
 			case etherman.RemoveL2GEROrder:
+				if len(blocks[i].RemoveL2GER) < element.Pos+1 {
+					return fmt.Errorf("removeL2GER event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
 				err = s.processRemoveL2GlobalExitRoot(blocks[i].RemoveL2GER[element.Pos], blockID, dbTx)
 				if err != nil {
 					return err
 				}
 				metrics.RemoveL2GERCounter()
 			case etherman.DepositsOrder:
+				if len(blocks[i].Deposits) < element.Pos+1 {
+					return fmt.Errorf("deposits event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
 				err = s.processDeposit(blocks[i].Deposits[element.Pos], blockID, dbTx)
 				if err != nil {
 					return err
 				}
 				metrics.DepositCounter()
 			case etherman.ClaimsOrder:
+				if len(blocks[i].Claims) < element.Pos+1 {
+					return fmt.Errorf("claims event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
 				err = s.processClaim(blocks[i].Claims[element.Pos], blockID, dbTx)
 				if err != nil {
 					return err
 				}
 				metrics.ClaimCounter()
 			case etherman.TokensOrder:
+				if len(blocks[i].Tokens) < element.Pos+1 {
+					return fmt.Errorf("tokens event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
 				err = s.processTokenWrapped(blocks[i].Tokens[element.Pos], blockID, dbTx)
 				if err != nil {
 					return err
 				}
 			case etherman.VerifyBatchOrder:
+				if len(blocks[i].VerifiedBatches) < element.Pos+1 {
+					return fmt.Errorf("verifiedBatches event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
 				err = s.processVerifyBatch(blocks[i].VerifiedBatches[element.Pos], blockID, dbTx)
 				if err != nil {
 					return err
@@ -614,10 +637,10 @@ If hash or hash parent don't match, reorg detected and the function will return 
 must be reverted. Then, check the previous ethereum block synced, get block info from the blockchain and check
 hash and has parent. This operation has to be done until a match is found.
 */
-func (s *ClientSynchronizer) checkReorg(latestStoredBlock, syncedBlock *etherman.Block) (*etherman.Block, error) {
+func (s *ClientSynchronizer) checkReorg(latestStoredBlock etherman.Block, syncedBlock *etherman.Block) (*etherman.Block, error) {
 	// This function only needs to worry about reorgs if some of the reorganized blocks contained rollup info.
-	latestStoredEthBlock := *latestStoredBlock
-	reorgedBlock := *latestStoredBlock
+	latestStoredEthBlock := latestStoredBlock
+	reorgedBlock := latestStoredBlock
 	var depth uint64
 	block := syncedBlock
 	for {
@@ -660,7 +683,7 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock, syncedBlock *etherman
 				log.Errorf("networkID: %d, error getting previousBlock from db. Error: %v", s.networkID, err)
 				return nil, err
 			}
-			reorgedBlock = *lb
+			reorgedBlock = lb
 			metrics.ReorgedBlocksCounter()
 		} else {
 			log.Debugf("networkID: %d, checkReorg: Block %d hashOk %t", s.networkID, reorgedBlock.BlockNumber, block.BlockHash == reorgedBlock.BlockHash)
@@ -670,10 +693,10 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock, syncedBlock *etherman
 		block = nil
 	}
 	if latestStoredEthBlock.BlockHash != reorgedBlock.BlockHash {
-		latestStoredBlock = &reorgedBlock
+		latestStoredBlock = reorgedBlock
 		log.Info("NetworkID: ", s.networkID, ", reorg detected in block: ", latestStoredEthBlock.BlockNumber, " last block OK: ", latestStoredBlock.BlockNumber)
 		metrics.ReorgCounter()
-		return latestStoredBlock, nil
+		return &latestStoredBlock, nil
 	}
 	log.Debugf("NetworkID: %d, no reorg detected in block: %d. BlockHash: %s", s.networkID, latestStoredEthBlock.BlockNumber, latestStoredEthBlock.BlockHash.String())
 	return nil, nil
