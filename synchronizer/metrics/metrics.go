@@ -3,6 +3,7 @@ package metrics
 import (
 	"fmt"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/metrics"
@@ -74,10 +75,15 @@ const (
 	LatestBlockSyncedName = "latest_block_synced"
 )
 
-var Prefix string
+var (
+	Prefix        string
+	registerMutex sync.Mutex
+)
 
 // Register the metrics for the synchronizer package.
 func Register(networkID uint32) {
+	registerMutex.Lock()
+	defer registerMutex.Unlock()
 	// Prefix for the metrics of the synchronizer package.
 	Prefix = "synchronizer_networkID_" + fmt.Sprintf("%d", networkID) + "_"
 

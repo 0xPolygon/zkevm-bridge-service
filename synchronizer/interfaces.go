@@ -29,7 +29,7 @@ type storageInterface interface {
 	AddClaim(ctx context.Context, claim *etherman.Claim, dbTx pgx.Tx) error
 	AddTokenWrapped(ctx context.Context, tokenWrapped *etherman.TokenWrapped, dbTx pgx.Tx) error
 	Reset(ctx context.Context, blockNumber uint64, networkID uint32, dbTx pgx.Tx) error
-	GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (*etherman.Block, error)
+	GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (etherman.Block, error)
 	GetNumberDeposits(ctx context.Context, origNetworkID uint32, blockNumber uint64, dbTx pgx.Tx) (uint32, error)
 	AddTrustedGlobalExitRoot(ctx context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx pgx.Tx) (bool, error)
 	GetLatestL1SyncedExitRoot(ctx context.Context, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error)
