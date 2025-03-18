@@ -39,7 +39,6 @@ func NewSynchronizerTest(
 	allNetworkIDs []uint32,
 	sovereignChain bool) (Synchronizer, error) {
 	ctx, cancel := context.WithCancel(parentCtx)
-	waitDuration = time.Duration(1 * time.Second)
 	networkID := ethMan.GetNetworkID()
 	ger, err := storage.(storageInterface).GetLatestL1SyncedExitRoot(ctx, nil)
 	if err != nil {
@@ -66,6 +65,7 @@ func NewSynchronizerTest(
 			allNetworkIDs:    allNetworkIDs,
 			synced:           true,
 			forceSyncChunk:   false,
+			waitDuration:     time.Duration(1 * time.Second),
 		}, nil
 	}
 	return &ClientSynchronizer{
@@ -83,6 +83,7 @@ func NewSynchronizerTest(
 		synced:            true,
 		sovereignChain:    sovereignChain,
 		forceSyncChunk:    cfg.ForceL2SyncChunk,
+		waitDuration:      time.Duration(1 * time.Second),
 	}, nil
 }
 
@@ -454,7 +455,7 @@ func TestReorg(t *testing.T) {
 			Once()
 
 		var depth uint64 = 1
-		stateBlock0 := &etherman.Block{
+		stateBlock0 := etherman.Block{
 			BlockNumber: ethBlock0.NumberU64(),
 			BlockHash:   ethBlock0.Hash(),
 		}
@@ -669,7 +670,7 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 			Once()
 
 		var depth uint64 = 1
-		stateBlock0 := &etherman.Block{
+		stateBlock0 := etherman.Block{
 			BlockNumber: ethBlock0.NumberU64(),
 			BlockHash:   ethBlock0.Hash(),
 		}
@@ -812,7 +813,7 @@ func TestRegularReorg(t *testing.T) {
 			Once()
 
 		var depth uint64 = 1
-		stateBlock0 := &etherman.Block{
+		stateBlock0 := etherman.Block{
 			BlockNumber: ethBlock0.NumberU64(),
 			BlockHash:   ethBlock0.Hash(),
 		}
@@ -1020,7 +1021,7 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 			Once()
 
 		var depth uint64 = 1
-		stateBlock1 := &etherman.Block{
+		stateBlock1 := etherman.Block{
 			BlockNumber: ethBlock1.NumberU64(),
 			BlockHash:   ethBlock1.Hash(),
 		}
@@ -1034,7 +1035,7 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 			Return(ethHeader1bis, nil).
 			Once()
 
-		stateBlock0 := &etherman.Block{
+		stateBlock0 := etherman.Block{
 			BlockNumber: ethBlock0.NumberU64(),
 			BlockHash:   ethBlock0.Hash(),
 		}
@@ -1221,7 +1222,7 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 			Once()
 
 		var depth uint64 = 1
-		stateBlock0 := &etherman.Block{
+		stateBlock0 := etherman.Block{
 			BlockNumber: ethBlock0.NumberU64(),
 			BlockHash:   ethBlock0.Hash(),
 		}
