@@ -2,22 +2,25 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"math/big"
+	"strings"
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonrollupmanager"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevm"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/hex"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	clientUtils "github.com/0xPolygonHermez/zkevm-bridge-service/test/client"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonrollupmanager"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevm"
-	"github.com/0xPolygonHermez/zkevm-node/hex"
-	"github.com/0xPolygonHermez/zkevm-node/state"
-	"github.com/0xPolygonHermez/zkevm-node/test/operations"
-	"github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 const (
@@ -37,6 +40,15 @@ const (
 
 	mtHeight      = 32
 	miningTimeout = 180
+)
+
+const (
+	// FORKID_DRAGONFRUIT is the fork id 5
+	FORKID_DRAGONFRUIT = 5
+
+	ether155V = 27
+
+	maxEffectivePercentage uint8 = 255
 )
 
 func main() {
@@ -91,7 +103,7 @@ func main() {
 		log.Fatal("error converting metadata to bytes. Error: ", err)
 	}
 	e := etherman.Deposit{
-		LeafType:           uint8(bridgeData.LeafType),
+		LeafType:           uint8(bridgeData.LeafType), // nolint:gosec
 		OriginalNetwork:    bridgeData.OrigNet,
 		OriginalAddress:    common.HexToAddress(bridgeData.OrigAddr),
 		Amount:             a,
@@ -128,7 +140,7 @@ func main() {
 	}
 	encoded := hex.EncodeToHex(b)
 	log.Info("tx encoded: ", encoded)
-	byt, err := state.EncodeTransaction(*tx, state.MaxEffectivePercentage, forkID)
+	byt, err := EncodeTransaction(tx, maxEffectivePercentage, forkID)
 	if err != nil {
 		log.Fatal("error: ", err)
 	}
@@ -140,7 +152,7 @@ func main() {
 	if err != nil {
 		log.Fatal("error getting l1 chainID: ", err)
 	}
-	auth, err = operations.GetAuth(accHexPrivateKey, chainID.Uint64())
+	auth, err = GetAuth(accHexPrivateKey, chainID.Uint64())
 	if err != nil {
 		log.Fatal("error: ", err)
 	}
@@ -177,7 +189,7 @@ func main() {
 
 	time.Sleep(1 * time.Second)
 
-	err = operations.WaitTxToBeMined(ctx, ethClient, txForcedBatch, miningTimeout*time.Second)
+	err = utils.WaitTxToBeMined(ctx, ethClient, txForcedBatch, miningTimeout*time.Second)
 	if err != nil {
 		log.Fatal("error: ", err)
 	}
@@ -205,4 +217,86 @@ func main() {
 		}
 	}
 	log.Info("Success!!!!")
+}
+
+// EncodeTransactions RLP encodes the given transactions
+func EncodeTransactions(txs []*types.Transaction, effectivePercentages []uint8, forkID uint64) ([]byte, error) {
+	var batchL2Data []byte
+
+	for i, tx := range txs {
+		txData, err := prepareRPLTxData(tx)
+		if err != nil {
+			return nil, err
+		}
+		batchL2Data = append(batchL2Data, txData...)
+
+		if forkID >= FORKID_DRAGONFRUIT {
+			effectivePercentageAsHex, err := hex.DecodeHex(fmt.Sprintf("%x", effectivePercentages[i]))
+			if err != nil {
+				return nil, err
+			}
+			batchL2Data = append(batchL2Data, effectivePercentageAsHex...)
+		}
+	}
+
+	return batchL2Data, nil
+}
+
+func prepareRPLTxData(tx *types.Transaction) ([]byte, error) {
+	v, r, s := tx.RawSignatureValues()
+	sign := 1 - (v.Uint64() & 1)
+
+	nonce, gasPrice, gas, to, value, data, chainID := tx.Nonce(), tx.GasPrice(), tx.Gas(), tx.To(), tx.Value(), tx.Data(), tx.ChainId()
+
+	rlpFieldsToEncode := []interface{}{
+		nonce,
+		gasPrice,
+		gas,
+		to,
+		value,
+		data,
+	}
+
+	if !IsPreEIP155Tx(tx) {
+		rlpFieldsToEncode = append(rlpFieldsToEncode, chainID)
+		rlpFieldsToEncode = append(rlpFieldsToEncode, uint(0))
+		rlpFieldsToEncode = append(rlpFieldsToEncode, uint(0))
+	}
+
+	txCodedRlp, err := rlp.EncodeToBytes(rlpFieldsToEncode)
+	if err != nil {
+		return nil, err
+	}
+
+	newV := new(big.Int).Add(big.NewInt(ether155V), big.NewInt(int64(sign))) // nolint:gosec
+	newRPadded := fmt.Sprintf("%064s", r.Text(hex.Base))
+	newSPadded := fmt.Sprintf("%064s", s.Text(hex.Base))
+	newVPadded := fmt.Sprintf("%02s", newV.Text(hex.Base))
+	txData, err := hex.DecodeString(hex.EncodeToString(txCodedRlp) + newRPadded + newSPadded + newVPadded)
+	if err != nil {
+		return nil, err
+	}
+	return txData, nil
+}
+
+// IsPreEIP155Tx checks if the tx is a tx that has a chainID as zero and
+// V field is either 27 or 28
+func IsPreEIP155Tx(tx *types.Transaction) bool {
+	v, _, _ := tx.RawSignatureValues()
+	return tx.ChainId().Uint64() == 0 && (v.Uint64() == 27 || v.Uint64() == 28)
+}
+
+// EncodeTransaction RLP encodes the given transaction
+func EncodeTransaction(tx *types.Transaction, effectivePercentage uint8, forkID uint64) ([]byte, error) {
+	return EncodeTransactions([]*types.Transaction{tx}, []uint8{effectivePercentage}, forkID)
+}
+
+// GetAuth configures and returns an auth object.
+func GetAuth(privateKeyStr string, chainID uint64) (*bind.TransactOpts, error) {
+	privateKey, err := crypto.HexToECDSA(strings.TrimPrefix(privateKeyStr, "0x"))
+	if err != nil {
+		return nil, err
+	}
+
+	return bind.NewKeyedTransactorWithChainID(privateKey, big.NewInt(0).SetUint64(chainID))
 }

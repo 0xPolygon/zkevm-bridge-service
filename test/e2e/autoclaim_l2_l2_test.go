@@ -61,7 +61,7 @@ func TestAutoClaimL2L2(t *testing.T) {
 		require.NoError(t, err)
 		v, _ := big.NewInt(0).SetString("99999998433970000000000", 10)
 		t.Log("balance: ", balance)
-		require.Equal(t, 0,  v.Cmp(balance))
+		require.Equal(t, 0, v.Cmp(balance))
 		// This deposit forces the update of the ger to process the previous ready for claim. It is
 		// needed because of the race condition between both claimtxmanagers (network 1 and network 2). Both claimTxManagers
 		// run at the same time and network 2 checks if there are some deposit ready for claim before the dbTx of

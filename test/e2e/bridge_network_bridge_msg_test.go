@@ -11,11 +11,10 @@ import (
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/test/mocksmartcontracts/BridgeMessageReceiver"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/mocksmartcontracts/PingReceiver"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/operations"
+	ops "github.com/0xPolygonHermez/zkevm-bridge-service/test/operations"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
-	ops "github.com/0xPolygonHermez/zkevm-node/test/operations"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
@@ -75,7 +74,6 @@ func TestMessageTransferL2toL1(t *testing.T) {
 	v, err := testData.L1Client.Bridge.NetworkID(nil)
 	require.NoError(t, err)
 	log.Infof("MSG [L2->L1] L1 Network ID: %d", v)
-	//contractDeployedAdrr, _, err := deployBridgeMessageReceiver(ctx, testData.auth[operations.L2], testData.L2Client)
 	contractDeployedAdrr, pingContract, blockDeployed, err := deployBridgeMessagePingReceiver(ctx, testData.auth[operations.L1], testData.L1Client, testData.cfg.ConnectionConfig.L1BridgeAddr)
 	require.NoError(t, err)
 	log.Infof("MSG [L2->L1]  deployed contract to recieve message: %s", contractDeployedAdrr.String())
@@ -140,20 +138,7 @@ func assetMsgGeneric(ctx context.Context, client *utils.Client, destNetwork uint
 	err = ops.WaitTxToBeMined(ctx, client.Client, tx, 60*time.Second)
 	return tx.Hash(), err
 }
-func checkEventOfBridgeMessageReceiver(t *testing.T, pingContract *PingReceiver.PingReceiver, blockDeployed uint64, timeNow uint32) {
 
-}
-
-func deployBridgeMessageReceiver(ctx context.Context, auth *bind.TransactOpts, backend *utils.Client) (common.Address, *BridgeMessageReceiver.BridgeMessageReceiver, error) {
-	const txMinedTimeoutLimit = 60 * time.Second
-	addr, tx, contractBinded, err := BridgeMessageReceiver.DeployBridgeMessageReceiver(auth, backend)
-	if err != nil {
-		return common.Address{}, nil, err
-	}
-	err = ops.WaitTxToBeMined(ctx, backend, tx, txMinedTimeoutLimit)
-
-	return addr, contractBinded, err
-}
 func deployBridgeMessagePingReceiver(ctx context.Context, auth *bind.TransactOpts, backend *utils.Client, bridgeAddr common.Address) (common.Address, *PingReceiver.PingReceiver, uint64, error) {
 	const txMinedTimeoutLimit = 60 * time.Second
 	log.Infof("Deploying PingReceiver contract using ath.From: %s", auth.From.String())
@@ -162,7 +147,7 @@ func deployBridgeMessagePingReceiver(ctx context.Context, auth *bind.TransactOpt
 		log.Errorf("Error deploying PingReceiver contract: %s", err.Error())
 		return common.Address{}, nil, 0, err
 	}
-	err = ops.WaitTxToBeMined(ctx, backend, tx, txMinedTimeoutLimit)
+	err = utils.WaitTxToBeMined(ctx, backend, tx, txMinedTimeoutLimit)
 	if err != nil {
 		log.Errorf("Error deploying PingReceiver contract:WaitTxToBeMined: %s", err.Error())
 		return common.Address{}, nil, 0, err

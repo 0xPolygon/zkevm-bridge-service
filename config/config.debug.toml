@@ -37,6 +37,7 @@ L2URLs = ["http://localhost:8123"]
 [Synchronizer]
 SyncInterval = "1s"
 SyncChunkSize = 100
+ForceL2SyncChunk = false
 
 [BridgeController]
 Store = "postgres"

@@ -916,24 +916,22 @@ func (_c *storageMock_GetNumberDeposits_Call) RunAndReturn(run func(context.Cont
 }
 
 // GetPreviousBlock provides a mock function with given fields: ctx, networkID, offset, dbTx
-func (_m *storageMock) GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (*etherman.Block, error) {
+func (_m *storageMock) GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (etherman.Block, error) {
 	ret := _m.Called(ctx, networkID, offset, dbTx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPreviousBlock")
 	}
 
-	var r0 *etherman.Block
+	var r0 etherman.Block
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint64, pgx.Tx) (*etherman.Block, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint64, pgx.Tx) (etherman.Block, error)); ok {
 		return rf(ctx, networkID, offset, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint64, pgx.Tx) *etherman.Block); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint64, pgx.Tx) etherman.Block); ok {
 		r0 = rf(ctx, networkID, offset, dbTx)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*etherman.Block)
-		}
+		r0 = ret.Get(0).(etherman.Block)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, uint32, uint64, pgx.Tx) error); ok {
@@ -966,12 +964,12 @@ func (_c *storageMock_GetPreviousBlock_Call) Run(run func(ctx context.Context, n
 	return _c
 }
 
-func (_c *storageMock_GetPreviousBlock_Call) Return(_a0 *etherman.Block, _a1 error) *storageMock_GetPreviousBlock_Call {
+func (_c *storageMock_GetPreviousBlock_Call) Return(_a0 etherman.Block, _a1 error) *storageMock_GetPreviousBlock_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *storageMock_GetPreviousBlock_Call) RunAndReturn(run func(context.Context, uint32, uint64, pgx.Tx) (*etherman.Block, error)) *storageMock_GetPreviousBlock_Call {
+func (_c *storageMock_GetPreviousBlock_Call) RunAndReturn(run func(context.Context, uint32, uint64, pgx.Tx) (etherman.Block, error)) *storageMock_GetPreviousBlock_Call {
 	_c.Call.Return(run)
 	return _c
 }

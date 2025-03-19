@@ -79,9 +79,8 @@ func initServer(b *testing.B, bench benchmark) *bridgectrl.BridgeController {
 		dbTx, err := store.BeginDBTransaction(context.Background())
 		require.NoError(b, err)
 		id, err := store.AddBlock(context.TODO(), &etherman.Block{
-			BlockNumber: uint64(i),
+			BlockNumber: uint64(i), // nolint:gosec
 			BlockHash:   utils.GenerateRandomHash(),
-			ParentHash:  utils.GenerateRandomHash(),
 		}, dbTx)
 		require.NoError(b, err)
 		deposit := randDeposit(r, counts[networkID], id, networkID)
@@ -145,7 +144,7 @@ func addDeposit(b *testing.B, bench benchmark) {
 		depositIDs []uint64
 	)
 	for i := 0; i < bench.initSize; i++ {
-		deposit := randDeposit(r, uint32(i), 0, 0)
+		deposit := randDeposit(r, uint32(i), 0, 0) // nolint:gosec
 		depositID, err := store.AddDeposit(context.TODO(), deposit, nil)
 		require.NoError(b, err)
 		deposits = append(deposits, deposit)

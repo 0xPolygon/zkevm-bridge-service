@@ -2,7 +2,6 @@ package etherman
 
 import (
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 )
@@ -12,7 +11,6 @@ type Block struct {
 	ID              uint64
 	BlockNumber     uint64
 	BlockHash       common.Hash
-	ParentHash      common.Hash
 	NetworkID       uint32
 	GlobalExitRoots []GlobalExitRoot
 	RemoveL2GER     []GlobalExitRoot
@@ -21,7 +19,6 @@ type Block struct {
 	Tokens          []TokenWrapped
 	VerifiedBatches []VerifiedBatch
 	ActivateEtrog   []bool
-	ReceivedAt      time.Time
 }
 
 // GlobalExitRoot struct

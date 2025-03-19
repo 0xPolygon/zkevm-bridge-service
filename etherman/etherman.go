@@ -11,12 +11,12 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/metrics"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/claimcompressor"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/globalexitrootmanagerl2sovereignchain"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/oldpolygonzkevmbridge"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonrollupmanager"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/oldpolygonzkevmbridge"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonrollupmanager"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmglobalexitroot"
-	"github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -465,12 +465,10 @@ func (etherMan *Client) removeLastL2GER(ctx context.Context, vLog types.Log, blo
 	gExitRoot.BlockNumber = vLog.BlockNumber
 
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
-		fullBlock, err := etherMan.EtherClient.HeaderByHash(ctx, vLog.BlockHash)
-		if err != nil {
-			return fmt.Errorf("error getting hashParent. BlockNumber: %d. Error: %v", vLog.BlockNumber, err)
+		var block = Block{
+			BlockNumber: vLog.BlockNumber,
+			BlockHash:   vLog.BlockHash,
 		}
-		t := time.Unix(int64(fullBlock.Time), 0)
-		block := prepareBlock(vLog, t, fullBlock)
 		block.RemoveL2GER = append(block.RemoveL2GER, gExitRoot)
 		*blocks = append(*blocks, block)
 	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
@@ -498,12 +496,10 @@ func (etherMan *Client) insertSovereignChainL2GER(ctx context.Context, vLog type
 	gExitRoot.BlockNumber = vLog.BlockNumber
 
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
-		fullBlock, err := etherMan.EtherClient.HeaderByHash(ctx, vLog.BlockHash)
-		if err != nil {
-			return fmt.Errorf("error getting hashParent. BlockNumber: %d. Error: %v", vLog.BlockNumber, err)
+		var block = Block{
+			BlockNumber: vLog.BlockNumber,
+			BlockHash:   vLog.BlockHash,
 		}
-		t := time.Unix(int64(fullBlock.Time), 0)
-		block := prepareBlock(vLog, t, fullBlock)
 		block.GlobalExitRoots = append(block.GlobalExitRoots, gExitRoot)
 		*blocks = append(*blocks, block)
 	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
@@ -543,12 +539,10 @@ func (etherMan *Client) processUpdateGlobalExitRootEvent(ctx context.Context, ma
 	gExitRoot.BlockNumber = vLog.BlockNumber
 
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
-		fullBlock, err := etherMan.EtherClient.HeaderByHash(ctx, vLog.BlockHash)
-		if err != nil {
-			return fmt.Errorf("error getting hashParent. BlockNumber: %d. Error: %v", vLog.BlockNumber, err)
+		var block = Block{
+			BlockNumber: vLog.BlockNumber,
+			BlockHash:   vLog.BlockHash,
 		}
-		t := time.Unix(int64(fullBlock.Time), 0)
-		block := prepareBlock(vLog, t, fullBlock)
 		block.GlobalExitRoots = append(block.GlobalExitRoots, gExitRoot)
 		*blocks = append(*blocks, block)
 	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
@@ -584,11 +578,10 @@ func (etherMan *Client) depositEvent(ctx context.Context, vLog types.Log, blocks
 	deposit.LeafType = d.LeafType
 
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
-		fullBlock, err := etherMan.EtherClient.HeaderByHash(ctx, vLog.BlockHash)
-		if err != nil {
-			return fmt.Errorf("error getting hashParent. BlockNumber: %d. Error: %v", vLog.BlockNumber, err)
+		var block = Block{
+			BlockNumber: vLog.BlockNumber,
+			BlockHash:   vLog.BlockHash,
 		}
-		block := prepareBlock(vLog, time.Unix(int64(fullBlock.Time), 0), fullBlock)
 		block.Deposits = append(block.Deposits, deposit)
 		*blocks = append(*blocks, block)
 	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
@@ -640,11 +633,10 @@ func (etherMan *Client) claimEvent(ctx context.Context, vLog types.Log, blocks *
 	claim.MainnetFlag = mainnetFlag
 
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
-		fullBlock, err := etherMan.EtherClient.HeaderByHash(ctx, vLog.BlockHash)
-		if err != nil {
-			return fmt.Errorf("error getting hashParent. BlockNumber: %d. Error: %v", vLog.BlockNumber, err)
+		var block = Block{
+			BlockNumber: vLog.BlockNumber,
+			BlockHash:   vLog.BlockHash,
 		}
-		block := prepareBlock(vLog, time.Unix(int64(fullBlock.Time), 0), fullBlock)
 		block.Claims = append(block.Claims, claim)
 		*blocks = append(*blocks, block)
 	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
@@ -674,11 +666,10 @@ func (etherMan *Client) tokenWrappedEvent(ctx context.Context, vLog types.Log, b
 	tokenWrapped.BlockNumber = vLog.BlockNumber
 
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
-		fullBlock, err := etherMan.EtherClient.HeaderByHash(ctx, vLog.BlockHash)
-		if err != nil {
-			return fmt.Errorf("error getting hashParent. BlockNumber: %d. Error: %v", vLog.BlockNumber, err)
+		var block = Block{
+			BlockNumber: vLog.BlockNumber,
+			BlockHash:   vLog.BlockHash,
 		}
-		block := prepareBlock(vLog, time.Unix(int64(fullBlock.Time), 0), fullBlock)
 		block.Tokens = append(block.Tokens, tokenWrapped)
 		*blocks = append(*blocks, block)
 	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
@@ -693,15 +684,6 @@ func (etherMan *Client) tokenWrappedEvent(ctx context.Context, vLog types.Log, b
 	}
 	(*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash] = append((*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash], or)
 	return nil
-}
-
-func prepareBlock(vLog types.Log, t time.Time, fullBlock *types.Header) Block {
-	var block Block
-	block.BlockNumber = vLog.BlockNumber
-	block.BlockHash = vLog.BlockHash
-	block.ParentHash = fullBlock.ParentHash
-	block.ReceivedAt = t
-	return block
 }
 
 func hash(data ...[32]byte) [32]byte {
@@ -756,11 +738,10 @@ func (etherMan *Client) verifyBatches(ctx context.Context, vLog types.Log, block
 	verifyBatch.Aggregator = aggregator
 
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
-		fullBlock, err := etherMan.EtherClient.HeaderByHash(ctx, vLog.BlockHash)
-		if err != nil {
-			return fmt.Errorf("error getting hashParent. BlockNumber: %d. Error: %v", vLog.BlockNumber, err)
+		var block = Block{
+			BlockNumber: vLog.BlockNumber,
+			BlockHash:   vLog.BlockHash,
 		}
-		block := prepareBlock(vLog, time.Unix(int64(fullBlock.Time), 0), fullBlock)
 		block.VerifiedBatches = append(block.VerifiedBatches, verifyBatch)
 		*blocks = append(*blocks, block)
 	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
@@ -793,7 +774,7 @@ func DecodeGlobalIndex(globalIndex *big.Int) (bool, uint32, uint32, error) {
 	if localRootIndex.Uint64() > math.MaxUint32 {
 		return false, 0, 0, fmt.Errorf("invalid localRootIndex length. Should be fit into uint32 type")
 	}
-	return mainnetFlag, uint32(rollupIndex.Uint64()), uint32(localRootIndex.Uint64()), nil
+	return mainnetFlag, uint32(rollupIndex.Uint64()), uint32(localRootIndex.Uint64()), nil // nolint:gosec
 }
 
 func GenerateGlobalIndex(mainnetFlag bool, rollupIndex uint32, localExitRootIndex uint32) *big.Int {

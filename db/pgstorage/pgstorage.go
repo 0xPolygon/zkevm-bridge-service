@@ -14,7 +14,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/lib/pq"
 )
@@ -29,7 +29,7 @@ func (p *PostgresStorage) getExecQuerier(dbTx pgx.Tx) execQuerier {
 	if dbTx != nil {
 		return dbTx
 	}
-	return p
+	return p.Pool
 }
 
 // NewPostgresStorage creates a new Storage DB
@@ -66,16 +66,16 @@ func (p *PostgresStorage) Commit(ctx context.Context, dbTx pgx.Tx) error {
 
 // BeginDBTransaction starts a transaction block.
 func (p *PostgresStorage) BeginDBTransaction(ctx context.Context) (pgx.Tx, error) {
-	return p.Begin(ctx)
+	return p.Pool.Begin(ctx)
 }
 
 // GetLastBlock gets the last block.
 func (p *PostgresStorage) GetLastBlock(ctx context.Context, networkID uint32, dbTx pgx.Tx) (*etherman.Block, error) {
 	var block etherman.Block
-	const getLastBlockSQL = "SELECT id, block_num, block_hash, parent_hash, network_id, received_at FROM sync.block where network_id = $1 ORDER BY block_num DESC LIMIT 1"
+	const getLastBlockSQL = "SELECT id, block_num, block_hash, network_id FROM sync.block where network_id = $1 ORDER BY block_num DESC LIMIT 1"
 
 	e := p.getExecQuerier(dbTx)
-	err := e.QueryRow(ctx, getLastBlockSQL, networkID).Scan(&block.ID, &block.BlockNumber, &block.BlockHash, &block.ParentHash, &block.NetworkID, &block.ReceivedAt)
+	err := e.QueryRow(ctx, getLastBlockSQL, networkID).Scan(&block.ID, &block.BlockNumber, &block.BlockHash, &block.NetworkID)
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, gerror.ErrStorageNotFound
@@ -88,13 +88,13 @@ func (p *PostgresStorage) GetLastBlock(ctx context.Context, networkID uint32, db
 func (p *PostgresStorage) AddBlock(ctx context.Context, block *etherman.Block, dbTx pgx.Tx) (uint64, error) {
 	var blockID uint64
 	const addBlockSQL = `WITH block_id AS 
-		(INSERT INTO sync.block (block_num, block_hash, parent_hash, network_id, received_at) 
-		VALUES ($1, $2, $3, $4, $5) ON CONFLICT (block_hash) DO NOTHING RETURNING id)
+		(INSERT INTO sync.block (block_num, block_hash, network_id) 
+		VALUES ($1, $2, $3) ON CONFLICT (block_hash) DO NOTHING RETURNING id)
 		SELECT * from block_id
 		UNION ALL
 		SELECT id FROM sync.block WHERE block_hash = $2;`
 	e := p.getExecQuerier(dbTx)
-	err := e.QueryRow(ctx, addBlockSQL, block.BlockNumber, block.BlockHash, block.ParentHash, block.NetworkID, block.ReceivedAt).Scan(&blockID)
+	err := e.QueryRow(ctx, addBlockSQL, block.BlockNumber, block.BlockHash, block.NetworkID).Scan(&blockID)
 
 	if err == pgx.ErrNoRows {
 		err = nil
@@ -174,15 +174,15 @@ func (p *PostgresStorage) Reset(ctx context.Context, blockNumber uint64, network
 }
 
 // GetPreviousBlock gets the offset previous L1 block respect to latest.
-func (p *PostgresStorage) GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (*etherman.Block, error) {
+func (p *PostgresStorage) GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (etherman.Block, error) {
 	var block etherman.Block
-	const getPreviousBlockSQL = "SELECT block_num, block_hash, parent_hash, network_id, received_at FROM sync.block WHERE network_id = $1 ORDER BY block_num DESC LIMIT 1 OFFSET $2"
+	const getPreviousBlockSQL = "SELECT block_num, block_hash, network_id FROM sync.block WHERE network_id = $1 ORDER BY block_num DESC LIMIT 1 OFFSET $2"
 	e := p.getExecQuerier(dbTx)
-	err := e.QueryRow(ctx, getPreviousBlockSQL, networkID, offset).Scan(&block.BlockNumber, &block.BlockHash, &block.ParentHash, &block.NetworkID, &block.ReceivedAt)
+	err := e.QueryRow(ctx, getPreviousBlockSQL, networkID, offset).Scan(&block.BlockNumber, &block.BlockHash, &block.NetworkID)
 	if errors.Is(err, pgx.ErrNoRows) {
-		return nil, gerror.ErrStorageNotFound
+		return etherman.Block{}, gerror.ErrStorageNotFound
 	}
-	return &block, err
+	return block, err
 }
 
 // GetNumberDeposits gets the number of  deposits.
@@ -190,7 +190,7 @@ func (p *PostgresStorage) GetNumberDeposits(ctx context.Context, networkID uint3
 	var nDeposits int64
 	const getNumDepositsSQL = "SELECT coalesce(MAX(deposit_cnt), -1) FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE d.network_id = $1 AND b.block_num <= $2"
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getNumDepositsSQL, networkID, blockNumber).Scan(&nDeposits)
-	return uint32(nDeposits + 1), err
+	return uint32(nDeposits + 1), err // nolint:gosec
 }
 
 // AddTrustedGlobalExitRoot adds new global exit root which comes from the trusted sequencer.
@@ -239,7 +239,7 @@ func (p *PostgresStorage) GetClaim(ctx context.Context, depositCount, originNetw
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, gerror.ErrStorageNotFound
 	}
-	claim.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:gomnd
+	claim.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:mnd
 	return &claim, err
 }
 
@@ -254,7 +254,7 @@ func (p *PostgresStorage) GetDeposit(ctx context.Context, depositCounterUser, ne
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, gerror.ErrStorageNotFound
 	}
-	deposit.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:gomnd
+	deposit.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:mnd
 
 	return &deposit, err
 }
@@ -352,7 +352,7 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 		}
 		return nil, err
 	}
-	if len(exitRoots) == 2 { //nolint:gomnd
+	if len(exitRoots) == 2 { //nolint:mnd
 		ger.ExitRoots = []common.Hash{common.BytesToHash(exitRoots[0]), common.BytesToHash(exitRoots[1])}
 	} else {
 		// Query to look for the missing values
@@ -556,7 +556,7 @@ func (p *PostgresStorage) GetLastDepositCount(ctx context.Context, networkID uin
 	if depositCnt < 0 {
 		return 0, gerror.ErrStorageNotFound
 	}
-	return uint32(depositCnt), nil
+	return uint32(depositCnt), nil // nolint:gosec
 }
 
 // GetClaimCount gets the claim count for the destination address.
@@ -588,7 +588,7 @@ func (p *PostgresStorage) GetClaims(ctx context.Context, destAddr string, limit,
 		if err != nil {
 			return nil, err
 		}
-		claim.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:gomnd
+		claim.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:mnd
 		claims = append(claims, &claim)
 	}
 	return claims, nil
@@ -709,7 +709,7 @@ func (p *PostgresStorage) GetClaimTxsByStatus(ctx context.Context, statuses []ct
 		if err != nil {
 			return mTxs, err
 		}
-		mTx.Value, _ = new(big.Int).SetString(value, 10) //nolint:gomnd
+		mTx.Value, _ = new(big.Int).SetString(value, 10) //nolint:mnd
 		mTx.History = make(map[common.Hash]bool)
 		for _, h := range history {
 			mTx.History[common.BytesToHash(h)] = true
@@ -840,7 +840,7 @@ func parseDeposits(rows pgx.Rows, needBlockNum bool) ([]*etherman.Deposit, error
 		if err != nil {
 			return nil, err
 		}
-		deposit.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:gomnd
+		deposit.Amount, _ = new(big.Int).SetString(amount, 10) //nolint:mnd
 		deposits = append(deposits, &deposit)
 	}
 	return deposits, nil
