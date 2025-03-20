@@ -295,17 +295,17 @@ func (etherMan *Client) readEvents(ctx context.Context, query ethereum.FilterQue
 func (etherMan *Client) processEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	switch vLog.Topics[0] {
 	case updateGlobalExitRootSignatureHash:
-		return etherMan.updateGlobalExitRootEvent(ctx, vLog, blocks, blocksOrder)
+		return etherMan.updateGlobalExitRootEvent(vLog, blocks, blocksOrder)
 	case updateL1InfoTreeSignatureHash:
-		return etherMan.updateL1InfoTreeEvent(ctx, vLog, blocks, blocksOrder)
+		return etherMan.updateL1InfoTreeEvent(vLog, blocks, blocksOrder)
 	case depositEventSignatureHash:
-		return etherMan.depositEvent(ctx, vLog, blocks, blocksOrder)
+		return etherMan.depositEvent(vLog, blocks, blocksOrder)
 	case claimEventSignatureHash:
-		return etherMan.newClaimEvent(ctx, vLog, blocks, blocksOrder)
+		return etherMan.newClaimEvent(vLog, blocks, blocksOrder)
 	case oldClaimEventSignatureHash:
-		return etherMan.oldClaimEvent(ctx, vLog, blocks, blocksOrder)
+		return etherMan.oldClaimEvent(vLog, blocks, blocksOrder)
 	case newWrappedTokenEventSignatureHash:
-		return etherMan.tokenWrappedEvent(ctx, vLog, blocks, blocksOrder)
+		return etherMan.tokenWrappedEvent(vLog, blocks, blocksOrder)
 	case initializedProxySignatureHash:
 		etherMan.logger.Debugf("Initialized proxy event detected. Ignoring...")
 		return nil
@@ -349,9 +349,9 @@ func (etherMan *Client) processEvent(ctx context.Context, vLog types.Log, blocks
 		etherMan.logger.Debug("ConsolidatePendingState event detected. Ignoring...")
 		return nil
 	case verifyBatchesTrustedAggregatorSignatureHash:
-		return etherMan.verifyBatchesTrustedAggregatorEvent(ctx, vLog, blocks, blocksOrder)
+		return etherMan.verifyBatchesTrustedAggregatorEvent(vLog, blocks, blocksOrder)
 	case rollupManagerVerifyBatchesSignatureHash:
-		return etherMan.verifyBatchesEvent(ctx, vLog, blocks, blocksOrder)
+		return etherMan.verifyBatchesEvent(vLog, blocks, blocksOrder)
 	case onSequenceBatchesSignatureHash:
 		etherMan.logger.Debug("OnSequenceBatches event detected. Ignoring...")
 		return nil
@@ -431,9 +431,9 @@ func (etherMan *Client) processEvent(ctx context.Context, vLog types.Log, blocks
 		etherMan.logger.Debug("TransferAdminRole event detected. Ignoring...")
 		return nil
 	case insertGlobalExitRootSignatureHash:
-		return etherMan.insertSovereignChainL2GER(ctx, vLog, blocks, blocksOrder)
+		return etherMan.insertSovereignChainL2GER(vLog, blocks, blocksOrder)
 	case removeLastGlobalExitRootSignatureHash:
-		return etherMan.removeLastL2GER(ctx, vLog, blocks, blocksOrder)
+		return etherMan.removeLastL2GER(vLog, blocks, blocksOrder)
 	case setBridgeManagerSignatureHash:
 		etherMan.logger.Debug("setBridgeManager event detected. Ignoring...")
 		return nil
@@ -454,7 +454,7 @@ func (etherMan *Client) processEvent(ctx context.Context, vLog types.Log, blocks
 	return nil
 }
 
-func (etherMan *Client) removeLastL2GER(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) removeLastL2GER(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("removeLastGlobalExitRoot event detected. Processing...")
 	var gExitRoot GlobalExitRoot
 	l2GER, err := etherMan.GerL2SovereignChain.ParseRemoveLastGlobalExitRoot(vLog)
@@ -485,7 +485,7 @@ func (etherMan *Client) removeLastL2GER(ctx context.Context, vLog types.Log, blo
 	return nil
 }
 
-func (etherMan *Client) insertSovereignChainL2GER(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) insertSovereignChainL2GER(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("insertSovereignChainL2GER event detected. Processing...")
 	var gExitRoot GlobalExitRoot
 	l2GER, err := etherMan.GerL2SovereignChain.ParseInsertGlobalExitRoot(vLog)
@@ -516,21 +516,21 @@ func (etherMan *Client) insertSovereignChainL2GER(ctx context.Context, vLog type
 	return nil
 }
 
-func (etherMan *Client) updateGlobalExitRootEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) updateGlobalExitRootEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("UpdateGlobalExitRoot event detected. Processing...")
-	return etherMan.processUpdateGlobalExitRootEvent(ctx, vLog.Topics[1], vLog.Topics[2], vLog, blocks, blocksOrder)
+	return etherMan.processUpdateGlobalExitRootEvent(vLog.Topics[1], vLog.Topics[2], vLog, blocks, blocksOrder)
 }
 
-func (etherMan *Client) updateL1InfoTreeEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) updateL1InfoTreeEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("UpdateL1InfoTree event detected")
 	globalExitRoot, err := etherMan.PolygonZkEVMGlobalExitRoot.ParseUpdateL1InfoTree(vLog)
 	if err != nil {
 		return err
 	}
-	return etherMan.processUpdateGlobalExitRootEvent(ctx, globalExitRoot.MainnetExitRoot, globalExitRoot.RollupExitRoot, vLog, blocks, blocksOrder)
+	return etherMan.processUpdateGlobalExitRootEvent(globalExitRoot.MainnetExitRoot, globalExitRoot.RollupExitRoot, vLog, blocks, blocksOrder)
 }
 
-func (etherMan *Client) processUpdateGlobalExitRootEvent(ctx context.Context, mainnetExitRoot, rollupExitRoot common.Hash, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) processUpdateGlobalExitRootEvent(mainnetExitRoot, rollupExitRoot common.Hash, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	var gExitRoot GlobalExitRoot
 	gExitRoot.ExitRoots = make([]common.Hash, 0)
 	gExitRoot.ExitRoots = append(gExitRoot.ExitRoots, mainnetExitRoot)
@@ -559,7 +559,7 @@ func (etherMan *Client) processUpdateGlobalExitRootEvent(ctx context.Context, ma
 	return nil
 }
 
-func (etherMan *Client) depositEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) depositEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("Deposit event detected. Processing...")
 	d, err := etherMan.PolygonBridgeV2.ParseBridgeEvent(vLog)
 	if err != nil {
@@ -598,16 +598,16 @@ func (etherMan *Client) depositEvent(ctx context.Context, vLog types.Log, blocks
 	return nil
 }
 
-func (etherMan *Client) oldClaimEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) oldClaimEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("Old claim event detected. Processing...")
 	c, err := etherMan.OldPolygonBridge.ParseClaimEvent(vLog)
 	if err != nil {
 		return err
 	}
-	return etherMan.claimEvent(ctx, vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, c.Index, c.OriginNetwork, 0, false)
+	return etherMan.claimEvent(vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, c.Index, c.OriginNetwork, 0, false)
 }
 
-func (etherMan *Client) newClaimEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) newClaimEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("New claim event detected. Processing...")
 	c, err := etherMan.PolygonBridgeV2.ParseClaimEvent(vLog)
 	if err != nil {
@@ -617,10 +617,10 @@ func (etherMan *Client) newClaimEvent(ctx context.Context, vLog types.Log, block
 	if err != nil {
 		return err
 	}
-	return etherMan.claimEvent(ctx, vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, localExitRootIndex, c.OriginNetwork, rollupIndex, mainnetFlag)
+	return etherMan.claimEvent(vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, localExitRootIndex, c.OriginNetwork, rollupIndex, mainnetFlag)
 }
 
-func (etherMan *Client) claimEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, amount *big.Int, destinationAddress, originAddress common.Address, Index, originNetwork, rollupIndex uint32, mainnetFlag bool) error {
+func (etherMan *Client) claimEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, amount *big.Int, destinationAddress, originAddress common.Address, Index, originNetwork, rollupIndex uint32, mainnetFlag bool) error {
 	var claim Claim
 	claim.Amount = amount
 	claim.DestinationAddress = destinationAddress
@@ -653,7 +653,7 @@ func (etherMan *Client) claimEvent(ctx context.Context, vLog types.Log, blocks *
 	return nil
 }
 
-func (etherMan *Client) tokenWrappedEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) tokenWrappedEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("TokenWrapped event detected. Processing...")
 	tw, err := etherMan.PolygonBridgeV2.ParseNewWrappedToken(vLog)
 	if err != nil {
@@ -707,27 +707,27 @@ func (etherMan *Client) GetNetworkID() uint32 {
 	return etherMan.NetworkID
 }
 
-func (etherMan *Client) verifyBatchesTrustedAggregatorEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) verifyBatchesTrustedAggregatorEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("VerifyBatchesTrustedAggregator event detected. Processing...")
 	vb, err := etherMan.PolygonRollupManager.ParseVerifyBatchesTrustedAggregator(vLog)
 	if err != nil {
 		etherMan.logger.Error("error parsing verifyBatchesTrustedAggregator event. Error: ", err)
 		return err
 	}
-	return etherMan.verifyBatches(ctx, vLog, blocks, blocksOrder, vb.RollupID, vb.NumBatch, vb.StateRoot, vb.ExitRoot, vb.Aggregator)
+	return etherMan.verifyBatches(vLog, blocks, blocksOrder, vb.RollupID, vb.NumBatch, vb.StateRoot, vb.ExitRoot, vb.Aggregator)
 }
 
-func (etherMan *Client) verifyBatchesEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) verifyBatchesEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	etherMan.logger.Debug("RollupManagerVerifyBatches event detected. Processing...")
 	vb, err := etherMan.PolygonRollupManager.ParseVerifyBatches(vLog)
 	if err != nil {
 		etherMan.logger.Error("error parsing VerifyBatches event. Error: ", err)
 		return err
 	}
-	return etherMan.verifyBatches(ctx, vLog, blocks, blocksOrder, vb.RollupID, vb.NumBatch, vb.StateRoot, vb.ExitRoot, vb.Aggregator)
+	return etherMan.verifyBatches(vLog, blocks, blocksOrder, vb.RollupID, vb.NumBatch, vb.StateRoot, vb.ExitRoot, vb.Aggregator)
 }
 
-func (etherMan *Client) verifyBatches(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, rollupID uint32, batchNum uint64, stateRoot, localExitRoot common.Hash, aggregator common.Address) error {
+func (etherMan *Client) verifyBatches(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, rollupID uint32, batchNum uint64, stateRoot, localExitRoot common.Hash, aggregator common.Address) error {
 	var verifyBatch VerifiedBatch
 	verifyBatch.BlockNumber = vLog.BlockNumber
 	verifyBatch.BatchNumber = batchNum
