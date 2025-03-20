@@ -8,7 +8,6 @@ import (
 // NetworkConfig is the configuration struct for the different environments.
 type NetworkConfig struct {
 	GenBlockNumber                        uint64
-	L2GenBlockNumber                      uint64
 	PolygonBridgeAddress                  common.Address
 	PolygonZkEVMGlobalExitRootAddress     common.Address
 	PolygonRollupManagerAddress           common.Address
@@ -16,6 +15,7 @@ type NetworkConfig struct {
 	L2PolygonBridgeAddresses              []common.Address
 	RequireSovereignChainSmcs             []bool
 	L2PolygonZkEVMGlobalExitRootAddresses []common.Address
+	L2GenBlockNumbers                     []uint64
 }
 
 const (
@@ -27,7 +27,6 @@ var (
 	networkConfigs = map[string]NetworkConfig{
 		defaultNetwork: {
 			GenBlockNumber:                        16896718,
-			L2GenBlockNumber:                      0,
 			PolygonBridgeAddress:                  common.HexToAddress("0x2a3DD3EB832aF982ec71669E178424b10Dca2EDe"),
 			PolygonZkEVMGlobalExitRootAddress:     common.HexToAddress("0x580bda1e7A0CFAe92Fa7F6c20A3794F169CE3CFb"),
 			PolygonRollupManagerAddress:           common.HexToAddress("0x0000000000000000000000000000000000000000"),
@@ -35,11 +34,11 @@ var (
 			L2PolygonBridgeAddresses:              []common.Address{common.HexToAddress("0x2a3DD3EB832aF982ec71669E178424b10Dca2EDe")},
 			RequireSovereignChainSmcs:             []bool{false},
 			L2PolygonZkEVMGlobalExitRootAddresses: []common.Address{common.HexToAddress("0x0000000000000000000000000000000000000000")},
+			L2GenBlockNumbers:                     []uint64{0},
 		},
 
 		"testnet": {
 			GenBlockNumber:                        8572995,
-			L2GenBlockNumber:                      0,
 			PolygonBridgeAddress:                  common.HexToAddress("0xF6BEEeBB578e214CA9E23B0e9683454Ff88Ed2A7"),
 			PolygonZkEVMGlobalExitRootAddress:     common.HexToAddress("0x4d9427DCA0406358445bC0a8F88C26b704004f74"),
 			PolygonRollupManagerAddress:           common.HexToAddress("0x0000000000000000000000000000000000000000"),
@@ -47,10 +46,10 @@ var (
 			L2PolygonBridgeAddresses:              []common.Address{common.HexToAddress("0xF6BEEeBB578e214CA9E23B0e9683454Ff88Ed2A7")},
 			RequireSovereignChainSmcs:             []bool{false},
 			L2PolygonZkEVMGlobalExitRootAddresses: []common.Address{common.HexToAddress("0x0000000000000000000000000000000000000000")},
+			L2GenBlockNumbers:                     []uint64{0},
 		},
 		"internaltestnet": {
 			GenBlockNumber:                        7674349,
-			L2GenBlockNumber:                      0,
 			PolygonBridgeAddress:                  common.HexToAddress("0x47c1090bc966280000Fe4356a501f1D0887Ce840"),
 			PolygonZkEVMGlobalExitRootAddress:     common.HexToAddress("0xA379Dd55Eb12e8FCdb467A814A15DE2b29677066"),
 			PolygonRollupManagerAddress:           common.HexToAddress("0x0000000000000000000000000000000000000000"),
@@ -58,10 +57,10 @@ var (
 			L2PolygonBridgeAddresses:              []common.Address{common.HexToAddress("0xfC5b0c5F677a3f3E29DB2e98c9eD455c7ACfCf03")},
 			RequireSovereignChainSmcs:             []bool{false},
 			L2PolygonZkEVMGlobalExitRootAddresses: []common.Address{common.HexToAddress("0x0000000000000000000000000000000000000000")},
+			L2GenBlockNumbers:                     []uint64{0},
 		},
 		"local": {
 			GenBlockNumber:                        1,
-			L2GenBlockNumber:                      0,
 			PolygonBridgeAddress:                  common.HexToAddress("0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E"),
 			PolygonZkEVMGlobalExitRootAddress:     common.HexToAddress("0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"),
 			PolygonRollupManagerAddress:           common.HexToAddress("0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"),
@@ -69,6 +68,7 @@ var (
 			L2PolygonBridgeAddresses:              []common.Address{common.HexToAddress("0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E")},
 			RequireSovereignChainSmcs:             []bool{false},
 			L2PolygonZkEVMGlobalExitRootAddresses: []common.Address{common.HexToAddress("0xa40d5f56745a118d0906a34e69aec8c0db1cb8fa")},
+			L2GenBlockNumbers:                     []uint64{0},
 		},
 	}
 )

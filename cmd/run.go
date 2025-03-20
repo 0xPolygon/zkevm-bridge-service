@@ -115,7 +115,7 @@ func start(ctx *cli.Context) error {
 		chSyncedL2 := make(chan uint32)
 		chsExitRootEvent = append(chsExitRootEvent, chExitRootEventL2)
 		chsSyncedL2 = append(chsSyncedL2, chSyncedL2)
-		go runSynchronizer(ctx.Context, c.NetworkConfig.L2GenBlockNumber, bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint32{}, c.NetworkConfig.RequireSovereignChainSmcs[i])
+		go runSynchronizer(ctx.Context, c.NetworkConfig.L2GenBlockNumbers[i], bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint32{}, c.NetworkConfig.RequireSovereignChainSmcs[i])
 	}
 	chSynced := make(chan uint32)
 	go runSynchronizer(ctx.Context, c.NetworkConfig.GenBlockNumber, bridgeController, l1Etherman, c.Synchronizer, storage, nil, nil, chsExitRootEvent, chSynced, networkIDs, false)
