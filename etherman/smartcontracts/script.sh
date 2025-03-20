@@ -19,6 +19,7 @@ compilegen() {
 }
 
 gen  claimcompressor
+gen oldglobalexitrootmanagerl2sovereignchain
 gen globalexitrootmanagerl2sovereignchain
 gen bridgel2sovereignchain
 gen polygonzkevmbridgev2

@@ -1048,7 +1048,7 @@ func (m *Manager) RemoveL2GER(ctx context.Context, l2GERManagerAddr common.Addre
 		log.Error("error getting the GlobalExitRoot before sending the tx. Error: ", err)
 		return err
 	}
-	tx, err := gerManager.RemoveLastGlobalExitRoots(auth, gersToRemoveAux)
+	tx, err := gerManager.RemoveGlobalExitRoots(auth, gersToRemoveAux)
 	if err != nil {
 		log.Error("error removing gers. Error: ", err)
 		return err
