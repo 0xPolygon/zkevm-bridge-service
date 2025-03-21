@@ -358,9 +358,8 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 		// Query to look for the missing values
 		l1GER, err := p.GetL1ExitRootByGER(ctx, ger.GlobalExitRoot, dbTx)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
+			if errors.Is(err, gerror.ErrStorageNotFound) {
 				log.Error("Missing L1Ger for the L2Ger entry")
-				return nil, gerror.ErrStorageNotFound
 			}
 			return nil, err
 		}

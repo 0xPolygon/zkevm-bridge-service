@@ -420,3 +420,41 @@ func TestSetMaxUintNetworkID(t *testing.T) {
 	require.Equal(t, root, rRoot)
 	require.NoError(t, tx.Commit(ctx))
 }
+
+func TestIncompleteL1GlobalExitRoot(t *testing.T) {
+	cfg := pgstorage.NewConfigFromEnv()
+	// Init database instance
+	err := pgstorage.InitOrReset(cfg)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	pg, err := pgstorage.NewPostgresStorage(cfg)
+	require.NoError(t, err)
+	tx, err := pg.BeginDBTransaction(ctx)
+	require.NoError(t, err)
+
+	block := &etherman.Block{
+		BlockNumber: 1,
+		BlockHash:   common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"),
+		NetworkID:   1,
+	}
+
+	blockID, err := pg.AddBlock(ctx, block, tx)
+	require.NoError(t, err)
+	require.Equal(t, blockID, uint64(1))
+
+	l2GER := &etherman.GlobalExitRoot{
+		NetworkID:      1,
+		BlockNumber:    1,
+		BlockID:        1,
+		// ExitRoots:      []common.Hash{common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"), common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1")},
+		GlobalExitRoot: common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"),
+	}
+
+	err = pg.AddGlobalExitRoot(ctx, l2GER, tx)
+	require.NoError(t, err)
+
+	_, err = pg.GetLatestTrustedExitRoot(ctx, l2GER.NetworkID, tx)
+	require.Error(t, err)
+	require.NoError(t, tx.Commit(ctx))
+}
