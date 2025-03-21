@@ -221,6 +221,8 @@ func NewL2Client(url string, polygonBridgeAddress, claimCompressorAddress, polyg
 	networkID, err := bridge.NetworkID(&bind.CallOpts{Pending: false})
 	if err != nil {
 		return nil, err
+	} else if networkID == 0 {
+		return nil, fmt.Errorf("l2 networkID received is 0. It can't be the same value as L1")
 	}
 	scAddresses := []common.Address{polygonBridgeAddress}
 	logger := log.WithFields("networkID", networkID)
@@ -306,7 +308,7 @@ func (etherMan *Client) readEvents(ctx context.Context, query ethereum.FilterQue
 	startProcess := time.Now()
 	for _, vLog := range logs {
 		startProcessSingleEvent := time.Now()
-		err := etherMan.processEvent(ctx, vLog, &blocks, &blocksOrder)
+		err := etherMan.processEvent(vLog, &blocks, &blocksOrder)
 		metrics.ProcessSingleEventTime(time.Since(startProcessSingleEvent))
 		metrics.EventCounter()
 		if err != nil {
@@ -319,7 +321,7 @@ func (etherMan *Client) readEvents(ctx context.Context, query ethereum.FilterQue
 	return blocks, blocksOrder, nil
 }
 
-func (etherMan *Client) processEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) processEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	switch vLog.Topics[0] {
 	case updateGlobalExitRootSignatureHash:
 		return etherMan.updateGlobalExitRootEvent(vLog, blocks, blocksOrder)
