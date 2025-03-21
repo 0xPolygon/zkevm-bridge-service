@@ -444,9 +444,9 @@ func TestIncompleteL1GlobalExitRoot(t *testing.T) {
 	require.Equal(t, blockID, uint64(1))
 
 	l2GER := &etherman.GlobalExitRoot{
-		NetworkID:      1,
-		BlockNumber:    1,
-		BlockID:        1,
+		NetworkID:   1,
+		BlockNumber: 1,
+		BlockID:     1,
 		// ExitRoots:      []common.Hash{common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"), common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1")},
 		GlobalExitRoot: common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"),
 	}
