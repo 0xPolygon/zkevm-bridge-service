@@ -1,25 +1,16 @@
 package db
 
+import (
+	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/db/sqlitestorage"
+)
+
 // Config struct
 type Config struct {
 	// Database type
 	Database string `mapstructure:"Database"`
 
-	// Database name
-	Name string `mapstructure:"Name"`
+	PgStorage pgstorage.Config
 
-	// User name
-	User string `mapstructure:"User"`
-
-	// Password of the user
-	Password string `mapstructure:"Password"`
-
-	// Host address
-	Host string `mapstructure:"Host"`
-
-	// Port Number
-	Port string `mapstructure:"Port"`
-
-	// MaxConns is the maximum number of connections in the pool.
-	MaxConns int `mapstructure:"MaxConns"`
+	SqliteStorage sqlitestorage.Config
 }

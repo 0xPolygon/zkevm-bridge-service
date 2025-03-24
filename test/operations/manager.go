@@ -100,12 +100,12 @@ func NewManager(ctx context.Context, cfg *Config) (*Manager, error) {
 	}
 
 	pgst, err := pgstorage.NewPostgresStorage(pgstorage.Config{
-		Name:     cfg.Storage.Name,
-		User:     cfg.Storage.User,
-		Password: cfg.Storage.Password,
-		Host:     cfg.Storage.Host,
-		Port:     cfg.Storage.Port,
-		MaxConns: cfg.Storage.MaxConns,
+		Name:     cfg.Storage.PgStorage.Name,
+		User:     cfg.Storage.PgStorage.User,
+		Password: cfg.Storage.PgStorage.Password,
+		Host:     cfg.Storage.PgStorage.Host,
+		Port:     cfg.Storage.PgStorage.Port,
+		MaxConns: cfg.Storage.PgStorage.MaxConns,
 	})
 	if err != nil {
 		return nil, err
@@ -973,12 +973,14 @@ func GetOpsman(ctx context.Context, l2NetworkURL, dbName, bridgeServiceHTTPPort,
 		L2NetworkID:  networkID,
 		Storage: db.Config{
 			Database: "postgres",
-			Name:     dbName,
-			User:     "test_user",
-			Password: "test_password",
-			Host:     "localhost",
-			Port:     port,
-			MaxConns: 10,
+			PgStorage: pgstorage.Config{
+				Name:     dbName,
+				User:     "test_user",
+				Password: "test_password",
+				Host:     "localhost",
+				Port:     port,
+				MaxConns: 10,
+			},
 		},
 		BT: bridgectrl.Config{
 			Store:  "postgres",

@@ -1,15 +1,14 @@
-package pgstorage
+package sqlitestorage
 
 import (
 	"os"
-	"strconv"
+	"database/sql"
+	"fmt"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	packr "github.com/gobuffalo/packr/v2"
-	pgx "github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	migrate "github.com/rubenv/sql-migrate"
 )
 
@@ -25,11 +24,10 @@ func RunMigrationsDown(cfg Config) error {
 
 // ResetDB.
 func ResetDB(cfg Config) error {
-	c, err := pgx.ParseConfig("postgres://" + cfg.User + ":" + cfg.Password + "@" + cfg.Host + ":" + cfg.Port + "/" + cfg.Name)
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_txlock=exclusive&_foreign_keys=on&_journal_mode=WAL", cfg.DBFile))
 	if err != nil {
 		return err
 	}
-	db := stdlib.OpenDB(*c)
 	_, err = db.Exec("DROP SCHEMA IF EXISTS mt CASCADE;")
 	if err != nil {
 		return err
@@ -48,14 +46,13 @@ func ResetDB(cfg Config) error {
 // runMigrations will execute pending migrations if needed to keep
 // the database updated with the latest changes in either direction of up or down.
 func runMigrations(cfg Config, direction migrate.MigrationDirection) error {
-	c, err := pgx.ParseConfig("postgres://" + cfg.User + ":" + cfg.Password + "@" + cfg.Host + ":" + cfg.Port + "/" + cfg.Name)
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_txlock=exclusive&_foreign_keys=on&_journal_mode=WAL", cfg.DBFile))
 	if err != nil {
 		return err
 	}
-	db := stdlib.OpenDB(*c)
 
-	var migrations = &migrate.PackrMigrationSource{Box: packr.New("hermez-db-migrations", "./migrations")}
-	nMigrations, err := migrate.Exec(db, "postgres", migrations, direction)
+	var migrations = &migrate.PackrMigrationSource{Box: packr.New("bridge-service-db-migrations", "./migrations")}
+	nMigrations, err := migrate.Exec(db, "sqlite3", migrations, direction)
 	if err != nil {
 		return err
 	}
@@ -68,7 +65,7 @@ func runMigrations(cfg Config, direction migrate.MigrationDirection) error {
 // will reset all the known data and rerun the migrations
 func InitOrReset(cfg Config) error {
 	// connect to database
-	_, err := NewPostgresStorage(cfg)
+	_, err := NewSQLiteStorage(cfg)
 	if err != nil {
 		return err
 	}
@@ -82,14 +79,8 @@ func InitOrReset(cfg Config) error {
 
 // NewConfigFromEnv creates config from standard postgres environment variables,
 func NewConfigFromEnv() Config {
-	maxConns, _ := strconv.Atoi(getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_MAXCONNS", "500"))
 	return Config{
-		User:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_USER", "test_user"),
-		Password: getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_PASSWORD", "test_password"),
-		Name:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_NAME", "test_db"),
-		Host:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_HOST", "localhost"),
-		Port:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_PORT", "5435"),
-		MaxConns: maxConns,
+		DBFile: getEnv("ZKEVM_BRIDGE_DATABASE_SQLITESTORAGE_DBFILE", "/tmp/database.sqlite"),
 	}
 }
 
