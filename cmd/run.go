@@ -82,7 +82,7 @@ func start(ctx *cli.Context) error {
 
 	var bridgeController *bridgectrl.BridgeController
 
-	if c.BridgeController.Store == "postgres" {
+	if c.BridgeController.Store == "postgres" || c.BridgeController.Store == "sqlite" {
 		bridgeController, err = bridgectrl.NewBridgeController(ctx.Context, c.BridgeController, networkIDs, storage)
 		if err != nil {
 			log.Error(err)
@@ -258,8 +258,8 @@ func newEthermans(c *config.Config) (*etherman.Client, []*etherman.Client, error
 	return l1Etherman, l2Ethermans, nil
 }
 
-func runSynchronizer(ctx context.Context, genBlockNumber uint64, brdigeCtrl *bridgectrl.BridgeController, etherman *etherman.Client, cfg synchronizer.Config, storage db.Storage, zkEVMClient *client.Client, chExitRootEventL2 chan *etherman.GlobalExitRoot, chsExitRootEvent []chan *etherman.GlobalExitRoot, chSynced chan uint32, allNetworkIDs []uint32, sovereignChain bool) {
-	sy, err := synchronizer.NewSynchronizer(ctx, storage, brdigeCtrl, etherman, zkEVMClient, genBlockNumber, chExitRootEventL2, chsExitRootEvent, chSynced, cfg, allNetworkIDs, sovereignChain)
+func runSynchronizer(ctx context.Context, genBlockNumber uint64, bridgeCtrl *bridgectrl.BridgeController, etherman *etherman.Client, cfg synchronizer.Config, storage db.Storage, zkEVMClient *client.Client, chExitRootEventL2 chan *etherman.GlobalExitRoot, chsExitRootEvent []chan *etherman.GlobalExitRoot, chSynced chan uint32, allNetworkIDs []uint32, sovereignChain bool) {
+	sy, err := synchronizer.NewSynchronizer(ctx, storage, bridgeCtrl, etherman, zkEVMClient, genBlockNumber, chExitRootEventL2, chsExitRootEvent, chSynced, cfg, allNetworkIDs, sovereignChain)
 	if err != nil {
 		log.Fatal(err)
 	}

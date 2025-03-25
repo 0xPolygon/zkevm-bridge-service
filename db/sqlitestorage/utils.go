@@ -10,6 +10,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	migrate "github.com/rubenv/sql-migrate"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // RunMigrationsUp migrate up.
@@ -24,19 +25,49 @@ func RunMigrationsDown(cfg Config) error {
 
 // ResetDB.
 func ResetDB(cfg Config) error {
-	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_txlock=exclusive&_foreign_keys=on&_journal_mode=WAL", cfg.DBFile))
+	file := fmt.Sprintf("file:%s?_txlock=exclusive&_foreign_keys=on&_journal_mode=WAL", cfg.DBFile)
+	log.Debug("Resetting database: ", file)
+	db, err := sql.Open("sqlite3", file)
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec("DROP SCHEMA IF EXISTS mt CASCADE;")
+	_, err = db.Exec("DROP TABLE IF EXISTS token_wrapped;")
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec("DROP SCHEMA IF EXISTS sync CASCADE;")
+	_, err = db.Exec("DROP TABLE IF EXISTS remove_exit_root;")
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec("DROP TABLE IF EXISTS public.gorp_migrations;")
+	_, err = db.Exec("DROP TABLE IF EXISTS exit_root;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS claim;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS deposit;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS block;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS root;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS rollup_exit;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS rht;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS gorp_migrations;")
 	if err != nil {
 		return err
 	}
@@ -46,7 +77,9 @@ func ResetDB(cfg Config) error {
 // runMigrations will execute pending migrations if needed to keep
 // the database updated with the latest changes in either direction of up or down.
 func runMigrations(cfg Config, direction migrate.MigrationDirection) error {
-	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_txlock=exclusive&_foreign_keys=on&_journal_mode=WAL", cfg.DBFile))
+	file := fmt.Sprintf("file:%s?_txlock=exclusive&_foreign_keys=on&_journal_mode=WAL", cfg.DBFile)
+	log.Debug("Running migrations: ", file)
+	db, err := sql.Open("sqlite3", file)
 	if err != nil {
 		return err
 	}

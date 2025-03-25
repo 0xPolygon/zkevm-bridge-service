@@ -25,7 +25,7 @@ func (_m *StorageCompressedInterface) EXPECT() *StorageCompressedInterface_Expec
 }
 
 // AddMonitoredTxsGroup provides a mock function with given fields: ctx, mTxGroup, dbTx
-func (_m *StorageCompressedInterface) AddMonitoredTxsGroup(ctx context.Context, mTxGroup *types.MonitoredTxGroupDBEntry, dbTx pgx.Tx) error {
+func (_m *StorageCompressedInterface) AddMonitoredTxsGroup(ctx context.Context, mTxGroup *types.MonitoredTxGroupDBEntry, dbTx interface{}) error {
 	ret := _m.Called(ctx, mTxGroup, dbTx)
 
 	if len(ret) == 0 {
@@ -33,7 +33,7 @@ func (_m *StorageCompressedInterface) AddMonitoredTxsGroup(ctx context.Context, 
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *types.MonitoredTxGroupDBEntry, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *types.MonitoredTxGroupDBEntry, interface{}) error); ok {
 		r0 = rf(ctx, mTxGroup, dbTx)
 	} else {
 		r0 = ret.Error(0)
@@ -50,14 +50,14 @@ type StorageCompressedInterface_AddMonitoredTxsGroup_Call struct {
 // AddMonitoredTxsGroup is a helper method to define mock.On call
 //   - ctx context.Context
 //   - mTxGroup *types.MonitoredTxGroupDBEntry
-//   - dbTx pgx.Tx
+//   - dbTx interface{}
 func (_e *StorageCompressedInterface_Expecter) AddMonitoredTxsGroup(ctx interface{}, mTxGroup interface{}, dbTx interface{}) *StorageCompressedInterface_AddMonitoredTxsGroup_Call {
 	return &StorageCompressedInterface_AddMonitoredTxsGroup_Call{Call: _e.mock.On("AddMonitoredTxsGroup", ctx, mTxGroup, dbTx)}
 }
 
-func (_c *StorageCompressedInterface_AddMonitoredTxsGroup_Call) Run(run func(ctx context.Context, mTxGroup *types.MonitoredTxGroupDBEntry, dbTx pgx.Tx)) *StorageCompressedInterface_AddMonitoredTxsGroup_Call {
+func (_c *StorageCompressedInterface_AddMonitoredTxsGroup_Call) Run(run func(ctx context.Context, mTxGroup *types.MonitoredTxGroupDBEntry, dbTx interface{})) *StorageCompressedInterface_AddMonitoredTxsGroup_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*types.MonitoredTxGroupDBEntry), args[2].(pgx.Tx))
+		run(args[0].(context.Context), args[1].(*types.MonitoredTxGroupDBEntry), args[2].(interface{}))
 	})
 	return _c
 }
@@ -67,7 +67,7 @@ func (_c *StorageCompressedInterface_AddMonitoredTxsGroup_Call) Return(_a0 error
 	return _c
 }
 
-func (_c *StorageCompressedInterface_AddMonitoredTxsGroup_Call) RunAndReturn(run func(context.Context, *types.MonitoredTxGroupDBEntry, pgx.Tx) error) *StorageCompressedInterface_AddMonitoredTxsGroup_Call {
+func (_c *StorageCompressedInterface_AddMonitoredTxsGroup_Call) RunAndReturn(run func(context.Context, *types.MonitoredTxGroupDBEntry, interface{}) error) *StorageCompressedInterface_AddMonitoredTxsGroup_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -131,7 +131,7 @@ func (_c *StorageCompressedInterface_BeginDBTransaction_Call) RunAndReturn(run f
 }
 
 // Commit provides a mock function with given fields: ctx, dbTx
-func (_m *StorageCompressedInterface) Commit(ctx context.Context, dbTx pgx.Tx) error {
+func (_m *StorageCompressedInterface) Commit(ctx context.Context, dbTx interface{}) error {
 	ret := _m.Called(ctx, dbTx)
 
 	if len(ret) == 0 {
@@ -139,7 +139,7 @@ func (_m *StorageCompressedInterface) Commit(ctx context.Context, dbTx pgx.Tx) e
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}) error); ok {
 		r0 = rf(ctx, dbTx)
 	} else {
 		r0 = ret.Error(0)
@@ -155,14 +155,14 @@ type StorageCompressedInterface_Commit_Call struct {
 
 // Commit is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dbTx pgx.Tx
+//   - dbTx interface{}
 func (_e *StorageCompressedInterface_Expecter) Commit(ctx interface{}, dbTx interface{}) *StorageCompressedInterface_Commit_Call {
 	return &StorageCompressedInterface_Commit_Call{Call: _e.mock.On("Commit", ctx, dbTx)}
 }
 
-func (_c *StorageCompressedInterface_Commit_Call) Run(run func(ctx context.Context, dbTx pgx.Tx)) *StorageCompressedInterface_Commit_Call {
+func (_c *StorageCompressedInterface_Commit_Call) Run(run func(ctx context.Context, dbTx interface{})) *StorageCompressedInterface_Commit_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(pgx.Tx))
+		run(args[0].(context.Context), args[1].(interface{}))
 	})
 	return _c
 }
@@ -172,13 +172,13 @@ func (_c *StorageCompressedInterface_Commit_Call) Return(_a0 error) *StorageComp
 	return _c
 }
 
-func (_c *StorageCompressedInterface_Commit_Call) RunAndReturn(run func(context.Context, pgx.Tx) error) *StorageCompressedInterface_Commit_Call {
+func (_c *StorageCompressedInterface_Commit_Call) RunAndReturn(run func(context.Context, interface{}) error) *StorageCompressedInterface_Commit_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetClaimTxsByStatus provides a mock function with given fields: ctx, statuses, rollupID, dbTx
-func (_m *StorageCompressedInterface) GetClaimTxsByStatus(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint32, dbTx pgx.Tx) ([]types.MonitoredTx, error) {
+func (_m *StorageCompressedInterface) GetClaimTxsByStatus(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint32, dbTx interface{}) ([]types.MonitoredTx, error) {
 	ret := _m.Called(ctx, statuses, rollupID, dbTx)
 
 	if len(ret) == 0 {
@@ -187,10 +187,10 @@ func (_m *StorageCompressedInterface) GetClaimTxsByStatus(ctx context.Context, s
 
 	var r0 []types.MonitoredTx
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) ([]types.MonitoredTx, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint32, interface{}) ([]types.MonitoredTx, error)); ok {
 		return rf(ctx, statuses, rollupID, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) []types.MonitoredTx); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint32, interface{}) []types.MonitoredTx); ok {
 		r0 = rf(ctx, statuses, rollupID, dbTx)
 	} else {
 		if ret.Get(0) != nil {
@@ -198,7 +198,7 @@ func (_m *StorageCompressedInterface) GetClaimTxsByStatus(ctx context.Context, s
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []types.MonitoredTxStatus, uint32, interface{}) error); ok {
 		r1 = rf(ctx, statuses, rollupID, dbTx)
 	} else {
 		r1 = ret.Error(1)
@@ -216,14 +216,14 @@ type StorageCompressedInterface_GetClaimTxsByStatus_Call struct {
 //   - ctx context.Context
 //   - statuses []types.MonitoredTxStatus
 //   - rollupID uint32
-//   - dbTx pgx.Tx
+//   - dbTx interface{}
 func (_e *StorageCompressedInterface_Expecter) GetClaimTxsByStatus(ctx interface{}, statuses interface{}, rollupID interface{}, dbTx interface{}) *StorageCompressedInterface_GetClaimTxsByStatus_Call {
 	return &StorageCompressedInterface_GetClaimTxsByStatus_Call{Call: _e.mock.On("GetClaimTxsByStatus", ctx, statuses, rollupID, dbTx)}
 }
 
-func (_c *StorageCompressedInterface_GetClaimTxsByStatus_Call) Run(run func(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint32, dbTx pgx.Tx)) *StorageCompressedInterface_GetClaimTxsByStatus_Call {
+func (_c *StorageCompressedInterface_GetClaimTxsByStatus_Call) Run(run func(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint32, dbTx interface{})) *StorageCompressedInterface_GetClaimTxsByStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]types.MonitoredTxStatus), args[2].(uint32), args[3].(pgx.Tx))
+		run(args[0].(context.Context), args[1].([]types.MonitoredTxStatus), args[2].(uint32), args[3].(interface{}))
 	})
 	return _c
 }
@@ -233,13 +233,13 @@ func (_c *StorageCompressedInterface_GetClaimTxsByStatus_Call) Return(_a0 []type
 	return _c
 }
 
-func (_c *StorageCompressedInterface_GetClaimTxsByStatus_Call) RunAndReturn(run func(context.Context, []types.MonitoredTxStatus, uint32, pgx.Tx) ([]types.MonitoredTx, error)) *StorageCompressedInterface_GetClaimTxsByStatus_Call {
+func (_c *StorageCompressedInterface_GetClaimTxsByStatus_Call) RunAndReturn(run func(context.Context, []types.MonitoredTxStatus, uint32, interface{}) ([]types.MonitoredTx, error)) *StorageCompressedInterface_GetClaimTxsByStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetLatestMonitoredTxGroupID provides a mock function with given fields: ctx, dbTx
-func (_m *StorageCompressedInterface) GetLatestMonitoredTxGroupID(ctx context.Context, dbTx pgx.Tx) (uint64, error) {
+func (_m *StorageCompressedInterface) GetLatestMonitoredTxGroupID(ctx context.Context, dbTx interface{}) (uint64, error) {
 	ret := _m.Called(ctx, dbTx)
 
 	if len(ret) == 0 {
@@ -248,16 +248,16 @@ func (_m *StorageCompressedInterface) GetLatestMonitoredTxGroupID(ctx context.Co
 
 	var r0 uint64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) (uint64, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}) (uint64, error)); ok {
 		return rf(ctx, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) uint64); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}) uint64); ok {
 		r0 = rf(ctx, dbTx)
 	} else {
 		r0 = ret.Get(0).(uint64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, interface{}) error); ok {
 		r1 = rf(ctx, dbTx)
 	} else {
 		r1 = ret.Error(1)
@@ -273,14 +273,14 @@ type StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call struct {
 
 // GetLatestMonitoredTxGroupID is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dbTx pgx.Tx
+//   - dbTx interface{}
 func (_e *StorageCompressedInterface_Expecter) GetLatestMonitoredTxGroupID(ctx interface{}, dbTx interface{}) *StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call {
 	return &StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call{Call: _e.mock.On("GetLatestMonitoredTxGroupID", ctx, dbTx)}
 }
 
-func (_c *StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call) Run(run func(ctx context.Context, dbTx pgx.Tx)) *StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call {
+func (_c *StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call) Run(run func(ctx context.Context, dbTx interface{})) *StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(pgx.Tx))
+		run(args[0].(context.Context), args[1].(interface{}))
 	})
 	return _c
 }
@@ -290,13 +290,13 @@ func (_c *StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call) Return(_a
 	return _c
 }
 
-func (_c *StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call) RunAndReturn(run func(context.Context, pgx.Tx) (uint64, error)) *StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call {
+func (_c *StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call) RunAndReturn(run func(context.Context, interface{}) (uint64, error)) *StorageCompressedInterface_GetLatestMonitoredTxGroupID_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GetMonitoredTxsGroups provides a mock function with given fields: ctx, groupIds, dbTx
-func (_m *StorageCompressedInterface) GetMonitoredTxsGroups(ctx context.Context, groupIds []uint64, dbTx pgx.Tx) (map[uint64]types.MonitoredTxGroupDBEntry, error) {
+func (_m *StorageCompressedInterface) GetMonitoredTxsGroups(ctx context.Context, groupIds []uint64, dbTx interface{}) (map[uint64]types.MonitoredTxGroupDBEntry, error) {
 	ret := _m.Called(ctx, groupIds, dbTx)
 
 	if len(ret) == 0 {
@@ -305,10 +305,10 @@ func (_m *StorageCompressedInterface) GetMonitoredTxsGroups(ctx context.Context,
 
 	var r0 map[uint64]types.MonitoredTxGroupDBEntry
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []uint64, pgx.Tx) (map[uint64]types.MonitoredTxGroupDBEntry, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []uint64, interface{}) (map[uint64]types.MonitoredTxGroupDBEntry, error)); ok {
 		return rf(ctx, groupIds, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []uint64, pgx.Tx) map[uint64]types.MonitoredTxGroupDBEntry); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []uint64, interface{}) map[uint64]types.MonitoredTxGroupDBEntry); ok {
 		r0 = rf(ctx, groupIds, dbTx)
 	} else {
 		if ret.Get(0) != nil {
@@ -316,7 +316,7 @@ func (_m *StorageCompressedInterface) GetMonitoredTxsGroups(ctx context.Context,
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []uint64, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []uint64, interface{}) error); ok {
 		r1 = rf(ctx, groupIds, dbTx)
 	} else {
 		r1 = ret.Error(1)
@@ -333,14 +333,14 @@ type StorageCompressedInterface_GetMonitoredTxsGroups_Call struct {
 // GetMonitoredTxsGroups is a helper method to define mock.On call
 //   - ctx context.Context
 //   - groupIds []uint64
-//   - dbTx pgx.Tx
+//   - dbTx interface{}
 func (_e *StorageCompressedInterface_Expecter) GetMonitoredTxsGroups(ctx interface{}, groupIds interface{}, dbTx interface{}) *StorageCompressedInterface_GetMonitoredTxsGroups_Call {
 	return &StorageCompressedInterface_GetMonitoredTxsGroups_Call{Call: _e.mock.On("GetMonitoredTxsGroups", ctx, groupIds, dbTx)}
 }
 
-func (_c *StorageCompressedInterface_GetMonitoredTxsGroups_Call) Run(run func(ctx context.Context, groupIds []uint64, dbTx pgx.Tx)) *StorageCompressedInterface_GetMonitoredTxsGroups_Call {
+func (_c *StorageCompressedInterface_GetMonitoredTxsGroups_Call) Run(run func(ctx context.Context, groupIds []uint64, dbTx interface{})) *StorageCompressedInterface_GetMonitoredTxsGroups_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]uint64), args[2].(pgx.Tx))
+		run(args[0].(context.Context), args[1].([]uint64), args[2].(interface{}))
 	})
 	return _c
 }
@@ -350,13 +350,13 @@ func (_c *StorageCompressedInterface_GetMonitoredTxsGroups_Call) Return(_a0 map[
 	return _c
 }
 
-func (_c *StorageCompressedInterface_GetMonitoredTxsGroups_Call) RunAndReturn(run func(context.Context, []uint64, pgx.Tx) (map[uint64]types.MonitoredTxGroupDBEntry, error)) *StorageCompressedInterface_GetMonitoredTxsGroups_Call {
+func (_c *StorageCompressedInterface_GetMonitoredTxsGroups_Call) RunAndReturn(run func(context.Context, []uint64, interface{}) (map[uint64]types.MonitoredTxGroupDBEntry, error)) *StorageCompressedInterface_GetMonitoredTxsGroups_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Rollback provides a mock function with given fields: ctx, dbTx
-func (_m *StorageCompressedInterface) Rollback(ctx context.Context, dbTx pgx.Tx) error {
+func (_m *StorageCompressedInterface) Rollback(ctx context.Context, dbTx interface{}) error {
 	ret := _m.Called(ctx, dbTx)
 
 	if len(ret) == 0 {
@@ -364,7 +364,7 @@ func (_m *StorageCompressedInterface) Rollback(ctx context.Context, dbTx pgx.Tx)
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}) error); ok {
 		r0 = rf(ctx, dbTx)
 	} else {
 		r0 = ret.Error(0)
@@ -380,14 +380,14 @@ type StorageCompressedInterface_Rollback_Call struct {
 
 // Rollback is a helper method to define mock.On call
 //   - ctx context.Context
-//   - dbTx pgx.Tx
+//   - dbTx interface{}
 func (_e *StorageCompressedInterface_Expecter) Rollback(ctx interface{}, dbTx interface{}) *StorageCompressedInterface_Rollback_Call {
 	return &StorageCompressedInterface_Rollback_Call{Call: _e.mock.On("Rollback", ctx, dbTx)}
 }
 
-func (_c *StorageCompressedInterface_Rollback_Call) Run(run func(ctx context.Context, dbTx pgx.Tx)) *StorageCompressedInterface_Rollback_Call {
+func (_c *StorageCompressedInterface_Rollback_Call) Run(run func(ctx context.Context, dbTx interface{})) *StorageCompressedInterface_Rollback_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(pgx.Tx))
+		run(args[0].(context.Context), args[1].(interface{}))
 	})
 	return _c
 }
@@ -397,13 +397,13 @@ func (_c *StorageCompressedInterface_Rollback_Call) Return(_a0 error) *StorageCo
 	return _c
 }
 
-func (_c *StorageCompressedInterface_Rollback_Call) RunAndReturn(run func(context.Context, pgx.Tx) error) *StorageCompressedInterface_Rollback_Call {
+func (_c *StorageCompressedInterface_Rollback_Call) RunAndReturn(run func(context.Context, interface{}) error) *StorageCompressedInterface_Rollback_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateClaimTx provides a mock function with given fields: ctx, mTx, dbTx
-func (_m *StorageCompressedInterface) UpdateClaimTx(ctx context.Context, mTx types.MonitoredTx, dbTx pgx.Tx) error {
+func (_m *StorageCompressedInterface) UpdateClaimTx(ctx context.Context, mTx types.MonitoredTx, dbTx interface{}) error {
 	ret := _m.Called(ctx, mTx, dbTx)
 
 	if len(ret) == 0 {
@@ -411,7 +411,7 @@ func (_m *StorageCompressedInterface) UpdateClaimTx(ctx context.Context, mTx typ
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, types.MonitoredTx, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, types.MonitoredTx, interface{}) error); ok {
 		r0 = rf(ctx, mTx, dbTx)
 	} else {
 		r0 = ret.Error(0)
@@ -428,14 +428,14 @@ type StorageCompressedInterface_UpdateClaimTx_Call struct {
 // UpdateClaimTx is a helper method to define mock.On call
 //   - ctx context.Context
 //   - mTx types.MonitoredTx
-//   - dbTx pgx.Tx
+//   - dbTx interface{}
 func (_e *StorageCompressedInterface_Expecter) UpdateClaimTx(ctx interface{}, mTx interface{}, dbTx interface{}) *StorageCompressedInterface_UpdateClaimTx_Call {
 	return &StorageCompressedInterface_UpdateClaimTx_Call{Call: _e.mock.On("UpdateClaimTx", ctx, mTx, dbTx)}
 }
 
-func (_c *StorageCompressedInterface_UpdateClaimTx_Call) Run(run func(ctx context.Context, mTx types.MonitoredTx, dbTx pgx.Tx)) *StorageCompressedInterface_UpdateClaimTx_Call {
+func (_c *StorageCompressedInterface_UpdateClaimTx_Call) Run(run func(ctx context.Context, mTx types.MonitoredTx, dbTx interface{})) *StorageCompressedInterface_UpdateClaimTx_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(types.MonitoredTx), args[2].(pgx.Tx))
+		run(args[0].(context.Context), args[1].(types.MonitoredTx), args[2].(interface{}))
 	})
 	return _c
 }
@@ -445,13 +445,13 @@ func (_c *StorageCompressedInterface_UpdateClaimTx_Call) Return(_a0 error) *Stor
 	return _c
 }
 
-func (_c *StorageCompressedInterface_UpdateClaimTx_Call) RunAndReturn(run func(context.Context, types.MonitoredTx, pgx.Tx) error) *StorageCompressedInterface_UpdateClaimTx_Call {
+func (_c *StorageCompressedInterface_UpdateClaimTx_Call) RunAndReturn(run func(context.Context, types.MonitoredTx, interface{}) error) *StorageCompressedInterface_UpdateClaimTx_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // UpdateMonitoredTxsGroup provides a mock function with given fields: ctx, mTxGroup, dbTx
-func (_m *StorageCompressedInterface) UpdateMonitoredTxsGroup(ctx context.Context, mTxGroup *types.MonitoredTxGroupDBEntry, dbTx pgx.Tx) error {
+func (_m *StorageCompressedInterface) UpdateMonitoredTxsGroup(ctx context.Context, mTxGroup *types.MonitoredTxGroupDBEntry, dbTx interface{}) error {
 	ret := _m.Called(ctx, mTxGroup, dbTx)
 
 	if len(ret) == 0 {
@@ -459,7 +459,7 @@ func (_m *StorageCompressedInterface) UpdateMonitoredTxsGroup(ctx context.Contex
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *types.MonitoredTxGroupDBEntry, pgx.Tx) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *types.MonitoredTxGroupDBEntry, interface{}) error); ok {
 		r0 = rf(ctx, mTxGroup, dbTx)
 	} else {
 		r0 = ret.Error(0)
@@ -476,14 +476,14 @@ type StorageCompressedInterface_UpdateMonitoredTxsGroup_Call struct {
 // UpdateMonitoredTxsGroup is a helper method to define mock.On call
 //   - ctx context.Context
 //   - mTxGroup *types.MonitoredTxGroupDBEntry
-//   - dbTx pgx.Tx
+//   - dbTx interface{}
 func (_e *StorageCompressedInterface_Expecter) UpdateMonitoredTxsGroup(ctx interface{}, mTxGroup interface{}, dbTx interface{}) *StorageCompressedInterface_UpdateMonitoredTxsGroup_Call {
 	return &StorageCompressedInterface_UpdateMonitoredTxsGroup_Call{Call: _e.mock.On("UpdateMonitoredTxsGroup", ctx, mTxGroup, dbTx)}
 }
 
-func (_c *StorageCompressedInterface_UpdateMonitoredTxsGroup_Call) Run(run func(ctx context.Context, mTxGroup *types.MonitoredTxGroupDBEntry, dbTx pgx.Tx)) *StorageCompressedInterface_UpdateMonitoredTxsGroup_Call {
+func (_c *StorageCompressedInterface_UpdateMonitoredTxsGroup_Call) Run(run func(ctx context.Context, mTxGroup *types.MonitoredTxGroupDBEntry, dbTx interface{})) *StorageCompressedInterface_UpdateMonitoredTxsGroup_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*types.MonitoredTxGroupDBEntry), args[2].(pgx.Tx))
+		run(args[0].(context.Context), args[1].(*types.MonitoredTxGroupDBEntry), args[2].(interface{}))
 	})
 	return _c
 }
@@ -493,7 +493,7 @@ func (_c *StorageCompressedInterface_UpdateMonitoredTxsGroup_Call) Return(_a0 er
 	return _c
 }
 
-func (_c *StorageCompressedInterface_UpdateMonitoredTxsGroup_Call) RunAndReturn(run func(context.Context, *types.MonitoredTxGroupDBEntry, pgx.Tx) error) *StorageCompressedInterface_UpdateMonitoredTxsGroup_Call {
+func (_c *StorageCompressedInterface_UpdateMonitoredTxsGroup_Call) RunAndReturn(run func(context.Context, *types.MonitoredTxGroupDBEntry, interface{}) error) *StorageCompressedInterface_UpdateMonitoredTxsGroup_Call {
 	_c.Call.Return(run)
 	return _c
 }

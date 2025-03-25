@@ -22,7 +22,6 @@ func TestMonitoredTxStorage(t *testing.T) {
 	pg, err := pgstorage.NewPostgresStorage(dbCfg)
 	require.NoError(t, err)
 
-	var _ StorageInterface = pg
 	tx, err := pg.BeginDBTransaction(ctx)
 	require.NoError(t, err)
 
@@ -101,7 +100,7 @@ func TestMonitoredTxStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, mTxs, 2)
 
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, pg.Commit(ctx, tx))
 }
 
 // Test the update deposit status logic

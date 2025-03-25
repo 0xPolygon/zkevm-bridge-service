@@ -42,7 +42,7 @@ func TestInsertDeposit(t *testing.T) {
 	}
 	_, err = pg.AddDeposit(ctx, deposit, tx)
 	require.NoError(t, err)
-	require.NoError(t, tx.Rollback(ctx))
+	require.NoError(t, pg.Rollback(ctx, tx))
 }
 
 func TestL1GlobalExitRoot(t *testing.T) {
@@ -88,7 +88,7 @@ func TestL1GlobalExitRoot(t *testing.T) {
 	require.Equal(t, latestGER.ExitRoots[0], l1GER.ExitRoots[0])
 	require.Equal(t, latestGER.ExitRoots[1], l1GER.ExitRoots[1])
 
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, pg.Commit(ctx, tx))
 }
 
 func TestAddTrustedGERDuplicated(t *testing.T) {
@@ -112,16 +112,16 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 	require.NoError(t, err)
 	getCount := "select count(*) from sync.exit_root where block_id = 0 AND global_exit_root = $1"
 	var result int
-	err = tx.QueryRow(ctx, getCount, ger.GlobalExitRoot).Scan(&result)
+	err = pg.QueryRow(ctx, getCount, ger.GlobalExitRoot).Scan(&result)
 	require.NoError(t, err)
 	assert.Equal(t, 1, result)
 	isInserted, err = pg.AddTrustedGlobalExitRoot(ctx, ger, tx)
 	require.False(t, isInserted)
 	require.NoError(t, err)
-	err = tx.QueryRow(ctx, getCount, ger.GlobalExitRoot).Scan(&result)
+	err = pg.QueryRow(ctx, getCount, ger.GlobalExitRoot).Scan(&result)
 	require.NoError(t, err)
 	assert.Equal(t, 1, result)
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, pg.Commit(ctx, tx))
 
 	tx, err = pg.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -134,14 +134,14 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 	isInserted, err = pg.AddTrustedGlobalExitRoot(ctx, ger, tx)
 	require.False(t, isInserted)
 	require.NoError(t, err)
-	err = tx.QueryRow(ctx, getCount, ger.GlobalExitRoot).Scan(&result)
+	err = pg.QueryRow(ctx, getCount, ger.GlobalExitRoot).Scan(&result)
 	require.NoError(t, err)
 	assert.Equal(t, 1, result)
 	isInserted, err = pg.AddTrustedGlobalExitRoot(ctx, ger1, tx)
 	require.True(t, isInserted)
 	require.NoError(t, err)
 	getCount2 := "select count(*) from sync.exit_root"
-	err = tx.QueryRow(ctx, getCount2).Scan(&result)
+	err = pg.QueryRow(ctx, getCount2).Scan(&result)
 	require.NoError(t, err)
 	assert.Equal(t, 2, result)
 
@@ -165,7 +165,7 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 	require.Equal(t, latestGER.ExitRoots[0], ger1.ExitRoots[0])
 	require.Equal(t, latestGER.ExitRoots[1], ger1.ExitRoots[1])
 
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, pg.Commit(ctx, tx))
 }
 
 func TestGetLastBlock(t *testing.T) {
@@ -235,7 +235,7 @@ func TestGetLastBlock(t *testing.T) {
 	require.Equal(t, prevBlock.BlockNumber, block3.BlockNumber)
 	require.Equal(t, prevBlock.BlockHash, block3.BlockHash)
 
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, pg.Commit(ctx, tx))
 }
 
 // Test MerkleTree storage
@@ -281,7 +281,7 @@ func TestMTStorage(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, uint32(0), dCount)
 
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, pg.Commit(ctx, tx))
 }
 
 // Test BridgeService storage
@@ -393,7 +393,7 @@ func TestBSStorage(t *testing.T) {
 	require.Equal(t, wt.TokenMetadata.Symbol, "COA")
 	require.Equal(t, wt.TokenMetadata.Decimals, uint8(12))
 
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, pg.Commit(ctx, tx))
 }
 
 // Test Set Max uint as networkID into setRoot storage
@@ -418,7 +418,7 @@ func TestSetMaxUintNetworkID(t *testing.T) {
 	rRoot, err := pg.GetRoot(ctx, 0, math.MaxInt32, tx)
 	require.NoError(t, err)
 	require.Equal(t, root, rRoot)
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, pg.Commit(ctx, tx))
 }
 
 func TestIncompleteL1GlobalExitRoot(t *testing.T) {
@@ -456,5 +456,5 @@ func TestIncompleteL1GlobalExitRoot(t *testing.T) {
 
 	_, err = pg.GetLatestTrustedExitRoot(ctx, l2GER.NetworkID, tx)
 	require.Error(t, err)
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, pg.Commit(ctx, tx))
 }
