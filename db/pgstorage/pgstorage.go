@@ -477,8 +477,7 @@ func (p *PostgresStorage) BulkSet(ctx context.Context, rows [][]interface{}, dbT
 
 // AddRollupExitLeaves iinserts multiple entries into the db.
 func (p *PostgresStorage) AddRollupExitLeaves(ctx context.Context, rows [][]interface{}, dbTx interface{}) error {
-	DBTx := dbTx.(pgx.Tx)
-	_, err := p.getExecQuerier(DBTx).CopyFrom(ctx, pgx.Identifier{"mt", "rollup_exit"}, []string{"leaf", "rollup_id", "root", "block_id"}, pgx.CopyFromRows(rows))
+	_, err := p.getExecQuerier(dbTx).CopyFrom(ctx, pgx.Identifier{"mt", "rollup_exit"}, []string{"leaf", "rollup_id", "root", "block_id"}, pgx.CopyFromRows(rows))
 	return err
 }
 
@@ -827,13 +826,12 @@ func (p *PostgresStorage) UpdateBlocksForTesting(ctx context.Context, networkID 
 	return err
 }
 
-// // QueryRowTesting is used for testing purposes.
-// func (p *PostgresStorage) QueryRowTesting(ctx context.Context, query string, args []interface{}, dbTx interface{}) (interface{}, error) {
-// 	e := p.getExecQuerier(dbTx)
-// 	var result interface{}
-// 	err := e.QueryRow(ctx, query, args...).Scan(&result)
-// 	return result, err
-// }
+// ExecTesting is used for testing purposes.
+func (st *PostgresStorage) ExecTesting(ctx context.Context, data string) error {
+	e := st.getExecQuerier(nil)
+	_, err := e.Exec(ctx, data)
+	return err
+}
 
 func parseDeposits(rows pgx.Rows, needBlockNum bool) ([]*etherman.Deposit, error) {
 	deposits := make([]*etherman.Deposit, 0, len(rows.RawValues()))

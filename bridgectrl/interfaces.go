@@ -18,4 +18,7 @@ type merkleTreeStore interface {
 	GetRollupExitLeavesByRoot(ctx context.Context, root common.Hash, dbTx interface{}) ([]etherman.RollupExitLeaf, error)
 	GetLatestRollupExitLeaves(ctx context.Context, dbTx interface{}) ([]etherman.RollupExitLeaf, error)
 	IsRollupExitRoot(ctx context.Context, root common.Hash, dbTx interface{}) (bool, error)
+	AddDeposit(_ context.Context, deposit *etherman.Deposit, dbTx interface{}) (uint64, error)
+	AddBlock(_ context.Context, block *etherman.Block, dbTx interface{}) (uint64, error)
+	ExecTesting(ctx context.Context, data string) error
 }

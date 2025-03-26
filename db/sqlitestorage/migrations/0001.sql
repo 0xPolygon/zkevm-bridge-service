@@ -33,6 +33,9 @@ CREATE TABLE IF NOT EXISTS block (
     network_id INTEGER
 );
 
+-- insert the block with block_id = 0 for the trusted exit root table
+INSERT INTO block (id, block_hash) VALUES (0, X'0000000000000000000000000000000000000000000000000000000000000000');
+
 CREATE TABLE IF NOT EXISTS claim (
     network_id INTEGER NOT NULL,
     claim_index INTEGER NOT NULL,

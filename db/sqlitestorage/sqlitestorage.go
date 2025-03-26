@@ -454,7 +454,7 @@ func (st *DBStorage) SetRoot(_ context.Context, root []byte, depositID uint64, n
 
 // Get gets value of key from the merkle tree.
 func (st *DBStorage) Get(_ context.Context, key []byte, dbTx interface{}) ([][]byte, error) {
-	const getValueByKeySQL = "SELECT value FROM rht WHERE key = ?"
+	const getValueByKeySQL = "SELECT left_node, right_node FROM rht WHERE key = ?"
 	var data [][]byte
 	var left, right []byte
 	err := st.getExecQuerier(dbTx).QueryRow(getValueByKeySQL, key).Scan(&left, &right)
@@ -909,13 +909,12 @@ func (st *DBStorage) UpdateBlocksForTesting(_ context.Context, networkID uint32,
 	return err
 }
 
-// // QueryRowTesting is used for testing purposes.
-// func (st *DBStorage) QueryRowTesting(_ context.Context, query string, args []interface{}, dbTx interface{}) (interface{}, error) {
-// 	e := st.getExecQuerier(dbTx)
-// 	var result interface{}
-// 	err := e.QueryRow(query, args...).Scan(&result)
-// 	return result, err
-// }
+// ExecTesting is used for testing purposes.
+func (st *DBStorage) ExecTesting(_ context.Context, data string) error {
+	e := st.getExecQuerier(nil)
+	_, err := e.Exec(data)
+	return err
+}
 
 func parseDeposits(rows *sql.Rows, needBlockNum bool) ([]*etherman.Deposit, error) {
 	var deposits []*etherman.Deposit

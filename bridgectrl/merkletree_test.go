@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/db/sqlitestorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/vectors"
@@ -83,15 +84,11 @@ func TestMTAddLeaf(t *testing.T) {
 	err = json.Unmarshal(data, &mtTestVectors)
 	require.NoError(t, err)
 
-	dbCfg := pgstorage.NewConfigFromEnv()
 	ctx := context.Background()
 
 	for ti, testVector := range mtTestVectors {
 		t.Run(fmt.Sprintf("Test vector %d", ti), func(t *testing.T) {
-			err = pgstorage.InitOrReset(dbCfg)
-			require.NoError(t, err)
-
-			store, err := pgstorage.NewPostgresStorage(dbCfg)
+			store, err := newStorageSettings("postgres")
 			require.NoError(t, err)
 
 			mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -148,15 +145,11 @@ func TestMTGetProof(t *testing.T) {
 	err = json.Unmarshal(data, &mtTestVectors)
 	require.NoError(t, err)
 
-	dbCfg := pgstorage.NewConfigFromEnv()
 	ctx := context.Background()
 
 	for ti, testVector := range mtTestVectors {
 		t.Run(fmt.Sprintf("Test vector %d", ti), func(t *testing.T) {
-			err = pgstorage.InitOrReset(dbCfg)
-			require.NoError(t, err)
-
-			store, err := pgstorage.NewPostgresStorage(dbCfg)
+			store, err := newStorageSettings("postgres")
 			require.NoError(t, err)
 
 			mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -217,12 +210,8 @@ func TestUpdateMT(t *testing.T) {
 	for ti, testVector := range mtTestVectors {
 		input := testVector.ExistingLeaves
 		log.Debug("input: ", input)
-		dbCfg := pgstorage.NewConfigFromEnv()
 		ctx := context.Background()
-		err := pgstorage.InitOrReset(dbCfg)
-		require.NoError(t, err)
-
-		store, err := pgstorage.NewPostgresStorage(dbCfg)
+		store, err := newStorageSettings("postgres")
 		require.NoError(t, err)
 
 		mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -276,16 +265,21 @@ func TestUpdateMT(t *testing.T) {
 }
 
 func TestGetLeaves(t *testing.T) {
-	data, err := os.ReadFile("test/vectors/src/mt-bridge/fullmt-vector.sql")
+	databaseType := "postgres"
+	var (
+		data []byte
+		err error
+	)
+	if databaseType == "sqlite" {
+		data, err = os.ReadFile("test/vectors/src/mt-bridge/sqlite-fullmt-vector.sql")
+	} else if databaseType == "postgres" {
+		data, err = os.ReadFile("test/vectors/src/mt-bridge/postgres-fullmt-vector.sql")
+	}
 	require.NoError(t, err)
-	dbCfg := pgstorage.NewConfigFromEnv()
 	ctx := context.Background()
-	err = pgstorage.InitOrReset(dbCfg)
+	store, err := newStorageSettings(databaseType)
 	require.NoError(t, err)
-
-	store, err := pgstorage.NewPostgresStorage(dbCfg)
-	require.NoError(t, err)
-	_, err = store.Exec(ctx, string(data))
+	err = store.ExecTesting(ctx, string(data))
 	require.NoError(t, err)
 
 	mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -306,12 +300,8 @@ func TestBuildMTRootAndStore(t *testing.T) {
 	for _, testVector := range mtTestVectors {
 		input := testVector.ExistingLeaves
 		log.Debug("input: ", input)
-		dbCfg := pgstorage.NewConfigFromEnv()
 		ctx := context.Background()
-		err := pgstorage.InitOrReset(dbCfg)
-		require.NoError(t, err)
-
-		store, err := pgstorage.NewPostgresStorage(dbCfg)
+		store, err := newStorageSettings("postgres")
 		require.NoError(t, err)
 
 		mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -353,16 +343,21 @@ func TestBuildMTRootAndStore(t *testing.T) {
 }
 
 func TestComputeSiblings(t *testing.T) {
-	data, err := os.ReadFile("test/vectors/src/mt-bridge/fullmt-vector.sql")
+	databaseType := "postgres"
+	var (
+		data []byte
+		err error
+	)
+	if databaseType == "sqlite" {
+		data, err = os.ReadFile("test/vectors/src/mt-bridge/sqlite-fullmt-vector.sql")
+	} else if databaseType == "postgres" {
+		data, err = os.ReadFile("test/vectors/src/mt-bridge/postgres-fullmt-vector.sql")
+	}
 	require.NoError(t, err)
-	dbCfg := pgstorage.NewConfigFromEnv()
 	ctx := context.Background()
-	err = pgstorage.InitOrReset(dbCfg)
+	store, err := newStorageSettings(databaseType)
 	require.NoError(t, err)
-
-	store, err := pgstorage.NewPostgresStorage(dbCfg)
-	require.NoError(t, err)
-	_, err = store.Exec(ctx, string(data))
+	err = store.ExecTesting(ctx, string(data))
 	require.NoError(t, err)
 
 	mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -535,10 +530,7 @@ func TestCheckMerkleProof2(t *testing.T) {
 
 func TestPerformanceComputeRoot(t *testing.T) {
 	ctx := context.Background()
-	dbCfg := pgstorage.NewConfigFromEnv()
-	err := pgstorage.InitOrReset(dbCfg)
-	require.NoError(t, err)
-	store, err := pgstorage.NewPostgresStorage(dbCfg)
+	store, err := newStorageSettings("postgres")
 	require.NoError(t, err)
 	mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
 	require.NoError(t, err)
@@ -554,4 +546,23 @@ func TestPerformanceComputeRoot(t *testing.T) {
 	_, err = mt.buildMTRoot(leaves)
 	require.NoError(t, err)
 	log.Debug("End creating leaves: ", time.Now().Unix()-initTime)
+}
+
+func newStorageSettings(storageType string) (merkleTreeStore, error) {
+	if storageType == "postgres" {
+		dbCfg := pgstorage.NewConfigFromEnv()
+		err := pgstorage.InitOrReset(dbCfg)
+		if err != nil {
+			return nil, err
+		}
+		return pgstorage.NewPostgresStorage(dbCfg)
+	} else if storageType == "sqlite" {
+		dbCfg := sqlitestorage.NewConfigFromEnv()
+		err := sqlitestorage.InitOrReset(dbCfg)
+		if err != nil {
+			return nil, err
+		}
+		return sqlitestorage.NewSQLiteStorage(dbCfg)
+	}
+	return nil, fmt.Errorf("unknown storage type: %s", storageType)
 }
