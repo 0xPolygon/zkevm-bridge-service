@@ -983,7 +983,6 @@ func GetOpsman(ctx context.Context, l2NetworkURL, dbName, bridgeServiceHTTPPort,
 			},
 		},
 		BT: bridgectrl.Config{
-			Store:  "postgres",
 			Height: uint8(32),
 		},
 		BS: server.Config{

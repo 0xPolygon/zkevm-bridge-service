@@ -55,7 +55,6 @@ SyncChunkSize = 100
 ForceL2SyncChunk = false
 
 [BridgeController]
-Store = "postgres"
 Height = 32
 
 [BridgeServer]

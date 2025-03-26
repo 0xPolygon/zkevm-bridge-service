@@ -44,7 +44,6 @@ func TestBridgeTree(t *testing.T) {
 
 	cfg := Config{
 		Height: uint8(32), //nolint:mnd
-		Store:  "postgres",
 	}
 
 	store, err := pgstorage.NewPostgresStorage(dbCfg)

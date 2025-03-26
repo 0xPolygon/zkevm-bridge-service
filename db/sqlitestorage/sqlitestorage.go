@@ -703,7 +703,7 @@ func (st *DBStorage) UpdateL2DepositsStatus(_ context.Context, exitRoot []byte, 
 		WHERE deposit_cnt <=
 		(SELECT deposit.deposit_cnt FROM root INNER JOIN deposit ON deposit.id = root.deposit_id WHERE root.root = (select leaf from rollup_exit where root = ? and rollup_id = ?) AND root.network = ?)
 			AND network_id = ? AND ready_for_claim = false;`
-	_, err := st.getExecQuerier(dbTx).Exec(updateL2DepositsStatusSQL, exitRoot, rollupID, networkID)
+	_, err := st.getExecQuerier(dbTx).Exec(updateL2DepositsStatusSQL, exitRoot, rollupID, networkID, networkID)
 	return err
 }
 

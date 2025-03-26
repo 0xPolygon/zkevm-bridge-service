@@ -22,7 +22,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	cli "github.com/urfave/cli/v2"
 )
@@ -82,15 +81,10 @@ func start(ctx *cli.Context) error {
 
 	var bridgeController *bridgectrl.BridgeController
 
-	if c.BridgeController.Store == "postgres" || c.BridgeController.Store == "sqlite" {
-		bridgeController, err = bridgectrl.NewBridgeController(ctx.Context, c.BridgeController, networkIDs, storage)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-	} else {
-		log.Error(gerror.ErrStorageNotRegister)
-		return gerror.ErrStorageNotRegister
+	bridgeController, err = bridgectrl.NewBridgeController(ctx.Context, c.BridgeController, networkIDs, storage)
+	if err != nil {
+		log.Error(err)
+		return err
 	}
 
 	apiStorage, err := db.NewStorage(c.BridgeServer.DB)
