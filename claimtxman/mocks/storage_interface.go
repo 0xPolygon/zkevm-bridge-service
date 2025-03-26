@@ -11,8 +11,6 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	pgx "github.com/jackc/pgx/v4"
-
 	types "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
 )
 
@@ -136,23 +134,23 @@ func (_c *StorageInterface_AddClaimTx_Call) RunAndReturn(run func(context.Contex
 }
 
 // BeginDBTransaction provides a mock function with given fields: ctx
-func (_m *StorageInterface) BeginDBTransaction(ctx context.Context) (pgx.Tx, error) {
+func (_m *StorageInterface) BeginDBTransaction(ctx context.Context) (interface{}, error) {
 	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for BeginDBTransaction")
 	}
 
-	var r0 pgx.Tx
+	var r0 interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (pgx.Tx, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (interface{}, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) pgx.Tx); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) interface{}); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(pgx.Tx)
+			r0 = ret.Get(0).(interface{})
 		}
 	}
 
@@ -183,12 +181,12 @@ func (_c *StorageInterface_BeginDBTransaction_Call) Run(run func(ctx context.Con
 	return _c
 }
 
-func (_c *StorageInterface_BeginDBTransaction_Call) Return(_a0 pgx.Tx, _a1 error) *StorageInterface_BeginDBTransaction_Call {
+func (_c *StorageInterface_BeginDBTransaction_Call) Return(_a0 interface{}, _a1 error) *StorageInterface_BeginDBTransaction_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *StorageInterface_BeginDBTransaction_Call) RunAndReturn(run func(context.Context) (pgx.Tx, error)) *StorageInterface_BeginDBTransaction_Call {
+func (_c *StorageInterface_BeginDBTransaction_Call) RunAndReturn(run func(context.Context) (interface{}, error)) *StorageInterface_BeginDBTransaction_Call {
 	_c.Call.Return(run)
 	return _c
 }

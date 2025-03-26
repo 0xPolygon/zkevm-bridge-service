@@ -25,8 +25,8 @@ type DBStorage struct {
 
 // getExecQuerier determines which execQuerier to use, dbTx or the main pgxpool
 func (st *DBStorage) getExecQuerier(dbTx interface{}) execQuerier {
-	DBTx := dbTx.(*sql.Tx)
-	if DBTx != nil {
+	if dbTx != nil {
+		DBTx := dbTx.(*sql.Tx)
 		return DBTx
 	}
 	return st.DB
@@ -43,8 +43,8 @@ func NewSQLiteStorage(cfg Config) (*DBStorage, error) {
 
 // Rollback rollbacks a db transaction.
 func (st *DBStorage) Rollback(_ context.Context, dbTx interface{}) error {
-	DBTx := dbTx.(*sql.Tx)
-	if DBTx != nil {
+	if dbTx != nil {
+		DBTx := dbTx.(*sql.Tx)
 		return DBTx.Rollback()
 	}
 
@@ -53,15 +53,15 @@ func (st *DBStorage) Rollback(_ context.Context, dbTx interface{}) error {
 
 // Commit commits a db transaction.
 func (st *DBStorage) Commit(_ context.Context, dbTx interface{}) error {
-	DBTx := dbTx.(*sql.Tx)
-	if DBTx != nil {
+	if dbTx != nil {
+		DBTx := dbTx.(*sql.Tx)
 		return DBTx.Commit()
 	}
 	return gerror.ErrNilDBTransaction
 }
 
 // BeginDBTransaction starts a transaction block.
-func (st *DBStorage) BeginDBTransaction(_ context.Context) (*sql.Tx, error) {
+func (st *DBStorage) BeginDBTransaction(_ context.Context) (interface{}, error) {
 	return st.DB.Begin()
 }
 
@@ -311,7 +311,7 @@ func (st *DBStorage) GetL1ExitRootByGER(_ context.Context, ger common.Hash, dbTx
 
 // GetL2ExitRootsByGER gets the global exit roots in all the L2 networks.
 func (st *DBStorage) GetL2ExitRootsByGER(_ context.Context, ger common.Hash, dbTx interface{}) ([]etherman.GlobalExitRoot, error) {
-	const getL2ExitRootsByGERSQL = "SELECT block_id, global_exit_root, network_id, id FROM exit_root WHERE allowed = true AND block_id > 0 AND global_exit_root = ? AND network_id != 0 AND mainnet_exit_root = '\x0000000000000000000000000000000000000000000000000000000000000000' AND rollups_exit_root = '\x0000000000000000000000000000000000000000000000000000000000000000' ORDER BY id DESC"
+	const getL2ExitRootsByGERSQL = "SELECT block_id, global_exit_root, network_id, id FROM exit_root WHERE allowed = true AND block_id > 0 AND global_exit_root = ? AND network_id != 0 AND mainnet_exit_root = X'0000000000000000000000000000000000000000000000000000000000000000' AND rollups_exit_root = X'0000000000000000000000000000000000000000000000000000000000000000' ORDER BY id DESC"
 	rows, err := st.getExecQuerier(dbTx).Query(getL2ExitRootsByGERSQL, ger)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -760,7 +760,7 @@ func (st *DBStorage) UpdateClaimTx(_ context.Context, mTx ctmtypes.MonitoredTx, 
 // GetClaimTxsByStatus gets the monitored transactions by status.
 func (st *DBStorage) GetClaimTxsByStatus(_ context.Context, statuses []ctmtypes.MonitoredTxStatus, rollupID uint32, dbTx interface{}) ([]ctmtypes.MonitoredTx, error) {
 	placeholders := strings.Repeat("?,", len(statuses)-1) + "?"
-	getMonitoredTxsSQL := fmt.Sprintf("SELECT deposit_id, from_addr, to_addr, nonce, value, data, gas, status, history, created_at, updated_at, group_id, global_exit_root FROM monitored_txs INNER JOIN deposit ON deposit.id = monitored_txs.deposit_id WHERE status = IN(%s) AND deposit.dest_net = ? ORDER BY created_at ASC", placeholders)
+	getMonitoredTxsSQL := fmt.Sprintf("SELECT deposit_id, from_addr, to_addr, nonce, value, data, gas, status, history, created_at, updated_at, group_id, global_exit_root FROM monitored_txs INNER JOIN deposit ON deposit.id = monitored_txs.deposit_id WHERE status IN(%s) AND deposit.dest_net = ? ORDER BY created_at ASC", placeholders)
 	StatusesInterfaces := make([]interface{}, len(statuses))
 	for i, status := range statuses {
 		StatusesInterfaces[i] = status

@@ -26,8 +26,8 @@ type PostgresStorage struct {
 
 // getExecQuerier determines which execQuerier to use, dbTx or the main pgxpool
 func (p *PostgresStorage) getExecQuerier(dbTx interface{}) execQuerier {
-	DBTx := dbTx.(pgx.Tx)
-	if DBTx != nil {
+	if dbTx != nil {
+		DBTx := dbTx.(pgx.Tx)
 		return DBTx
 	}
 	return p.Pool
@@ -50,8 +50,8 @@ func NewPostgresStorage(cfg Config) (*PostgresStorage, error) {
 
 // Rollback rollbacks a db transaction.
 func (p *PostgresStorage) Rollback(ctx context.Context, dbTx interface{}) error {
-	DBTx := dbTx.(pgx.Tx)
-	if DBTx != nil {
+	if dbTx != nil {
+		DBTx := dbTx.(pgx.Tx)
 		return DBTx.Rollback(ctx)
 	}
 
@@ -60,8 +60,8 @@ func (p *PostgresStorage) Rollback(ctx context.Context, dbTx interface{}) error 
 
 // Commit commits a db transaction.
 func (p *PostgresStorage) Commit(ctx context.Context, dbTx interface{}) error {
-	DBTx := dbTx.(pgx.Tx)
-	if DBTx != nil {
+	if dbTx != nil {
+		DBTx := dbTx.(pgx.Tx)
 		return DBTx.Commit(ctx)
 	}
 	return gerror.ErrNilDBTransaction

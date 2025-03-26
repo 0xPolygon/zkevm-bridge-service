@@ -7,7 +7,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/ethereum/go-ethereum/common"
-	pgx "github.com/jackc/pgx/v4"
 )
 
 type StorageInterface interface {
@@ -21,7 +20,7 @@ type StorageInterface interface {
 	GetClaimTxsByStatus(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint32, dbTx interface{}) ([]types.MonitoredTx, error)
 	// atomic
 	Rollback(ctx context.Context, dbTx interface{}) error
-	BeginDBTransaction(ctx context.Context) (pgx.Tx, error)
+	BeginDBTransaction(ctx context.Context) (interface{}, error)
 	Commit(ctx context.Context, dbTx interface{}) error
 }
 

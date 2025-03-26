@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	pgx "github.com/jackc/pgx/v4"
 )
 
 const (
@@ -28,7 +27,7 @@ type StorageCompressedInterface interface {
 	UpdateMonitoredTxsGroup(ctx context.Context, mTxGroup *ctmtypes.MonitoredTxGroupDBEntry, dbTx interface{}) error
 	// atomic
 	Rollback(ctx context.Context, dbTx interface{}) error
-	BeginDBTransaction(ctx context.Context) (pgx.Tx, error)
+	BeginDBTransaction(ctx context.Context) (interface{}, error)
 	Commit(ctx context.Context, dbTx interface{}) error
 }
 
