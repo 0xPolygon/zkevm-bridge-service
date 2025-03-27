@@ -675,26 +675,29 @@ func (st *DBStorage) GetDepositCount(_ context.Context, destAddr string, dbTx in
 // UpdateL1DepositsStatus updates the ready_for_claim status of L1 deposits.
 func (st *DBStorage) UpdateL1DepositsStatus(_ context.Context, exitRoot []byte, destinationNetwork uint32, dbTx interface{}) ([]*etherman.Deposit, error) {
 	// Retrieve the updated rows
-	selectQuery := `SELECT id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, network_id, tx_hash, metadata, ready_for_claim
+	selectQuery := `SELECT id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, network_id, tx_hash, metadata, true as ready_for_claim
 		FROM deposit
-		WHERE deposit_cnt <= (
-			SELECT deposit.deposit_cnt FROM root INNER JOIN deposit ON deposit.id = root.deposit_id WHERE root.root = ? AND root.network = 0
-		)
+		WHERE deposit_cnt <=
+			(SELECT deposit.deposit_cnt FROM root INNER JOIN deposit ON deposit.id = root.deposit_id WHERE root.root = ? AND root.network = 0)
 		AND network_id = 0 AND ready_for_claim = false AND dest_net = ?;
 	`
 	rows, err := st.getExecQuerier(dbTx).Query(selectQuery, exitRoot, destinationNetwork)
 	if err != nil {
 		return nil, err
 	}
+	deposits, err := parseDeposits(rows, false)
+	if err != nil {
+		return nil, err
+	}
 	const updateDepositsStatusSQL = `UPDATE deposit SET ready_for_claim = true 
 		WHERE deposit_cnt <=
 			(SELECT deposit.deposit_cnt FROM root INNER JOIN deposit ON deposit.id = root.deposit_id WHERE root.root = ? AND root.network = 0) 
-			AND network_id = 0 AND ready_for_claim = false AND dest_net = ?;`
+		AND network_id = 0 AND ready_for_claim = false AND dest_net = ?;`
 	_, err = st.getExecQuerier(dbTx).Exec(updateDepositsStatusSQL, exitRoot, destinationNetwork)
 	if err != nil {
 		return nil, err
 	}
-	return parseDeposits(rows, false)
+	return deposits, nil
 }
 
 // UpdateL2DepositsStatus updates the ready_for_claim status of L2 deposits.
@@ -775,10 +778,19 @@ func (st *DBStorage) GetClaimTxsByStatus(_ context.Context, statuses []ctmtypes.
 	var mTxs []ctmtypes.MonitoredTx
 	for rows.Next() {
 		var (
-			value, historyStr string
+			value, historyStr, createdAt, updatedAt string
 		)
 		mTx := ctmtypes.MonitoredTx{}
-		err = rows.Scan(&mTx.DepositID, &mTx.From, &mTx.To, &mTx.Nonce, &value, &mTx.Data, &mTx.Gas, &mTx.Status, &historyStr, &mTx.CreatedAt, &mTx.UpdatedAt, &mTx.GroupID, &mTx.GlobalExitRoot)
+		err = rows.Scan(&mTx.DepositID, &mTx.From, &mTx.To, &mTx.Nonce, &value, &mTx.Data, &mTx.Gas, &mTx.Status, &historyStr, &createdAt, &updatedAt, &mTx.GroupID, &mTx.GlobalExitRoot)
+		if err != nil {
+			return mTxs, err
+		}
+		layout := "2006-01-02 15:04:05.999999999-07:00"
+		mTx.CreatedAt, err = time.Parse(layout, createdAt)
+		if err != nil {
+			return mTxs, err
+		}
+		mTx.UpdatedAt, err = time.Parse(layout, updatedAt)
 		if err != nil {
 			return mTxs, err
 		}
