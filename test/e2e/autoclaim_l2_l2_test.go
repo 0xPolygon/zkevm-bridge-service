@@ -25,9 +25,13 @@ func TestAutoClaimL2L2(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, operations.StartBridge3())
 	ctx := context.Background()
-	opsman1, err := operations.GetOpsman(ctx, "http://localhost:8123", "test_db", "8080", "9090", "5435", 1)
+	databaseType, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	if !exists {
+		panic("ZKEVM_BRIDGE_SYNCDB_DATABASE env var not set")
+	}
+	opsman1, err := operations.GetOpsman(ctx, databaseType, "http://localhost:8123", "test_db", "8080", "9090", "5435", 1)
 	require.NoError(t, err)
-	opsman2, err := operations.GetOpsman(ctx, "http://localhost:8124", "test_db", "8080", "9090", "5435", 2)
+	opsman2, err := operations.GetOpsman(ctx, databaseType, "http://localhost:8124", "test_db", "8080", "9090", "5435", 2)
 	require.NoError(t, err)
 
 	t.Run("AutoClaim L2-L2 eth bridge", func(t *testing.T) {

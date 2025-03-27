@@ -14,6 +14,8 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/db/sqlitestorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/operations"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
@@ -51,21 +53,29 @@ func TestClaimCompressor(t *testing.T) {
 	}
 
 	ctx := context.Background()
+	databaseType, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	if !exists {
+		panic("ZKEVM_BRIDGE_SYNCDB_DATABASE env var not set")
+	}
 	opsCfg := &operations.Config{
 		L1NetworkURL: "http://localhost:8545",
 		L2NetworkURL: "http://localhost:8123",
 		L2NetworkID:  1,
 		Storage: db.Config{
-			Database: "postgres",
-			Name:     "test_db",
-			User:     "test_user",
-			Password: "test_password",
-			Host:     "localhost",
-			Port:     "5435",
-			MaxConns: 10,
+			Database: databaseType,
+			PgStorage: pgstorage.Config{
+				Name:     "test_db",
+				User:     "test_user",
+				Password: "test_password",
+				Host:     "localhost",
+				Port:     "5435",
+				MaxConns: 10,
+			},
+			SqliteStorage: sqlitestorage.Config{
+				DBFile: "/tmp/database.sqlite",
+			},
 		},
 		BT: bridgectrl.Config{
-			Store:  "postgres",
 			Height: uint8(32),
 		},
 		BS: server.Config{
@@ -77,12 +87,17 @@ func TestClaimCompressor(t *testing.T) {
 			BridgeVersion:    "v1",
 			DB: db.Config{
 				Database: "postgres",
-				Name:     "test_db",
-				User:     "test_user",
-				Password: "test_password",
-				Host:     "localhost",
-				Port:     "5435",
-				MaxConns: 10,
+				PgStorage: pgstorage.Config{
+					Name:     "test_db",
+					User:     "test_user",
+					Password: "test_password",
+					Host:     "localhost",
+					Port:     "5435",
+					MaxConns: 10,
+				},
+				SqliteStorage: sqlitestorage.Config{
+					DBFile: "/tmp/database.sqlite",
+				},
 			},
 		},
 	}
