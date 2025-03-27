@@ -362,7 +362,7 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 		l1GER, err := p.GetL1ExitRootByGER(ctx, ger.GlobalExitRoot, dbTx)
 		if err != nil {
 			if errors.Is(err, gerror.ErrStorageNotFound) {
-				log.Error("Missing L1Ger for the L2Ger entry")
+				log.Warn("Missing L1Ger for the L2Ger entry")
 			}
 			return nil, err
 		}
@@ -827,10 +827,16 @@ func (p *PostgresStorage) UpdateBlocksForTesting(ctx context.Context, networkID 
 }
 
 // ExecTesting is used for testing purposes.
-func (st *PostgresStorage) ExecTesting(ctx context.Context, data string) error {
-	e := st.getExecQuerier(nil)
+func (p *PostgresStorage) ExecTesting(ctx context.Context, data string) error {
+	e := p.getExecQuerier(nil)
 	_, err := e.Exec(ctx, data)
 	return err
+}
+
+// QueryRowTesting is used for testing purposes.
+func (p *PostgresStorage) QueryRowTesting(ctx context.Context, data string, dbTx interface{}) interface{} {
+	e := p.getExecQuerier(dbTx)
+	return  e.QueryRow(ctx, data)
 }
 
 func parseDeposits(rows pgx.Rows, needBlockNum bool) ([]*etherman.Deposit, error) {

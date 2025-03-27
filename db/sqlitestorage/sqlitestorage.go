@@ -34,7 +34,7 @@ func (st *DBStorage) getExecQuerier(dbTx interface{}) execQuerier {
 
 // NewSQLiteStorage creates a new Storage DB
 func NewSQLiteStorage(cfg Config) (*DBStorage, error) {
-	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_txlock=exclusive&_foreign_keys=on&_journal_mode=WAL", cfg.DBFile))
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on&_journal_mode=WAL", cfg.DBFile))
 	if err != nil {
 		return nil, err
 	}
@@ -108,6 +108,8 @@ func (st *DBStorage) AddGlobalExitRoot(_ context.Context, exitRoot *etherman.Glo
 	exitRoots := [][]byte{}
 	if len(exitRoot.ExitRoots) != 0 {
 		exitRoots = [][]byte{exitRoot.ExitRoots[0][:], exitRoot.ExitRoots[1][:]}
+	} else {
+		exitRoots = [][]byte{common.Hash{}.Bytes(), common.Hash{}.Bytes()}
 	}
 	e := st.getExecQuerier(dbTx)
 	_, err := e.Exec(addExitRootSQL, exitRoot.BlockID, exitRoot.GlobalExitRoot, exitRoots[0], exitRoots[1], exitRoot.NetworkID)
@@ -363,9 +365,8 @@ func (st *DBStorage) GetLatestTrustedExitRoot(ctx context.Context, networkID uin
 		// Query to look for the missing values
 		l1GER, err := st.GetL1ExitRootByGER(ctx, ger.GlobalExitRoot, dbTx)
 		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				log.Error("Missing L1Ger for the L2Ger entry")
-				return nil, gerror.ErrStorageNotFound
+			if errors.Is(err, gerror.ErrStorageNotFound) {
+				log.Warn("Missing L1Ger for the L2Ger entry")
 			}
 			return nil, err
 		}
@@ -469,7 +470,7 @@ func (st *DBStorage) Get(_ context.Context, key []byte, dbTx interface{}) ([][]b
 // If record with such a key already exists its assumed that the value is correct,
 // because it's a reverse hash table, and the key is a hash of the value
 func (st *DBStorage) Set(_ context.Context, key []byte, value [][]byte, depositID uint64, dbTx interface{}) error {
-	const setNodeSQL = "INSERT INTO rht (deposit_id, key, left_node, right_value) VALUES (?, ?, ?, ?)"
+	const setNodeSQL = "INSERT INTO rht (deposit_id, key, left_node, right_node) VALUES (?, ?, ?, ?)"
 	_, err := st.getExecQuerier(dbTx).Exec(setNodeSQL, depositID, key, value[0], value[1])
 	return err
 }
@@ -926,6 +927,12 @@ func (st *DBStorage) ExecTesting(_ context.Context, data string) error {
 	e := st.getExecQuerier(nil)
 	_, err := e.Exec(data)
 	return err
+}
+
+// QueryRowTesting is used for testing purposes.
+func (st *DBStorage) QueryRowTesting(_ context.Context, data string, dbTx interface{}) interface{} {
+	e := st.getExecQuerier(dbTx)
+	return  e.QueryRow(data)
 }
 
 func parseDeposits(rows *sql.Rows, needBlockNum bool) ([]*etherman.Deposit, error) {
