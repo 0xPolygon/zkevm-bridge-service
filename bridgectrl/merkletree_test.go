@@ -29,7 +29,11 @@ func init() {
 	dir := path.Join(path.Dir(filename), "../")
 	err := os.Chdir(dir)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+	}
+	_, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	if !exists {
+		log.Fatal("ZKEVM_BRIDGE_SYNCDB_DATABASE env var not set")
 	}
 }
 
@@ -88,7 +92,7 @@ func TestMTAddLeaf(t *testing.T) {
 
 	for ti, testVector := range mtTestVectors {
 		t.Run(fmt.Sprintf("Test vector %d", ti), func(t *testing.T) {
-			store, err := newStorageSettings("postgres")
+			store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 			require.NoError(t, err)
 
 			mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -111,7 +115,7 @@ func TestMTAddLeaf(t *testing.T) {
 					DepositCount:       uint32(i), // nolint:gosec
 					Metadata:           common.FromHex(testVector.NewLeaf.Metadata),
 				}
-				depositID, err := store.AddDeposit(ctx, deposit, nil)
+				depositID, err := testStore.AddDeposit(ctx, deposit, nil)
 				require.NoError(t, err)
 				depositIDs = append(depositIDs, depositID)
 			}
@@ -149,7 +153,7 @@ func TestMTGetProof(t *testing.T) {
 
 	for ti, testVector := range mtTestVectors {
 		t.Run(fmt.Sprintf("Test vector %d", ti), func(t *testing.T) {
-			store, err := newStorageSettings("postgres")
+			store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 			require.NoError(t, err)
 
 			mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -162,7 +166,7 @@ func TestMTGetProof(t *testing.T) {
 					BlockNumber: uint64(li + 1), // nolint:gosec
 					BlockHash:   common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9fc"),
 				}
-				blockID, err := store.AddBlock(context.TODO(), block, nil)
+				blockID, err := testStore.AddBlock(context.TODO(), block, nil)
 				require.NoError(t, err)
 				deposit := &etherman.Deposit{
 					OriginalNetwork:    leaf.OriginalNetwork,
@@ -174,7 +178,7 @@ func TestMTGetProof(t *testing.T) {
 					DepositCount:       uint32(li), // nolint:gosec
 					Metadata:           common.FromHex(leaf.Metadata),
 				}
-				depositID, err := store.AddDeposit(ctx, deposit, nil)
+				depositID, err := testStore.AddDeposit(ctx, deposit, nil)
 				require.NoError(t, err)
 				leafHash := hashDeposit(deposit)
 				if li == int(testVector.Index) {
@@ -211,7 +215,7 @@ func TestUpdateMT(t *testing.T) {
 		input := testVector.ExistingLeaves
 		log.Debug("input: ", input)
 		ctx := context.Background()
-		store, err := newStorageSettings("postgres")
+		store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 		require.NoError(t, err)
 
 		mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -230,7 +234,7 @@ func TestUpdateMT(t *testing.T) {
 				DepositCount:       uint32(i), // nolint:gosec
 				Metadata:           common.FromHex(testVector.NewLeaf.Metadata),
 			}
-			_, err := store.AddDeposit(ctx, deposit, nil)
+			_, err := testStore.AddDeposit(ctx, deposit, nil)
 			require.NoError(t, err)
 		}
 
@@ -265,7 +269,7 @@ func TestUpdateMT(t *testing.T) {
 }
 
 func TestGetLeaves(t *testing.T) {
-	databaseType := "postgres"
+	databaseType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
 	var (
 		data []byte
 		err error
@@ -277,9 +281,9 @@ func TestGetLeaves(t *testing.T) {
 	}
 	require.NoError(t, err)
 	ctx := context.Background()
-	store, err := newStorageSettings(databaseType)
+	store, testStore, err := newStorageSettings(databaseType)
 	require.NoError(t, err)
-	err = store.ExecTesting(ctx, string(data))
+	err = testStore.ExecTesting(ctx, string(data))
 	require.NoError(t, err)
 
 	mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -301,7 +305,7 @@ func TestBuildMTRootAndStore(t *testing.T) {
 		input := testVector.ExistingLeaves
 		log.Debug("input: ", input)
 		ctx := context.Background()
-		store, err := newStorageSettings("postgres")
+		store, _, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 		require.NoError(t, err)
 
 		mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -343,7 +347,7 @@ func TestBuildMTRootAndStore(t *testing.T) {
 }
 
 func TestComputeSiblings(t *testing.T) {
-	databaseType := "postgres"
+	databaseType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
 	var (
 		data []byte
 		err error
@@ -355,9 +359,9 @@ func TestComputeSiblings(t *testing.T) {
 	}
 	require.NoError(t, err)
 	ctx := context.Background()
-	store, err := newStorageSettings(databaseType)
+	store, testStore, err := newStorageSettings(databaseType)
 	require.NoError(t, err)
-	err = store.ExecTesting(ctx, string(data))
+	err = testStore.ExecTesting(ctx, string(data))
 	require.NoError(t, err)
 
 	mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -530,7 +534,7 @@ func TestCheckMerkleProof2(t *testing.T) {
 
 func TestPerformanceComputeRoot(t *testing.T) {
 	ctx := context.Background()
-	store, err := newStorageSettings("postgres")
+	store, _, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
 	require.NoError(t, err)
@@ -548,21 +552,32 @@ func TestPerformanceComputeRoot(t *testing.T) {
 	log.Debug("End creating leaves: ", time.Now().Unix()-initTime)
 }
 
-func newStorageSettings(storageType string) (merkleTreeStore, error) {
+type testStore interface {
+	AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx interface{}) (uint64, error)
+	AddBlock(ctx context.Context, block *etherman.Block, dbTx interface{}) (uint64, error)
+	ExecTesting(ctx context.Context, data string) error
+	Reset(ctx context.Context, blockNumber uint64, networkID uint32, dbTx interface{}) error
+	AddGlobalExitRoot(ctx context.Context, exitRoot *etherman.GlobalExitRoot, dbTx interface{}) error
+	AddTrustedGlobalExitRoot(_ context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx interface{}) (bool, error)
+}
+
+func newStorageSettings(storageType string) (merkleTreeStore, testStore, error) {
 	if storageType == "postgres" {
 		dbCfg := pgstorage.NewConfigFromEnv()
 		err := pgstorage.InitOrReset(dbCfg)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return pgstorage.NewPostgresStorage(dbCfg)
+		mt, err := pgstorage.NewPostgresStorage(dbCfg)
+		return mt, mt, err
 	} else if storageType == "sqlite" {
 		dbCfg := sqlitestorage.NewConfigFromEnv()
 		err := sqlitestorage.InitOrReset(dbCfg)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
-		return sqlitestorage.NewSQLiteStorage(dbCfg)
+		mt, err := sqlitestorage.NewSQLiteStorage(dbCfg)
+		return mt, mt, err
 	}
-	return nil, fmt.Errorf("unknown storage type: %s", storageType)
+	return nil, nil, fmt.Errorf("unknown storage type: %s", storageType)
 }

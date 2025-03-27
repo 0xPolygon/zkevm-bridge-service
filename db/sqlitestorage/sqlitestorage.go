@@ -200,12 +200,12 @@ func (st *DBStorage) AddTrustedGlobalExitRoot(_ context.Context, trustedExitRoot
 	const addTrustedGerSQL = `
 		INSERT INTO exit_root (block_id, global_exit_root, mainnet_exit_root, rollups_exit_root, network_id, allowed)
 		VALUES (0, ?, ?, ?, ?, true)
-		ON CONFLICT ON CONSTRAINT UC DO NOTHING;`
+		ON CONFLICT DO NOTHING;`
 	res, err := st.getExecQuerier(dbTx).Exec(addTrustedGerSQL, trustedExitRoot.GlobalExitRoot, trustedExitRoot.ExitRoots[0], trustedExitRoot.ExitRoots[1], trustedExitRoot.NetworkID)
-	rowsAffected, err := res.RowsAffected()
 	if err != nil {
 		return false, err
 	}
+	rowsAffected, err := res.RowsAffected()
 	return rowsAffected > 0, nil
 }
 
