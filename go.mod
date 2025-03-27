@@ -24,7 +24,7 @@ require (
 	github.com/prometheus/client_model v0.6.1
 	github.com/rubenv/sql-migrate v1.7.1
 	github.com/spf13/afero v1.14.0
-	github.com/spf13/viper v1.20.0
+	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
 	github.com/urfave/cli/v2 v2.27.6
 	go.uber.org/zap v1.27.0
