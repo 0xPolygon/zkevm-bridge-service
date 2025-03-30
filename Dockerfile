@@ -14,6 +14,8 @@ RUN cd /src && make build
 
 # CONTAINER FOR RUNNING BINARY
 FROM postgres:latest
+RUN apt-get update
+RUN apt-get install ca-certificates -y
 COPY --from=build /src/dist/zkevm-bridge /app/zkevm-bridge
 COPY --from=build /src/dist/test-deploy-tool /app/test-deploy-tool
 COPY --from=build /src/dist/zkevm-autoclaimer /app/zkevm-autoclaimer
