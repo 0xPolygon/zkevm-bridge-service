@@ -12,7 +12,7 @@ Database = "postgres"
     Port = "5432"
     MaxConns = 20
     [SyncDB.SqliteStorage]
-    DBFile = "./database.sqlite"
+    DBFile = "/app/sqlite/database.sqlite"
 
 [ClaimTxManager]
 Enabled = true
@@ -61,7 +61,7 @@ MaxPageLimit = 100
         Port = "5432"
         MaxConns = 20
         [BridgeServer.DB.SqliteStorage]
-        DBFile = "./database.sqlite"
+        DBFile = "/app/sqlite/database.sqlite"
 
 [NetworkConfig]
 GenBlockNumber = 0

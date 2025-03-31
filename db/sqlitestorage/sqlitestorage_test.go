@@ -21,6 +21,11 @@ func TestHistoryHashesString(t *testing.T) {
 
 	history := historyStrToHashArray(input)
 	assert.Equal(t, expectedHistory, history)
+
+	input = ""
+	expectedHistory = make(map[common.Hash]bool)
+	history = historyStrToHashArray(input)
+	assert.Equal(t, expectedHistory, history)
 }
 
 func TestGetLeaves(t *testing.T) {

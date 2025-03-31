@@ -34,7 +34,7 @@ func (st *DBStorage) getExecQuerier(dbTx interface{}) execQuerier {
 
 // NewSQLiteStorage creates a new Storage DB
 func NewSQLiteStorage(cfg Config) (*DBStorage, error) {
-	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on&_journal_mode=WAL", cfg.DBFile))
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?_foreign_keys=on&_journal_mode=WAL&_busy_timeout=20000", cfg.DBFile))
 	if err != nil {
 		return nil, err
 	}
@@ -807,6 +807,9 @@ func historyStrToHashArray(historyStr string) map[common.Hash]bool {
 	hStr := strings.Split(historyStr, ",")
 	history := make(map[common.Hash]bool)
 	for _, h := range hStr {
+		if h == "" {
+			continue
+		}
 		history[common.HexToHash(h)] = true
 	}
 	return history

@@ -47,7 +47,7 @@ func TestE2E(t *testing.T) {
 				MaxConns: 10,
 			},
 			SqliteStorage: sqlitestorage.Config{
-				DBFile: "/tmp/database.sqlite",
+				DBFile: "../../sqlite/database.sqlite",
 			},
 		},
 		BT: bridgectrl.Config{
@@ -61,7 +61,7 @@ func TestE2E(t *testing.T) {
 			MaxPageLimit:     100,
 			BridgeVersion:    "v1",
 			DB: db.Config{
-				Database: "postgres",
+				Database: databaseType,
 				PgStorage: pgstorage.Config{
 					Name:     "test_db",
 					User:     "test_user",
@@ -71,7 +71,7 @@ func TestE2E(t *testing.T) {
 					MaxConns: 10,
 				},
 				SqliteStorage: sqlitestorage.Config{
-					DBFile: "/tmp/database.sqlite",
+					DBFile: "../../sqlite/database.sqlite",
 				},
 			},
 		},

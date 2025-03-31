@@ -1,5 +1,9 @@
 -- +migrate Up
 
+PRAGMA foreign_keys = ON;
+PRAGMA journal_mode = WAL;
+PRAGMA busy_timeout = 20000;
+
 CREATE TABLE IF NOT EXISTS rht (
     key BLOB NOT NULL,
     left_node BLOB,
