@@ -13,7 +13,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl/pb"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db/sqlitestorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/ERC20"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/globalexitrootmanagerl2sovereignchain"
@@ -970,9 +969,6 @@ func GetOpsman(ctx context.Context, databaseType, l2NetworkURL, dbName, bridgeSe
 				Host:     "localhost",
 				Port:     port,
 				MaxConns: 10,
-			},
-			SqliteStorage: sqlitestorage.Config{
-				DBFile: "/tmp/database.sqlite",
 			},
 		},
 		BT: bridgectrl.Config{

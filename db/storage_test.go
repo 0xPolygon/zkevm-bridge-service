@@ -8,14 +8,11 @@ import (
 	"math/big"
 	"os"
 	"testing"
-	"database/sql"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db/sqlitestorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/ethereum/go-ethereum/common"
 	pgx "github.com/jackc/pgx/v4"
-	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -122,8 +119,8 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 	if storageType == "postgres" {
 		query := fmt.Sprintf(getCount+"'\\x%s'", "sync.", hex.EncodeToString(ger.GlobalExitRoot.Bytes()))
 		err = testStore.QueryRowTesting(ctx, query, tx).(pgx.Row).Scan(&result)
-	} else if storageType == "sqlite" {
-		err = testStore.QueryRowTesting(ctx, fmt.Sprintf(getCount+"X'%s'", "", hex.EncodeToString(ger.GlobalExitRoot.Bytes())), tx).(*sql.Row).Scan(&result)
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
 	}
 	require.NoError(t, err)
 	assert.Equal(t, 1, result)
@@ -132,8 +129,8 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 	require.NoError(t, err)
 	if storageType == "postgres" {
 		err = testStore.QueryRowTesting(ctx, fmt.Sprintf(getCount+"'\\x%s'", "sync.", hex.EncodeToString(ger.GlobalExitRoot.Bytes())), tx).(pgx.Row).Scan(&result)
-	} else if storageType == "sqlite" {
-		err = testStore.QueryRowTesting(ctx, fmt.Sprintf(getCount+"X'%s'", "", hex.EncodeToString(ger.GlobalExitRoot.Bytes())), tx).(*sql.Row).Scan(&result)
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
 	}
 	require.NoError(t, err)
 	assert.Equal(t, 1, result)
@@ -152,8 +149,8 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 	require.NoError(t, err)
 	if storageType == "postgres" {
 		err = testStore.QueryRowTesting(ctx, fmt.Sprintf(getCount+"'\\x%s'", "sync.", hex.EncodeToString(ger.GlobalExitRoot.Bytes())), tx).(pgx.Row).Scan(&result)
-	} else if storageType == "sqlite" {
-		err = testStore.QueryRowTesting(ctx, fmt.Sprintf(getCount+"X'%s'", "", hex.EncodeToString(ger.GlobalExitRoot.Bytes())), tx).(*sql.Row).Scan(&result)
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
 	}
 	require.NoError(t, err)
 	assert.Equal(t, 1, result)
@@ -163,8 +160,8 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 	getCount2 := "select count(*) from %sexit_root"
 	if storageType == "postgres" {
 		err = testStore.QueryRowTesting(ctx, fmt.Sprintf(getCount2, "sync."), tx).(pgx.Row).Scan(&result)
-	} else if storageType == "sqlite" {
-		err = testStore.QueryRowTesting(ctx, fmt.Sprintf(getCount2, ""), tx).(*sql.Row).Scan(&result)
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
 	}
 	require.NoError(t, err)
 	assert.Equal(t, 2, result)
@@ -504,15 +501,6 @@ func newStorageSettings(storageType string) (testStore, error) {
 			return nil, err
 		}
 		mt, err := pgstorage.NewPostgresStorage(dbCfg)
-		return mt, err
-	} else if storageType == "sqlite" {
-		dbCfg := sqlitestorage.NewConfigFromEnv()
-		fmt.Println("cfg: ", dbCfg)
-		err := sqlitestorage.InitOrReset(dbCfg)
-		if err != nil {
-			return nil, err
-		}
-		mt, err := sqlitestorage.NewSQLiteStorage(dbCfg)
 		return mt, err
 	}
 	return nil, fmt.Errorf("unknown storage type: %s", storageType)

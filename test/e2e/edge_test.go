@@ -14,7 +14,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db/sqlitestorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/operations"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
@@ -83,9 +82,6 @@ func TestEdgeCase(t *testing.T) {
 				Port:     "5435",
 				MaxConns: 10,
 			},
-			SqliteStorage: sqlitestorage.Config{
-				DBFile: "/tmp/database.sqlite",
-			},
 		},
 		BT: bridgectrl.Config{
 			Height: uint8(32),
@@ -106,9 +102,6 @@ func TestEdgeCase(t *testing.T) {
 					Host:     "localhost",
 					Port:     "5435",
 					MaxConns: 10,
-				},
-				SqliteStorage: sqlitestorage.Config{
-					DBFile: "/tmp/database.sqlite",
 				},
 			},
 		},

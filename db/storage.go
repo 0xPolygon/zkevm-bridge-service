@@ -1,8 +1,9 @@
 package db
 
 import (
+	"fmt"
+
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db/sqlitestorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 )
 
@@ -21,9 +22,6 @@ func NewStorage(cfg Config) (Storage, error) {
 			MaxConns: cfg.PgStorage.MaxConns,
 		})
 		return pg, err
-	} else if cfg.Database == "sqlite" {
-		return sqlitestorage.NewSQLiteStorage(sqlitestorage.Config{
-			DBFile: cfg.SqliteStorage.DBFile,})
 	}
 	return nil, gerror.ErrStorageNotRegister
 }
@@ -40,11 +38,6 @@ func RunMigrations(cfg Config) error {
 			Port:     cfg.PgStorage.Port,
 		}
 		return pgstorage.RunMigrationsUp(config)
-	} else if cfg.Database == "sqlite" {
-		config := sqlitestorage.Config{
-			DBFile: cfg.SqliteStorage.DBFile,
-		}
-		return sqlitestorage.RunMigrationsUp(config)
 	}
-	return nil
+	return fmt.Errorf("database type not supported")
 }

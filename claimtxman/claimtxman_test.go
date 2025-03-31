@@ -9,7 +9,6 @@ import (
 
 	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db/sqlitestorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -173,8 +172,8 @@ func TestUpdateDepositStatus(t *testing.T) {
 	require.NoError(t, testStore.SetRoot(ctx, l2Root.Bytes(), depositID, deposit.NetworkID, nil))
 	if storageType == "postgres" {
 		err = testStore.ExecTesting(ctx, fmt.Sprintf("INSERT INTO mt.rollup_exit (leaf, rollup_id, root, block_id) VALUES ('\\x%s', 1, '\\x%s', %d)", "b4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30", "b4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30", blockID))
-	} else if storageType == "sqlite" {
-		err = testStore.ExecTesting(ctx, fmt.Sprintf("INSERT INTO rollup_exit (leaf, rollup_id, root, block_id) VALUES (X'%s', 1, X'%s', %d)", "b4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30", "b4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30", blockID))
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
 	}
 	require.NoError(t, err)
 
@@ -244,8 +243,8 @@ func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 	require.NoError(t, testStore.SetRoot(ctx, l2Root1, depositID1, deposit1.NetworkID, nil))
 	if storageType == "postgres" {
 		err = testStore.ExecTesting(ctx, fmt.Sprintf("INSERT INTO mt.rollup_exit (leaf, rollup_id, root, block_id) VALUES ('\\x%s', 1, '\\x%s', %d)", "b4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30", "b4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30", blockID1))
-	} else if storageType == "sqlite" {
-		err = testStore.ExecTesting(ctx, fmt.Sprintf("INSERT INTO rollup_exit (leaf, rollup_id, root, block_id) VALUES (X'%s', 1, X'%s', %d)", "b4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30", "b4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30", blockID1))
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
 	}
 	require.NoError(t, err)
 
@@ -275,8 +274,8 @@ func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 	require.NoError(t, testStore.SetRoot(ctx, l2Root2, depositID2, deposit2.NetworkID, nil))
 	if storageType == "postgres" {
 		err = testStore.ExecTesting(ctx, fmt.Sprintf("INSERT INTO mt.rollup_exit (leaf, rollup_id, root, block_id) VALUES ('\\x%s', 1, '\\x%s', %d)", "90c89934975cc71a021a11dbe78cb2008d77e018dfffcc629b8d6d4dc905ac5c", "90c89934975cc71a021a11dbe78cb2008d77e018dfffcc629b8d6d4dc905ac5c", blockID2))
-	} else if storageType == "sqlite" {
-		err = testStore.ExecTesting(ctx, fmt.Sprintf("INSERT INTO rollup_exit (leaf, rollup_id, root, block_id) VALUES (X'%s', 1, X'%s', %d)", "90c89934975cc71a021a11dbe78cb2008d77e018dfffcc629b8d6d4dc905ac5c", "90c89934975cc71a021a11dbe78cb2008d77e018dfffcc629b8d6d4dc905ac5c", blockID2))
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
 	}
 	require.NoError(t, err)
 
@@ -326,15 +325,6 @@ func newStorageSettings(storageType string) (StorageInterface, testStore, error)
 			return nil, nil, err
 		}
 		mt, err := pgstorage.NewPostgresStorage(dbCfg)
-		return mt, mt, err
-	} else if storageType == "sqlite" {
-		dbCfg := sqlitestorage.NewConfigFromEnv()
-		fmt.Println("cfg: ", dbCfg)
-		err := sqlitestorage.InitOrReset(dbCfg)
-		if err != nil {
-			return nil, nil, err
-		}
-		mt, err := sqlitestorage.NewSQLiteStorage(dbCfg)
 		return mt, mt, err
 	}
 	return nil, nil, fmt.Errorf("unknown storage type: %s", storageType)

@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db/sqlitestorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/vectors"
@@ -278,10 +277,10 @@ func TestGetLeaves(t *testing.T) {
 		data []byte
 		err error
 	)
-	if databaseType == "sqlite" {
-		data, err = os.ReadFile("test/vectors/src/mt-bridge/sqlite-fullmt-vector.sql")
-	} else if databaseType == "postgres" {
+	if databaseType == "postgres" {
 		data, err = os.ReadFile("test/vectors/src/mt-bridge/postgres-fullmt-vector.sql")
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
 	}
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -356,10 +355,10 @@ func TestComputeSiblings(t *testing.T) {
 		data []byte
 		err error
 	)
-	if databaseType == "sqlite" {
-		data, err = os.ReadFile("test/vectors/src/mt-bridge/sqlite-fullmt-vector.sql")
-	} else if databaseType == "postgres" {
+	if databaseType == "postgres" {
 		data, err = os.ReadFile("test/vectors/src/mt-bridge/postgres-fullmt-vector.sql")
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
 	}
 	require.NoError(t, err)
 	ctx := context.Background()
@@ -573,14 +572,6 @@ func newStorageSettings(storageType string) (merkleTreeStore, testStore, error) 
 			return nil, nil, err
 		}
 		mt, err := pgstorage.NewPostgresStorage(dbCfg)
-		return mt, mt, err
-	} else if storageType == "sqlite" {
-		dbCfg := sqlitestorage.NewConfigFromEnv()
-		err := sqlitestorage.InitOrReset(dbCfg)
-		if err != nil {
-			return nil, nil, err
-		}
-		mt, err := sqlitestorage.NewSQLiteStorage(dbCfg)
 		return mt, mt, err
 	}
 	return nil, nil, fmt.Errorf("unknown storage type: %s", storageType)

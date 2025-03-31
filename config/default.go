@@ -22,8 +22,6 @@ Database = "postgres"
     Host = "zkevm-bridge-db"
     Port = "5432"
     MaxConns = 20
-    [SyncDB.SqliteStorage]
-    DBFile = "./database.sqlite"
 
 [ClaimTxManager]
 Enabled = false
@@ -72,8 +70,6 @@ MaxPageLimit = 100
         Host = "zkevm-bridge-db"
         Port = "5432"
         MaxConns = 20
-        [BridgeServer.DB.SqliteStorage]
-        DBFile = "./database.sqlite"
 
 [Metrics]
 Enabled = false
