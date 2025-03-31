@@ -52,6 +52,9 @@ func TestClaimCompressor(t *testing.T) {
 		t.Skip()
 	}
 
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
+	require.NoError(t, err)
+
 	ctx := context.Background()
 	databaseType, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
 	if !exists {
@@ -102,7 +105,7 @@ func TestClaimCompressor(t *testing.T) {
 		},
 	}
 
-	err := os.Setenv("ZKEVM_BRIDGE_CLAIMTXMANAGER_GROUPINGCLAIMS_ENABLED", "true")
+	err = os.Setenv("ZKEVM_BRIDGE_CLAIMTXMANAGER_GROUPINGCLAIMS_ENABLED", "true")
 	require.NoError(t, err)
 	require.NoError(t, operations.StartBridge3())
 	opsman, err := operations.NewManager(ctx, opsCfg)

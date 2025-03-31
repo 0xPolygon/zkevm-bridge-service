@@ -20,8 +20,10 @@ func TestAutoClaimL2L2(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
+	require.NoError(t, err)
 
-	err := os.Setenv("ZKEVM_BRIDGE_CLAIMTXMANAGER_ARECLAIMSBETWEENL2SENABLED", "true")
+	err = os.Setenv("ZKEVM_BRIDGE_CLAIMTXMANAGER_ARECLAIMSBETWEENL2SENABLED", "true")
 	require.NoError(t, err)
 	require.NoError(t, operations.StartBridge3())
 	ctx := context.Background()

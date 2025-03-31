@@ -17,6 +17,10 @@ import (
 )
 
 func init() {
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
+	if err != nil {
+		panic(err)
+	}
 	_, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
 	if !exists {
 		panic("ZKEVM_BRIDGE_SYNCDB_DATABASE env var not set")

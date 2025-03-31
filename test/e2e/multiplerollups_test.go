@@ -25,6 +25,9 @@ func TestMultipleRollups(t *testing.T) {
 		rollup1ID uint32 = 1
 		rollup2ID uint32 = 2
 	)
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
+	require.NoError(t, err)
+
 	ctx := context.Background()
 	databaseType, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
 	if !exists {

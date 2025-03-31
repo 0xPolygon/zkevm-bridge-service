@@ -20,6 +20,8 @@ func TestL2L2(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
+	require.NoError(t, err)
 
 	ctx := context.Background()
 	databaseType, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")

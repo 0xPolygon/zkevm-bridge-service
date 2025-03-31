@@ -23,11 +23,15 @@ import (
 )
 
 func init() {
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Change dir to project root
 	// This is important because we have relative paths to files containing test vectors
 	_, filename, _, _ := runtime.Caller(0)
 	dir := path.Join(path.Dir(filename), "../")
-	err := os.Chdir(dir)
+	err = os.Chdir(dir)
 	if err != nil {
 		log.Fatal(err)
 	}

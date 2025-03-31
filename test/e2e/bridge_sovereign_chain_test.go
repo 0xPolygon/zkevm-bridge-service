@@ -27,6 +27,9 @@ func TestSovereignChainE2E(t *testing.T) {
 		t.Skip()
 	}
 
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
+	require.NoError(t, err)
+
 	ctx := context.Background()
 	l2PolygonZkEVMGlobalExitRootAddress := common.HexToAddress("0x712516e61C8B383dF4A63CFe83d7701Bce54B03e")
 	databaseType, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
