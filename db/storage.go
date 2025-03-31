@@ -2,6 +2,7 @@ package db
 
 import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/db/sqlitestorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 )
 
@@ -12,14 +13,17 @@ type Storage interface{}
 func NewStorage(cfg Config) (Storage, error) {
 	if cfg.Database == "postgres" {
 		pg, err := pgstorage.NewPostgresStorage(pgstorage.Config{
-			Name:     cfg.Name,
-			User:     cfg.User,
-			Password: cfg.Password,
-			Host:     cfg.Host,
-			Port:     cfg.Port,
-			MaxConns: cfg.MaxConns,
+			Name:     cfg.PgStorage.Name,
+			User:     cfg.PgStorage.User,
+			Password: cfg.PgStorage.Password,
+			Host:     cfg.PgStorage.Host,
+			Port:     cfg.PgStorage.Port,
+			MaxConns: cfg.PgStorage.MaxConns,
 		})
 		return pg, err
+	} else if cfg.Database == "sqlite" {
+		return sqlitestorage.NewSQLiteStorage(sqlitestorage.Config{
+			DBFile: cfg.SqliteStorage.DBFile,})
 	}
 	return nil, gerror.ErrStorageNotRegister
 }
@@ -27,12 +31,20 @@ func NewStorage(cfg Config) (Storage, error) {
 // RunMigrations will execute pending migrations if needed to keep
 // the database updated with the latest changes
 func RunMigrations(cfg Config) error {
-	config := pgstorage.Config{
-		Name:     cfg.Name,
-		User:     cfg.User,
-		Password: cfg.Password,
-		Host:     cfg.Host,
-		Port:     cfg.Port,
+	if cfg.Database == "postgres" {
+		config := pgstorage.Config{
+			Name:     cfg.PgStorage.Name,
+			User:     cfg.PgStorage.User,
+			Password: cfg.PgStorage.Password,
+			Host:     cfg.PgStorage.Host,
+			Port:     cfg.PgStorage.Port,
+		}
+		return pgstorage.RunMigrationsUp(config)
+	} else if cfg.Database == "sqlite" {
+		config := sqlitestorage.Config{
+			DBFile: cfg.SqliteStorage.DBFile,
+		}
+		return sqlitestorage.RunMigrationsUp(config)
 	}
-	return pgstorage.RunMigrationsUp(config)
+	return nil
 }

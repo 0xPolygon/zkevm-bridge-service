@@ -95,7 +95,7 @@ GO_DEPLOY_AUTOCLAIMER := $(GO_BASE)/autoclaimservice
 GO_DEPLOY_AUTOCLAIMER_BINARY := zkevm-autoclaimer
 
 LINT := $$(go env GOPATH)/bin/golangci-lint run --timeout=5m -E whitespace -E gosec -E gci -E misspell -E mnd -E gofmt -E goimports --exclude-use-default=false --max-same-issues 0
-BUILD := $(GO_ENV_VARS) go build -ldflags "all=$(LDFLAGS)" -o $(GO_BIN)/$(GO_BINARY) $(GO_CMD)
+BUILD := $(GO_ENV_VARS) CGO_ENABLED=1 go build -ldflags "all=$(LDFLAGS)" -o $(GO_BIN)/$(GO_BINARY) $(GO_CMD)
 BUILDSCRIPTEPLOY := $(GO_ENV_VARS) go build -o $(GO_BIN)/$(GO_DEPLOY_SCRIPT_BINARY) $(GO_DEPLOY_SCRIPT)
 BUILDAUTOCLAIMER := $(GO_ENV_VARS) go build -o $(GO_BIN)/$(GO_DEPLOY_AUTOCLAIMER_BINARY) $(GO_DEPLOY_AUTOCLAIMER)
 

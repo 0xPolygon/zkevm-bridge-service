@@ -1,16 +1,16 @@
-package pgstorage
+package sqlitestorage
 
 import (
 	"os"
-	"strconv"
+	"database/sql"
+	"fmt"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 	packr "github.com/gobuffalo/packr/v2"
-	pgx "github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/ethereum/go-ethereum/accounts/abi"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	migrate "github.com/rubenv/sql-migrate"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 // RunMigrationsUp migrate up.
@@ -25,20 +25,57 @@ func RunMigrationsDown(cfg Config) error {
 
 // ResetDB.
 func ResetDB(cfg Config) error {
-	c, err := pgx.ParseConfig("postgres://" + cfg.User + ":" + cfg.Password + "@" + cfg.Host + ":" + cfg.Port + "/" + cfg.Name)
+	file := fmt.Sprintf("file:%s?_txlock=exclusive&_foreign_keys=on&_journal_mode=WAL", cfg.DBFile)
+	log.Debug("Resetting database: ", file)
+	db, err := sql.Open("sqlite3", file)
 	if err != nil {
 		return err
 	}
-	db := stdlib.OpenDB(*c)
-	_, err = db.Exec("DROP SCHEMA IF EXISTS mt CASCADE;")
+	_, err = db.Exec("DROP TABLE IF EXISTS token_wrapped;")
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec("DROP SCHEMA IF EXISTS sync CASCADE;")
+	_, err = db.Exec("DROP TABLE IF EXISTS remove_exit_root;")
 	if err != nil {
 		return err
 	}
-	_, err = db.Exec("DROP TABLE IF EXISTS public.gorp_migrations;")
+	_, err = db.Exec("DROP TABLE IF EXISTS exit_root;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS claim;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS deposit;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS block;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS root;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS rollup_exit;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS rht;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS monitored_txs;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS monitored_txs_group;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP TABLE IF EXISTS gorp_migrations;")
 	if err != nil {
 		return err
 	}
@@ -48,14 +85,15 @@ func ResetDB(cfg Config) error {
 // runMigrations will execute pending migrations if needed to keep
 // the database updated with the latest changes in either direction of up or down.
 func runMigrations(cfg Config, direction migrate.MigrationDirection) error {
-	c, err := pgx.ParseConfig("postgres://" + cfg.User + ":" + cfg.Password + "@" + cfg.Host + ":" + cfg.Port + "/" + cfg.Name)
+	file := fmt.Sprintf("file:%s?_txlock=exclusive&_foreign_keys=on&_journal_mode=WAL", cfg.DBFile)
+	log.Debug("Running migrations: ", file)
+	db, err := sql.Open("sqlite3", file)
 	if err != nil {
 		return err
 	}
-	db := stdlib.OpenDB(*c)
 
-	var migrations = &migrate.PackrMigrationSource{Box: packr.New("hermez-db-migrations", "./migrations")}
-	nMigrations, err := migrate.Exec(db, "postgres", migrations, direction)
+	var migrations = &migrate.PackrMigrationSource{Box: packr.New("bridge-service-db-migrations", "./migrations")}
+	nMigrations, err := migrate.Exec(db, "sqlite3", migrations, direction)
 	if err != nil {
 		return err
 	}
@@ -68,7 +106,7 @@ func runMigrations(cfg Config, direction migrate.MigrationDirection) error {
 // will reset all the known data and rerun the migrations
 func InitOrReset(cfg Config) error {
 	// connect to database
-	_, err := NewPostgresStorage(cfg)
+	_, err := NewSQLiteStorage(cfg)
 	if err != nil {
 		return err
 	}
@@ -82,14 +120,8 @@ func InitOrReset(cfg Config) error {
 
 // NewConfigFromEnv creates config from standard postgres environment variables,
 func NewConfigFromEnv() Config {
-	maxConns, _ := strconv.Atoi(getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_MAXCONNS", "500"))
 	return Config{
-		User:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_USER", "test_user"),
-		Password: getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_PASSWORD", "test_password"),
-		Name:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_NAME", "test_db"),
-		Host:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_HOST", "localhost"),
-		Port:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_PORT", "5435"),
-		MaxConns: maxConns,
+		DBFile: getEnv("ZKEVM_BRIDGE_DATABASE_SQLITESTORAGE_DBFILE", "/tmp/database.sqlite"),
 	}
 }
 

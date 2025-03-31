@@ -45,3 +45,14 @@ func TestHistoryHashSlice(t *testing.T) {
 	assert.Equal(t, txs[1].Hash(), common.BytesToHash(history[0]))
 	t.Log("TEST3: ", txs[1].Hash(), common.BytesToHash(history[0]))
 }
+
+func TestHistoryHashesString(t *testing.T) {
+	tx := MonitoredTx {
+		History: make(map[common.Hash]bool),
+	}
+	tx.History[common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001")] = true
+	tx.History[common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000002")] = true
+	result := tx.HistoryHashesString()
+	expectedResults := []string{"0x0000000000000000000000000000000000000000000000000000000000000001,0x0000000000000000000000000000000000000000000000000000000000000002", "0x0000000000000000000000000000000000000000000000000000000000000002,0x0000000000000000000000000000000000000000000000000000000000000001"}
+	assert.Contains(t, expectedResults, result, "Result should be one of the expected solutions")
+}

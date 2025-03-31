@@ -4,12 +4,15 @@ Outputs = ["stdout"]
 
 [SyncDB]
 Database = "postgres"
-User = "test_user"
-Password = "test_password"
-Name = "test_db"
-Host = "zkevm-bridge-db"
-Port = "5432"
-MaxConns = 20
+    [SyncDB.PgStorage]
+    User = "test_user"
+    Password = "test_password"
+    Name = "test_db"
+    Host = "zkevm-bridge-db"
+    Port = "5432"
+    MaxConns = 20
+    [SyncDB.SqliteStorage]
+    DBFile = "/app/sqlite/database.sqlite"
 
 [ClaimTxManager]
 Enabled = true
@@ -40,7 +43,6 @@ SyncChunkSize = 100
 ForceL2SyncChunk = false
 
 [BridgeController]
-Store = "postgres"
 Height = 32
 
 [BridgeServer]
@@ -50,13 +52,16 @@ CacheSize = 100000
 DefaultPageLimit = 25
 MaxPageLimit = 100
     [BridgeServer.DB]
-    Database = "postgres"
-    User = "test_user"
-    Password = "test_password"
-    Name = "test_db"
-    Host = "zkevm-bridge-db"
-    Port = "5432"
-    MaxConns = 20
+        Database = "postgres"
+        [BridgeServer.DB.PgStorage]
+        User = "test_user"
+        Password = "test_password"
+        Name = "test_db"
+        Host = "zkevm-bridge-db"
+        Port = "5432"
+        MaxConns = 20
+        [BridgeServer.DB.SqliteStorage]
+        DBFile = "/app/sqlite/database.sqlite"
 
 [NetworkConfig]
 GenBlockNumber = 0
