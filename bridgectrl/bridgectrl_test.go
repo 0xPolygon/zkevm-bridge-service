@@ -85,7 +85,7 @@ func TestBridgeTree(t *testing.T) {
 			orgRoot, err := bt.exitTrees[0].store.GetRoot(ctx, uint32(i), 0, nil) // nolint:gosec
 			require.NoError(t, err)
 			require.NoError(t, testStore.Reset(ctx, uint64(i), deposit.NetworkID, nil)) // nolint:gosec
-			err = bt.ReorgMT(ctx, uint32(i), testVectors[i].OriginalNetwork, nil)   // nolint:gosec
+			err = bt.ReorgMT(ctx, uint32(i), testVectors[i].OriginalNetwork, nil)       // nolint:gosec
 			require.NoError(t, err)
 			blockID, err = testStore.AddBlock(ctx, block, nil)
 			require.NoError(t, err)

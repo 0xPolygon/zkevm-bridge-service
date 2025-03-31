@@ -47,7 +47,7 @@ func TestHistoryHashSlice(t *testing.T) {
 }
 
 func TestHistoryHashesString(t *testing.T) {
-	tx := MonitoredTx {
+	tx := MonitoredTx{
 		History: make(map[common.Hash]bool),
 	}
 	tx.History[common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000001")] = true

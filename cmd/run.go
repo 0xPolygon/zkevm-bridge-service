@@ -244,7 +244,7 @@ func newEthermans(c *config.Config) (*etherman.Client, []*etherman.Client, error
 	for i, addr := range c.L2PolygonBridgeAddresses {
 		l2Etherman, err := etherman.NewL2Client(c.Etherman.L2URLs[i], addr, c.NetworkConfig.L2ClaimCompressorAddress, c.NetworkConfig.L2PolygonZkEVMGlobalExitRootAddresses[i], c.NetworkConfig.RequireSovereignChainSmcs[i])
 		if err != nil {
-			log.Error("L2 etherman array position: ", i,". ", c.Etherman.L2URLs[i], ", error: ", err)
+			log.Error("L2 etherman array position: ", i, ". ", c.Etherman.L2URLs[i], ", error: ", err)
 			return l1Etherman, nil, err
 		}
 		l2Ethermans = append(l2Ethermans, l2Etherman)

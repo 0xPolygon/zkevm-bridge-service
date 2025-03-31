@@ -836,7 +836,7 @@ func (p *PostgresStorage) ExecTesting(ctx context.Context, data string) error {
 // QueryRowTesting is used for testing purposes.
 func (p *PostgresStorage) QueryRowTesting(ctx context.Context, data string, dbTx interface{}) interface{} {
 	e := p.getExecQuerier(dbTx)
-	return  e.QueryRow(ctx, data)
+	return e.QueryRow(ctx, data)
 }
 
 func parseDeposits(rows pgx.Rows, needBlockNum bool) ([]*etherman.Deposit, error) {

@@ -275,7 +275,7 @@ func TestGetLeaves(t *testing.T) {
 	databaseType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
 	var (
 		data []byte
-		err error
+		err  error
 	)
 	if databaseType == "postgres" {
 		data, err = os.ReadFile("test/vectors/src/mt-bridge/postgres-fullmt-vector.sql")
@@ -353,7 +353,7 @@ func TestComputeSiblings(t *testing.T) {
 	databaseType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
 	var (
 		data []byte
-		err error
+		err  error
 	)
 	if databaseType == "postgres" {
 		data, err = os.ReadFile("test/vectors/src/mt-bridge/postgres-fullmt-vector.sql")

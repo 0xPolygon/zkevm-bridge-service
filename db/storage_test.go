@@ -2,8 +2,8 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"encoding/hex"
+	"fmt"
 	"math"
 	"math/big"
 	"os"
@@ -37,7 +37,7 @@ func TestInsertDeposit(t *testing.T) {
 
 	blockID, err := testStore.AddBlock(ctx, &etherman.Block{
 		BlockNumber: 1,
-		BlockHash: common.HexToHash("0x29e885adaf8e4b51e4d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9d1"),
+		BlockHash:   common.HexToHash("0x29e885adaf8e4b51e4d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9d1"),
 	}, nil)
 	require.NoError(t, err)
 	deposit := &etherman.Deposit{
@@ -168,7 +168,7 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 
 	blockID, err := testStore.AddBlock(ctx, &etherman.Block{
 		BlockNumber: 1,
-		BlockHash: common.HexToHash("0x29e995edaf8e4b51e1d2e05f9da28161d2fb4efb1d53827d9b80a23cf2d7a3f2"),
+		BlockHash:   common.HexToHash("0x29e995edaf8e4b51e1d2e05f9da28161d2fb4efb1d53827d9b80a23cf2d7a3f2"),
 	}, tx)
 	require.NoError(t, err)
 	ger2 := ger1
@@ -445,9 +445,9 @@ func TestIncompleteL2GlobalExitRoot(t *testing.T) {
 	require.Equal(t, blockID, uint64(1))
 
 	l2GER := &etherman.GlobalExitRoot{
-		NetworkID:   1,
-		BlockNumber: 1,
-		BlockID:     1,
+		NetworkID:      1,
+		BlockNumber:    1,
+		BlockID:        1,
 		GlobalExitRoot: common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"),
 	}
 
