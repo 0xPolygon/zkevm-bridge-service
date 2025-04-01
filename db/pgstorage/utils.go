@@ -82,13 +82,13 @@ func InitOrReset(cfg Config) error {
 
 // NewConfigFromEnv creates config from standard postgres environment variables,
 func NewConfigFromEnv() Config {
-	maxConns, _ := strconv.Atoi(getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_MAXCONNS", "500"))
+	maxConns, _ := strconv.Atoi(getEnv("ZKEVM_BRIDGE_SYNCDB_PGSTORAGE_MAXCONNS", "500"))
 	return Config{
-		User:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_USER", "test_user"),
-		Password: getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_PASSWORD", "test_password"),
-		Name:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_NAME", "test_db"),
-		Host:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_HOST", "localhost"),
-		Port:     getEnv("ZKEVM_BRIDGE_DATABASE_PGSTORAGE_PORT", "5435"),
+		User:     getEnv("ZKEVM_BRIDGE_SYNCDB_PGSTORAGE_USER", "test_user"),
+		Password: getEnv("ZKEVM_BRIDGE_SYNCDB_PGSTORAGE_PASSWORD", "test_password"),
+		Name:     getEnv("ZKEVM_BRIDGE_SYNCDB_PGSTORAGE_NAME", "test_db"),
+		Host:     getEnv("ZKEVM_BRIDGE_SYNCDB_PGSTORAGE_HOST", "localhost"),
+		Port:     getEnv("ZKEVM_BRIDGE_SYNCDB_PGSTORAGE_PORT", "5435"),
 		MaxConns: maxConns,
 	}
 }
