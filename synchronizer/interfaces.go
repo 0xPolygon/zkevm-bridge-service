@@ -8,7 +8,6 @@ import (
 	rpcTypes "github.com/0xPolygonHermez/zkevm-bridge-service/jsonrpcclient/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	pgx "github.com/jackc/pgx/v4"
 )
 
 // ethermanInterface contains the methods required to interact with ethereum.
@@ -19,32 +18,32 @@ type ethermanInterface interface {
 }
 
 type storageInterface interface {
-	GetLastBlock(ctx context.Context, networkID uint32, dbTx pgx.Tx) (*etherman.Block, error)
-	Rollback(ctx context.Context, dbTx pgx.Tx) error
-	BeginDBTransaction(ctx context.Context) (pgx.Tx, error)
-	Commit(ctx context.Context, dbTx pgx.Tx) error
-	AddBlock(ctx context.Context, block *etherman.Block, dbTx pgx.Tx) (uint64, error)
-	AddGlobalExitRoot(ctx context.Context, exitRoot *etherman.GlobalExitRoot, dbTx pgx.Tx) error
-	AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx pgx.Tx) (uint64, error)
-	AddClaim(ctx context.Context, claim *etherman.Claim, dbTx pgx.Tx) error
-	AddTokenWrapped(ctx context.Context, tokenWrapped *etherman.TokenWrapped, dbTx pgx.Tx) error
-	Reset(ctx context.Context, blockNumber uint64, networkID uint32, dbTx pgx.Tx) error
-	GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx pgx.Tx) (etherman.Block, error)
-	GetNumberDeposits(ctx context.Context, origNetworkID uint32, blockNumber uint64, dbTx pgx.Tx) (uint32, error)
-	AddTrustedGlobalExitRoot(ctx context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx pgx.Tx) (bool, error)
-	GetLatestL1SyncedExitRoot(ctx context.Context, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error)
-	GetLatestTrustedExitRoot(ctx context.Context, networkID uint32, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error)
-	CheckIfRootExists(ctx context.Context, root []byte, network uint32, dbTx pgx.Tx) (bool, error)
-	GetL1ExitRootByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) (*etherman.GlobalExitRoot, error)
-	GetL2ExitRootsByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) ([]etherman.GlobalExitRoot, error)
-	UpdateL2GER(ctx context.Context, ger etherman.GlobalExitRoot, dbTx pgx.Tx) error
-	AddRemoveL2GER(ctx context.Context, globalExitRoot etherman.GlobalExitRoot, dbTx pgx.Tx) error
+	GetLastBlock(ctx context.Context, networkID uint32, dbTx interface{}) (*etherman.Block, error)
+	Rollback(ctx context.Context, dbTx interface{}) error
+	BeginDBTransaction(ctx context.Context) (interface{}, error)
+	Commit(ctx context.Context, dbTx interface{}) error
+	AddBlock(ctx context.Context, block *etherman.Block, dbTx interface{}) (uint64, error)
+	AddGlobalExitRoot(ctx context.Context, exitRoot *etherman.GlobalExitRoot, dbTx interface{}) error
+	AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx interface{}) (uint64, error)
+	AddClaim(ctx context.Context, claim *etherman.Claim, dbTx interface{}) error
+	AddTokenWrapped(ctx context.Context, tokenWrapped *etherman.TokenWrapped, dbTx interface{}) error
+	Reset(ctx context.Context, blockNumber uint64, networkID uint32, dbTx interface{}) error
+	GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx interface{}) (etherman.Block, error)
+	GetNumberDeposits(ctx context.Context, origNetworkID uint32, blockNumber uint64, dbTx interface{}) (uint32, error)
+	AddTrustedGlobalExitRoot(ctx context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx interface{}) (bool, error)
+	GetLatestL1SyncedExitRoot(ctx context.Context, dbTx interface{}) (*etherman.GlobalExitRoot, error)
+	GetLatestTrustedExitRoot(ctx context.Context, networkID uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error)
+	CheckIfRootExists(ctx context.Context, root []byte, network uint32, dbTx interface{}) (bool, error)
+	GetL1ExitRootByGER(ctx context.Context, ger common.Hash, dbTx interface{}) (*etherman.GlobalExitRoot, error)
+	GetL2ExitRootsByGER(ctx context.Context, ger common.Hash, dbTx interface{}) ([]etherman.GlobalExitRoot, error)
+	UpdateL2GER(ctx context.Context, ger etherman.GlobalExitRoot, dbTx interface{}) error
+	AddRemoveL2GER(ctx context.Context, globalExitRoot etherman.GlobalExitRoot, dbTx interface{}) error
 }
 
 type bridgectrlInterface interface {
-	AddDeposit(ctx context.Context, deposit *etherman.Deposit, depositID uint64, dbTx pgx.Tx) error
-	ReorgMT(ctx context.Context, depositCount, networkID uint32, dbTx pgx.Tx) error
-	AddRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx pgx.Tx) error
+	AddDeposit(ctx context.Context, deposit *etherman.Deposit, depositID uint64, dbTx interface{}) error
+	ReorgMT(ctx context.Context, depositCount, networkID uint32, dbTx interface{}) error
+	AddRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx interface{}) error
 }
 
 type zkEVMClientInterface interface {

@@ -8,7 +8,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
-	pgx "github.com/jackc/pgx/v4"
 )
 
 // zeroHashes is the pre-calculated zero hash array
@@ -62,7 +61,7 @@ func NewMerkleTree(ctx context.Context, store merkleTreeStore, height uint8, net
 
 // initSiblings returns the siblings of the node at the given index.
 // it is used to initialize the siblings array in the beginning.
-func (mt *MerkleTree) initSiblings(ctx context.Context, dbTx pgx.Tx) ([][KeyLen]byte, error) {
+func (mt *MerkleTree) initSiblings(ctx context.Context, dbTx interface{}) ([][KeyLen]byte, error) {
 	var (
 		left     [KeyLen]byte
 		siblings [][KeyLen]byte
@@ -110,7 +109,7 @@ func (mt *MerkleTree) initSiblings(ctx context.Context, dbTx pgx.Tx) ([][KeyLen]
 	return siblings, nil
 }
 
-func (mt *MerkleTree) addLeaf(ctx context.Context, depositID uint64, leaf [KeyLen]byte, index uint32, dbTx pgx.Tx) error {
+func (mt *MerkleTree) addLeaf(ctx context.Context, depositID uint64, leaf [KeyLen]byte, index uint32, dbTx interface{}) error {
 	if index != mt.count {
 		return fmt.Errorf("mismatched deposit count: %d, expected: %d", index, mt.count)
 	}
@@ -157,7 +156,7 @@ func (mt *MerkleTree) addLeaf(ctx context.Context, depositID uint64, leaf [KeyLe
 	return nil
 }
 
-func (mt *MerkleTree) resetLeaf(ctx context.Context, depositCount uint32, dbTx pgx.Tx) error {
+func (mt *MerkleTree) resetLeaf(ctx context.Context, depositCount uint32, dbTx interface{}) error {
 	var err error
 	mt.count = depositCount
 	mt.siblings, err = mt.initSiblings(ctx, dbTx)
@@ -165,7 +164,7 @@ func (mt *MerkleTree) resetLeaf(ctx context.Context, depositCount uint32, dbTx p
 }
 
 // this function is used to get the current root of the merkle tree
-func (mt *MerkleTree) getRoot(ctx context.Context, dbTx pgx.Tx) ([]byte, error) {
+func (mt *MerkleTree) getRoot(ctx context.Context, dbTx interface{}) ([]byte, error) {
 	if mt.count == 0 {
 		return zeroHashes[mt.height][:], nil
 	}
@@ -186,7 +185,7 @@ func buildIntermediate(leaves [][KeyLen]byte) ([][][]byte, [][32]byte) {
 	return nodes, hashes
 }
 
-func (mt *MerkleTree) updateLeaf(ctx context.Context, depositID uint64, leaves [][KeyLen]byte, dbTx pgx.Tx) error {
+func (mt *MerkleTree) updateLeaf(ctx context.Context, depositID uint64, leaves [][KeyLen]byte, dbTx interface{}) error {
 	var (
 		nodes [][][][]byte
 		ns    [][][]byte
@@ -224,7 +223,7 @@ func (mt *MerkleTree) updateLeaf(ctx context.Context, depositID uint64, leaves [
 	return nil
 }
 
-func (mt *MerkleTree) getLeaves(ctx context.Context, dbTx pgx.Tx) ([][KeyLen]byte, error) {
+func (mt *MerkleTree) getLeaves(ctx context.Context, dbTx interface{}) ([][KeyLen]byte, error) {
 	root, err := mt.getRoot(ctx, dbTx)
 	if err != nil {
 		return nil, err
@@ -284,7 +283,7 @@ func (mt *MerkleTree) buildMTRoot(leaves [][KeyLen]byte) (common.Hash, error) {
 	return common.BytesToHash(ns[0][0]), nil
 }
 
-func (mt MerkleTree) storeLeaves(ctx context.Context, leaves [][KeyLen]byte, blockID uint64, dbTx pgx.Tx) error {
+func (mt MerkleTree) storeLeaves(ctx context.Context, leaves [][KeyLen]byte, blockID uint64, dbTx interface{}) error {
 	root, err := mt.buildMTRoot(leaves)
 	if err != nil {
 		return err
@@ -306,11 +305,11 @@ func (mt MerkleTree) storeLeaves(ctx context.Context, leaves [][KeyLen]byte, blo
 	return nil
 }
 
-// func (mt MerkleTree) getLatestRollupExitLeaves(ctx context.Context, dbTx pgx.Tx) ([]etherman.RollupExitLeaf, error) {
+// func (mt MerkleTree) getLatestRollupExitLeaves(ctx context.Context, dbTx interface{}) ([]etherman.RollupExitLeaf, error) {
 // 	return mt.store.GetLatestRollupExitLeaves(ctx, dbTx)
 // }
 
-func (mt MerkleTree) addRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx pgx.Tx) error {
+func (mt MerkleTree) addRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx interface{}) error {
 	storedRollupLeaves, err := mt.store.GetLatestRollupExitLeaves(ctx, dbTx)
 	if err != nil {
 		log.Error("error getting latest rollup exit leaves. Error: ", err)
