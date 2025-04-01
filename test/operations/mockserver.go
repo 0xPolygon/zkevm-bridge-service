@@ -28,7 +28,6 @@ func RunMockServer(dbType string, height uint8, networks []uint32) (*bridgectrl.
 
 	btCfg := bridgectrl.Config{
 		Height: height,
-		Store:  "postgres",
 	}
 	ctx := context.Background()
 	bt, err := bridgectrl.NewBridgeController(ctx, btCfg, networks, store)

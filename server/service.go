@@ -14,7 +14,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
 	lru "github.com/hashicorp/golang-lru/v2"
-	pgx "github.com/jackc/pgx/v4"
 )
 
 type bridgeService struct {
@@ -50,7 +49,7 @@ func NewBridgeService(cfg Config, height uint8, networks []uint32, storage inter
 }
 
 // getNode returns the children hash pairs for a given parent hash.
-func (s *bridgeService) getNode(ctx context.Context, parentHash [bridgectrl.KeyLen]byte, dbTx pgx.Tx) (left, right [bridgectrl.KeyLen]byte, err error) {
+func (s *bridgeService) getNode(ctx context.Context, parentHash [bridgectrl.KeyLen]byte, dbTx interface{}) (left, right [bridgectrl.KeyLen]byte, err error) {
 	value, ok := s.cache.Get(string(parentHash[:]))
 	if !ok {
 		var err error
@@ -66,7 +65,7 @@ func (s *bridgeService) getNode(ctx context.Context, parentHash [bridgectrl.KeyL
 }
 
 // getProof returns the merkle proof for a given index and root.
-func (s *bridgeService) getProof(index uint32, root [bridgectrl.KeyLen]byte, dbTx pgx.Tx) ([][bridgectrl.KeyLen]byte, error) {
+func (s *bridgeService) getProof(index uint32, root [bridgectrl.KeyLen]byte, dbTx interface{}) ([][bridgectrl.KeyLen]byte, error) {
 	var siblings [][bridgectrl.KeyLen]byte
 
 	cur := root
@@ -117,7 +116,7 @@ func (s *bridgeService) getProof(index uint32, root [bridgectrl.KeyLen]byte, dbT
 }
 
 // getRollupExitProof returns the merkle proof for the zkevm leaf.
-func (s *bridgeService) getRollupExitProof(rollupIndex uint32, root common.Hash, dbTx pgx.Tx) ([][bridgectrl.KeyLen]byte, common.Hash, error) {
+func (s *bridgeService) getRollupExitProof(rollupIndex uint32, root common.Hash, dbTx interface{}) ([][bridgectrl.KeyLen]byte, common.Hash, error) {
 	ctx := context.Background()
 
 	// Get leaves given the root
@@ -150,7 +149,7 @@ func (s *bridgeService) getRollupExitProof(rollupIndex uint32, root common.Hash,
 }
 
 // GetClaimProof returns the merkle proof to claim the given deposit.
-func (s *bridgeService) GetClaimProof(depositCnt, networkID uint32, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
+func (s *bridgeService) GetClaimProof(depositCnt, networkID uint32, dbTx interface{}) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
 	ctx := context.Background()
 
 	deposit, err := s.storage.GetDeposit(ctx, depositCnt, networkID, dbTx)
@@ -196,7 +195,7 @@ func (s *bridgeService) GetClaimProof(depositCnt, networkID uint32, dbTx pgx.Tx)
 }
 
 // GetClaimProofbyGER returns the merkle proof to claim the given deposit.
-func (s *bridgeService) GetClaimProofbyGER(depositCnt, networkID uint32, GER common.Hash, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
+func (s *bridgeService) GetClaimProofbyGER(depositCnt, networkID uint32, GER common.Hash, dbTx interface{}) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
 	ctx := context.Background()
 
 	if dbTx == nil { // if the call comes from the rest API
@@ -247,7 +246,7 @@ func (s *bridgeService) GetClaimProofbyGER(depositCnt, networkID uint32, GER com
 }
 
 // GetClaimProofForCompressed returns the merkle proof to claim the given deposit.
-func (s *bridgeService) GetClaimProofForCompressed(ger common.Hash, depositCnt, networkID uint32, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
+func (s *bridgeService) GetClaimProofForCompressed(ger common.Hash, depositCnt, networkID uint32, dbTx interface{}) (*etherman.GlobalExitRoot, [][bridgectrl.KeyLen]byte, [][bridgectrl.KeyLen]byte, error) {
 	ctx := context.Background()
 
 	if dbTx == nil { // if the call comes from the rest API

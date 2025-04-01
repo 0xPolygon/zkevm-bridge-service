@@ -16,7 +16,6 @@ import (
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
-	pgx "github.com/jackc/pgx/v4"
 )
 
 const (
@@ -181,7 +180,7 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger *etherman.GlobalExitRoot) err
 	return nil
 }
 
-func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbTx pgx.Tx) error {
+func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbTx interface{}) error {
 	var (
 		deposits       []*etherman.Deposit
 		globalExitRoot = ger.GlobalExitRoot
@@ -288,7 +287,7 @@ func (tm *ClaimTxManager) isDepositMessageAllowed(deposit *etherman.Deposit) boo
 	return false
 }
 
-func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *common.Address, value *big.Int, data []byte, ger common.Hash, dbTx pgx.Tx) error {
+func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *common.Address, value *big.Int, data []byte, ger common.Hash, dbTx interface{}) error {
 	// get gas
 	tx := ethereum.CallMsg{
 		From:  from,
@@ -345,54 +344,6 @@ func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *
 		err := fmt.Errorf("rollupID: %d, failed to add tx to get monitored: %v", tm.rollupID, err)
 		log.Errorf("error adding claim tx to db. Error: %s", err.Error())
 		return err
-	}
-
-	return nil
-}
-
-// ReviewMonitoredTx checks if tx needs to be updated
-// accordingly to the current information stored and the current
-// state of the blockchain
-func (tm *ClaimTxManager) ReviewMonitoredTx(ctx context.Context, mTx *ctmtypes.MonitoredTx, reviewNonce bool) error {
-	mTxLog := log.WithFields("monitoredTx", mTx.DepositID, "rollupID", tm.rollupID)
-	mTxLog.Debug("reviewing")
-	// get gas
-	tx := ethereum.CallMsg{
-		From:  mTx.From,
-		To:    mTx.To,
-		Value: mTx.Value,
-		Data:  mTx.Data,
-	}
-	gas, err := tm.l2Node.EstimateGas(ctx, tx)
-	for i := 1; err != nil && err.Error() != ErrExecutionReverted.Error() && i < tm.cfg.RetryNumber; i++ {
-		mTxLog.Warnf("error during gas estimation. Retrying... Error: %v, Data: %s", err, common.Bytes2Hex(tx.Data))
-		time.Sleep(tm.cfg.RetryInterval.Duration)
-		gas, err = tm.l2Node.EstimateGas(tm.ctx, tx)
-	}
-	if err != nil {
-		err := fmt.Errorf("failed to estimate gas. Error: %v, Data: %s", err, common.Bytes2Hex(tx.Data))
-		mTxLog.Errorf("error: %s", err.Error())
-		return err
-	}
-
-	// check gas
-	if gas > mTx.Gas {
-		mTxLog.Infof("monitored tx gas updated from %v to %v", mTx.Gas, gas)
-		mTx.Gas = gas
-	}
-
-	if reviewNonce {
-		// check nonce
-		nonce, err := tm.nonceCache.GetNextNonce(mTx.From)
-		if err != nil {
-			err := fmt.Errorf("failed to get nonce: %v", err)
-			mTxLog.Errorf(err.Error())
-			return err
-		}
-		if nonce > mTx.Nonce {
-			mTxLog.Infof("monitored tx nonce updated from %v to %v", mTx.Nonce, nonce)
-			mTx.Nonce = nonce
-		}
 	}
 
 	return nil

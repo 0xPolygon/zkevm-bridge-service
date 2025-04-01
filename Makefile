@@ -452,7 +452,7 @@ bench: ## benchmark test
 	trap '$(STOP_BRIDGE_DB)' EXIT; go test -run=NOTEST -timeout=30m -bench=Small ./test/benchmark/...
 
 .PHONY: bench-full
-bench-full: export ZKEVM_BRIDGE_DATABASE_PORT = 5432
+bench-full: export ZKEVM_BRIDGE_SYNCDB_PGSTORAGE_PORT = 5432
 bench-full: ## benchmark full test
 	cd test/benchmark && \
 	go test -run=NOTEST -bench=Small . && \

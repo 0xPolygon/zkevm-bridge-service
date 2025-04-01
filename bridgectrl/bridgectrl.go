@@ -7,7 +7,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
-	pgx "github.com/jackc/pgx/v4"
 )
 
 const (
@@ -59,7 +58,7 @@ func (bt *BridgeController) GetMerkleTreeID(networkID uint32) (uint8, error) {
 }
 
 // AddDeposit adds deposit information to the bridge tree.
-func (bt *BridgeController) AddDeposit(ctx context.Context, deposit *etherman.Deposit, depositID uint64, dbTx pgx.Tx) error {
+func (bt *BridgeController) AddDeposit(ctx context.Context, deposit *etherman.Deposit, depositID uint64, dbTx interface{}) error {
 	leaf := hashDeposit(deposit)
 	tID, err := bt.GetMerkleTreeID(deposit.NetworkID)
 	if err != nil {
@@ -69,7 +68,7 @@ func (bt *BridgeController) AddDeposit(ctx context.Context, deposit *etherman.De
 }
 
 // ReorgMT reorg the specific merkle tree.
-func (bt *BridgeController) ReorgMT(ctx context.Context, depositCount uint32, networkID uint32, dbTx pgx.Tx) error {
+func (bt *BridgeController) ReorgMT(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{}) error {
 	tID, err := bt.GetMerkleTreeID(networkID)
 	if err != nil {
 		return err
@@ -79,11 +78,11 @@ func (bt *BridgeController) ReorgMT(ctx context.Context, depositCount uint32, ne
 
 // GetExitRoot returns the dedicated merkle tree's root.
 // only use for the test purpose
-func (bt *BridgeController) GetExitRoot(ctx context.Context, tID uint8, dbTx pgx.Tx) ([]byte, error) {
+func (bt *BridgeController) GetExitRoot(ctx context.Context, tID uint8, dbTx interface{}) ([]byte, error) {
 	return bt.exitTrees[tID].getRoot(ctx, dbTx)
 }
 
-func (bt *BridgeController) AddRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx pgx.Tx) error {
+func (bt *BridgeController) AddRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx interface{}) error {
 	err := bt.rollupsTree.addRollupExitLeaf(ctx, rollupLeaf, dbTx)
 	if err != nil {
 		log.Error("error adding rollupleaf. Error: ", err)
