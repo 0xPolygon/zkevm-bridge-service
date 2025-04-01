@@ -11,7 +11,6 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	pgx "github.com/jackc/pgx/v4"
 )
 
 const (
@@ -19,17 +18,17 @@ const (
 )
 
 type StorageCompressedInterface interface {
-	GetClaimTxsByStatus(ctx context.Context, statuses []ctmtypes.MonitoredTxStatus, rollupID uint32, dbTx pgx.Tx) ([]ctmtypes.MonitoredTx, error)
-	GetMonitoredTxsGroups(ctx context.Context, groupIds []uint64, dbTx pgx.Tx) (map[uint64]ctmtypes.MonitoredTxGroupDBEntry, error)
+	GetClaimTxsByStatus(ctx context.Context, statuses []ctmtypes.MonitoredTxStatus, rollupID uint32, dbTx interface{}) ([]ctmtypes.MonitoredTx, error)
+	GetMonitoredTxsGroups(ctx context.Context, groupIds []uint64, dbTx interface{}) (map[uint64]ctmtypes.MonitoredTxGroupDBEntry, error)
 
-	AddMonitoredTxsGroup(ctx context.Context, mTxGroup *ctmtypes.MonitoredTxGroupDBEntry, dbTx pgx.Tx) error
-	UpdateClaimTx(ctx context.Context, mTx ctmtypes.MonitoredTx, dbTx pgx.Tx) error
-	GetLatestMonitoredTxGroupID(ctx context.Context, dbTx pgx.Tx) (uint64, error)
-	UpdateMonitoredTxsGroup(ctx context.Context, mTxGroup *ctmtypes.MonitoredTxGroupDBEntry, dbTx pgx.Tx) error
+	AddMonitoredTxsGroup(ctx context.Context, mTxGroup *ctmtypes.MonitoredTxGroupDBEntry, dbTx interface{}) error
+	UpdateClaimTx(ctx context.Context, mTx ctmtypes.MonitoredTx, dbTx interface{}) error
+	GetLatestMonitoredTxGroupID(ctx context.Context, dbTx interface{}) (uint64, error)
+	UpdateMonitoredTxsGroup(ctx context.Context, mTxGroup *ctmtypes.MonitoredTxGroupDBEntry, dbTx interface{}) error
 	// atomic
-	Rollback(ctx context.Context, dbTx pgx.Tx) error
-	BeginDBTransaction(ctx context.Context) (pgx.Tx, error)
-	Commit(ctx context.Context, dbTx pgx.Tx) error
+	Rollback(ctx context.Context, dbTx interface{}) error
+	BeginDBTransaction(ctx context.Context) (interface{}, error)
+	Commit(ctx context.Context, dbTx interface{}) error
 }
 
 type EthermanI interface {
@@ -98,7 +97,7 @@ func getGroupsIds(txs []ctmtypes.MonitoredTx) []uint64 {
 	return keys
 }
 
-func (tm *MonitorCompressedTxs) getPendingTxs(ctx context.Context, dbTx pgx.Tx) (PendingTxs, error) {
+func (tm *MonitorCompressedTxs) getPendingTxs(ctx context.Context, dbTx interface{}) (PendingTxs, error) {
 	statusesFilter := []ctmtypes.MonitoredTxStatus{ctmtypes.MonitoredTxStatusCreated,
 		ctmtypes.MonitoredTxStatusCompressing,
 		ctmtypes.MonitoredTxStatusClaiming}
@@ -133,7 +132,7 @@ func (tm *MonitorCompressedTxs) MonitorTxs(ctx context.Context) error {
 }
 
 // monitorTxs process all pending monitored tx
-func (tm *MonitorCompressedTxs) internalMonitorTxs(ctx context.Context, dbTx pgx.Tx) error {
+func (tm *MonitorCompressedTxs) internalMonitorTxs(ctx context.Context, dbTx interface{}) error {
 	pendingTx, err := tm.getPendingTxs(ctx, dbTx)
 	if err != nil {
 		return err
