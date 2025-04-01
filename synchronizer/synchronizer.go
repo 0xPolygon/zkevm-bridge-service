@@ -12,7 +12,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer/metrics"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
-	pgx "github.com/jackc/pgx/v4"
 )
 
 // Synchronizer connects L1 and L2
@@ -702,7 +701,7 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock etherman.Block, synced
 	return nil, nil
 }
 
-func (s *ClientSynchronizer) processVerifyBatch(verifyBatch etherman.VerifiedBatch, blockID uint64, dbTx pgx.Tx) error {
+func (s *ClientSynchronizer) processVerifyBatch(verifyBatch etherman.VerifiedBatch, blockID uint64, dbTx interface{}) error {
 	if verifyBatch.LocalExitRoot == (common.Hash{}) {
 		log.Debugf("networkID: %d, skipping empty local exit root in verifyBatch event. VerifyBatch: %+v", s.networkID, verifyBatch)
 		return nil
@@ -757,7 +756,7 @@ func (s *ClientSynchronizer) processVerifyBatch(verifyBatch etherman.VerifiedBat
 	return nil
 }
 
-func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.GlobalExitRoot, blockID uint64, dbTx pgx.Tx) error {
+func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.GlobalExitRoot, blockID uint64, dbTx interface{}) error {
 	// Store GlobalExitRoot
 	globalExitRoot.BlockID = blockID
 	globalExitRoot.NetworkID = s.networkID
@@ -767,7 +766,7 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 		// A race condition between dbTxs (L1 dbTx and L2 dbTxs) is very unlikely because L1 sync takes usually takes more time than L2 sync.
 		gers, err := s.storage.GetL2ExitRootsByGER(s.ctx, globalExitRoot.GlobalExitRoot, nil)
 		if err != nil && !errors.Is(err, gerror.ErrStorageNotFound) {
-			log.Errorf("networkID: %d, error storing the GlobalExitRoot in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
+			log.Errorf("networkID: %d, error reading L2ExitRootsByGER in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
 			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
 			if rollbackErr != nil {
 				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
@@ -837,7 +836,7 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 	return nil
 }
 
-func (s *ClientSynchronizer) processDeposit(deposit etherman.Deposit, blockID uint64, dbTx pgx.Tx) error {
+func (s *ClientSynchronizer) processDeposit(deposit etherman.Deposit, blockID uint64, dbTx interface{}) error {
 	deposit.BlockID = blockID
 	deposit.NetworkID = s.networkID
 	depositID, err := s.storage.AddDeposit(s.ctx, &deposit, dbTx)
@@ -867,7 +866,7 @@ func (s *ClientSynchronizer) processDeposit(deposit etherman.Deposit, blockID ui
 	return nil
 }
 
-func (s *ClientSynchronizer) processClaim(claim etherman.Claim, blockID uint64, dbTx pgx.Tx) error {
+func (s *ClientSynchronizer) processClaim(claim etherman.Claim, blockID uint64, dbTx interface{}) error {
 	claim.BlockID = blockID
 	claim.NetworkID = s.networkID
 	err := s.storage.AddClaim(s.ctx, &claim, dbTx)
@@ -885,7 +884,7 @@ func (s *ClientSynchronizer) processClaim(claim etherman.Claim, blockID uint64, 
 	return nil
 }
 
-func (s *ClientSynchronizer) processTokenWrapped(tokenWrapped etherman.TokenWrapped, blockID uint64, dbTx pgx.Tx) error {
+func (s *ClientSynchronizer) processTokenWrapped(tokenWrapped etherman.TokenWrapped, blockID uint64, dbTx interface{}) error {
 	tokenWrapped.BlockID = blockID
 	tokenWrapped.NetworkID = s.networkID
 	err := s.storage.AddTokenWrapped(s.ctx, &tokenWrapped, dbTx)
@@ -903,7 +902,7 @@ func (s *ClientSynchronizer) processTokenWrapped(tokenWrapped etherman.TokenWrap
 	return nil
 }
 
-func (s *ClientSynchronizer) processRemoveL2GlobalExitRoot(ger etherman.GlobalExitRoot, blockID uint64, dbTx pgx.Tx) error {
+func (s *ClientSynchronizer) processRemoveL2GlobalExitRoot(ger etherman.GlobalExitRoot, blockID uint64, dbTx interface{}) error {
 	ger.BlockID = blockID
 	ger.NetworkID = s.networkID
 	err := s.storage.AddRemoveL2GER(s.ctx, ger, dbTx)

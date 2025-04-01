@@ -2,31 +2,43 @@ package db
 
 import (
 	"context"
+	"encoding/hex"
+	"fmt"
 	"math"
 	"math/big"
+	"os"
 	"testing"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/ethereum/go-ethereum/common"
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func init() {
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
+	if err != nil {
+		panic(err)
+	}
+	_, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	if !exists {
+		panic("ZKEVM_BRIDGE_SYNCDB_DATABASE env var not set")
+	}
+}
+
 func TestInsertDeposit(t *testing.T) {
-	cfg := pgstorage.NewConfigFromEnv()
-	// Init database instance
-	err := pgstorage.InitOrReset(cfg)
-	require.NoError(t, err)
 	ctx := context.Background()
-	pg, err := pgstorage.NewPostgresStorage(cfg)
+	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
-	tx, err := pg.BeginDBTransaction(ctx)
+	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
 
-	_, err = pg.AddBlock(ctx, &etherman.Block{
+	blockID, err := testStore.AddBlock(ctx, &etherman.Block{
 		BlockNumber: 1,
-	}, tx)
+		BlockHash:   common.HexToHash("0x29e885adaf8e4b51e4d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9d1"),
+	}, nil)
 	require.NoError(t, err)
 	deposit := &etherman.Deposit{
 		NetworkID:          1,
@@ -36,25 +48,20 @@ func TestInsertDeposit(t *testing.T) {
 		DestinationNetwork: 4294967295,
 		DestinationAddress: common.HexToAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"),
 		BlockNumber:        1,
-		BlockID:            1,
+		BlockID:            blockID,
 		DepositCount:       1,
 		Metadata:           common.FromHex("0x00"),
 	}
-	_, err = pg.AddDeposit(ctx, deposit, tx)
+	_, err = testStore.AddDeposit(ctx, deposit, tx)
 	require.NoError(t, err)
-	require.NoError(t, tx.Rollback(ctx))
+	require.NoError(t, testStore.Rollback(ctx, tx))
 }
 
 func TestL1GlobalExitRoot(t *testing.T) {
-	cfg := pgstorage.NewConfigFromEnv()
-	// Init database instance
-	err := pgstorage.InitOrReset(cfg)
-	require.NoError(t, err)
-
 	ctx := context.Background()
-	pg, err := pgstorage.NewPostgresStorage(cfg)
+	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
-	tx, err := pg.BeginDBTransaction(ctx)
+	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
 
 	block := &etherman.Block{
@@ -63,7 +70,7 @@ func TestL1GlobalExitRoot(t *testing.T) {
 		NetworkID:   0,
 	}
 
-	blockID, err := pg.AddBlock(ctx, block, tx)
+	blockID, err := testStore.AddBlock(ctx, block, tx)
 	require.NoError(t, err)
 	require.Equal(t, blockID, uint64(1))
 
@@ -73,33 +80,30 @@ func TestL1GlobalExitRoot(t *testing.T) {
 		GlobalExitRoot: common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"),
 	}
 
-	err = pg.AddGlobalExitRoot(ctx, l1GER, tx)
+	err = testStore.AddGlobalExitRoot(ctx, l1GER, tx)
 	require.NoError(t, err)
 
-	ger, err := pg.GetLatestL1SyncedExitRoot(ctx, tx)
+	ger, err := testStore.GetLatestL1SyncedExitRoot(ctx, tx)
 	require.NoError(t, err)
 	require.Equal(t, ger.BlockID, l1GER.BlockID)
 	require.Equal(t, ger.GlobalExitRoot, l1GER.GlobalExitRoot)
 
-	latestGER, err := pg.GetLatestExitRoot(ctx, 1, 0, tx)
+	latestGER, err := testStore.GetLatestExitRoot(ctx, 1, 0, tx)
 	require.NoError(t, err)
 	require.Equal(t, latestGER.GlobalExitRoot, l1GER.GlobalExitRoot)
 	require.Equal(t, latestGER.BlockNumber, l1GER.BlockNumber)
 	require.Equal(t, latestGER.ExitRoots[0], l1GER.ExitRoots[0])
 	require.Equal(t, latestGER.ExitRoots[1], l1GER.ExitRoots[1])
 
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, testStore.Commit(ctx, tx))
 }
 
 func TestAddTrustedGERDuplicated(t *testing.T) {
-	// Init database instance
-	cfg := pgstorage.NewConfigFromEnv()
-	err := pgstorage.InitOrReset(cfg)
-	require.NoError(t, err)
 	ctx := context.Background()
-	pg, err := pgstorage.NewPostgresStorage(cfg)
+	storageType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	testStore, err := newStorageSettings(storageType)
 	require.NoError(t, err)
-	tx, err := pg.BeginDBTransaction(ctx)
+	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
 
 	ger := &etherman.GlobalExitRoot{
@@ -107,23 +111,32 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 		ExitRoots:      []common.Hash{common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"), common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1")},
 		GlobalExitRoot: common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"),
 	}
-	isInserted, err := pg.AddTrustedGlobalExitRoot(ctx, ger, tx)
+	isInserted, err := testStore.AddTrustedGlobalExitRoot(ctx, ger, tx)
 	require.True(t, isInserted)
 	require.NoError(t, err)
-	getCount := "select count(*) from sync.exit_root where block_id = 0 AND global_exit_root = $1"
+	getCount := "select count(*) from %sexit_root where block_id = 0 AND global_exit_root = "
 	var result int
-	err = tx.QueryRow(ctx, getCount, ger.GlobalExitRoot).Scan(&result)
+	if storageType == "postgres" {
+		query := fmt.Sprintf(getCount+"'\\x%s'", "sync.", hex.EncodeToString(ger.GlobalExitRoot.Bytes()))
+		err = testStore.QueryRowTesting(ctx, query, tx).(pgx.Row).Scan(&result)
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
+	}
 	require.NoError(t, err)
 	assert.Equal(t, 1, result)
-	isInserted, err = pg.AddTrustedGlobalExitRoot(ctx, ger, tx)
+	isInserted, err = testStore.AddTrustedGlobalExitRoot(ctx, ger, tx)
 	require.False(t, isInserted)
 	require.NoError(t, err)
-	err = tx.QueryRow(ctx, getCount, ger.GlobalExitRoot).Scan(&result)
+	if storageType == "postgres" {
+		err = testStore.QueryRowTesting(ctx, fmt.Sprintf(getCount+"'\\x%s'", "sync.", hex.EncodeToString(ger.GlobalExitRoot.Bytes())), tx).(pgx.Row).Scan(&result)
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
+	}
 	require.NoError(t, err)
 	assert.Equal(t, 1, result)
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, testStore.Commit(ctx, tx))
 
-	tx, err = pg.BeginDBTransaction(ctx)
+	tx, err = testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
 
 	ger1 := &etherman.GlobalExitRoot{
@@ -131,52 +144,57 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 		ExitRoots:      []common.Hash{common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f2"), common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f2")},
 		GlobalExitRoot: common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f2"),
 	}
-	isInserted, err = pg.AddTrustedGlobalExitRoot(ctx, ger, tx)
+	isInserted, err = testStore.AddTrustedGlobalExitRoot(ctx, ger, tx)
 	require.False(t, isInserted)
 	require.NoError(t, err)
-	err = tx.QueryRow(ctx, getCount, ger.GlobalExitRoot).Scan(&result)
+	if storageType == "postgres" {
+		err = testStore.QueryRowTesting(ctx, fmt.Sprintf(getCount+"'\\x%s'", "sync.", hex.EncodeToString(ger.GlobalExitRoot.Bytes())), tx).(pgx.Row).Scan(&result)
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
+	}
 	require.NoError(t, err)
 	assert.Equal(t, 1, result)
-	isInserted, err = pg.AddTrustedGlobalExitRoot(ctx, ger1, tx)
+	isInserted, err = testStore.AddTrustedGlobalExitRoot(ctx, ger1, tx)
 	require.True(t, isInserted)
 	require.NoError(t, err)
-	getCount2 := "select count(*) from sync.exit_root"
-	err = tx.QueryRow(ctx, getCount2).Scan(&result)
+	getCount2 := "select count(*) from %sexit_root"
+	if storageType == "postgres" {
+		err = testStore.QueryRowTesting(ctx, fmt.Sprintf(getCount2, "sync."), tx).(pgx.Row).Scan(&result)
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
+	}
 	require.NoError(t, err)
 	assert.Equal(t, 2, result)
 
-	_, err = pg.AddBlock(ctx, &etherman.Block{
+	blockID, err := testStore.AddBlock(ctx, &etherman.Block{
 		BlockNumber: 1,
+		BlockHash:   common.HexToHash("0x29e995edaf8e4b51e1d2e05f9da28161d2fb4efb1d53827d9b80a23cf2d7a3f2"),
 	}, tx)
 	require.NoError(t, err)
 	ger2 := ger1
-	ger2.BlockID = 1
-	err = pg.AddGlobalExitRoot(ctx, ger2, tx)
+	ger2.BlockID = blockID
+	err = testStore.AddGlobalExitRoot(ctx, ger2, tx)
 	require.NoError(t, err)
 
-	tGER, err := pg.GetLatestTrustedExitRoot(ctx, 1, tx)
+	tGER, err := testStore.GetLatestTrustedExitRoot(ctx, 1, tx)
 	require.NoError(t, err)
 	require.Equal(t, tGER.GlobalExitRoot, ger1.GlobalExitRoot)
 
-	latestGER, err := pg.GetLatestExitRoot(ctx, 0, 1, tx)
+	latestGER, err := testStore.GetLatestExitRoot(ctx, 0, 1, tx)
 	require.NoError(t, err)
 	require.Equal(t, latestGER.GlobalExitRoot, ger1.GlobalExitRoot)
 	require.Equal(t, latestGER.BlockNumber, ger1.BlockNumber)
 	require.Equal(t, latestGER.ExitRoots[0], ger1.ExitRoots[0])
 	require.Equal(t, latestGER.ExitRoots[1], ger1.ExitRoots[1])
 
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, testStore.Commit(ctx, tx))
 }
 
 func TestGetLastBlock(t *testing.T) {
-	// Init database instance
-	cfg := pgstorage.NewConfigFromEnv()
-	err := pgstorage.InitOrReset(cfg)
-	require.NoError(t, err)
 	ctx := context.Background()
-	pg, err := pgstorage.NewPostgresStorage(cfg)
+	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
-	tx, err := pg.BeginDBTransaction(ctx)
+	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
 	block1 := etherman.Block{
 		BlockNumber: 1,
@@ -198,56 +216,52 @@ func TestGetLastBlock(t *testing.T) {
 		BlockHash:   common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f7"),
 		NetworkID:   1,
 	}
-	_, err = pg.AddBlock(ctx, &block1, tx)
+	_, err = testStore.AddBlock(ctx, &block1, tx)
 	require.NoError(t, err)
-	b, err := pg.GetLastBlock(ctx, 0, tx)
+	b, err := testStore.GetLastBlock(ctx, 0, tx)
 	require.NoError(t, err)
 	assert.Equal(t, block1.BlockNumber, b.BlockNumber)
 	assert.Equal(t, block1.BlockHash, b.BlockHash)
 	assert.Equal(t, block1.NetworkID, b.NetworkID)
 
-	_, err = pg.AddBlock(ctx, &block2, tx)
+	_, err = testStore.AddBlock(ctx, &block2, tx)
 	require.NoError(t, err)
-	b, err = pg.GetLastBlock(ctx, 0, tx)
+	b, err = testStore.GetLastBlock(ctx, 0, tx)
 	require.NoError(t, err)
 	assert.Equal(t, block2.BlockNumber, b.BlockNumber)
 	assert.Equal(t, block2.BlockHash, b.BlockHash)
 	assert.Equal(t, block2.NetworkID, b.NetworkID)
 
-	_, err = pg.AddBlock(ctx, &block3, tx)
+	_, err = testStore.AddBlock(ctx, &block3, tx)
 	require.NoError(t, err)
-	b, err = pg.GetLastBlock(ctx, 1, tx)
+	b, err = testStore.GetLastBlock(ctx, 1, tx)
 	require.NoError(t, err)
 	assert.Equal(t, block3.BlockNumber, b.BlockNumber)
 	assert.Equal(t, block3.BlockHash, b.BlockHash)
 	assert.Equal(t, block3.NetworkID, b.NetworkID)
 
-	_, err = pg.AddBlock(ctx, &block4, tx)
+	_, err = testStore.AddBlock(ctx, &block4, tx)
 	require.NoError(t, err)
-	b, err = pg.GetLastBlock(ctx, 1, tx)
+	b, err = testStore.GetLastBlock(ctx, 1, tx)
 	require.NoError(t, err)
 	assert.Equal(t, block4.BlockNumber, b.BlockNumber)
 	assert.Equal(t, block4.BlockHash, b.BlockHash)
 	assert.Equal(t, block4.NetworkID, b.NetworkID)
 
-	prevBlock, err := pg.GetPreviousBlock(ctx, 1, 1, tx)
+	prevBlock, err := testStore.GetPreviousBlock(ctx, 1, 1, tx)
 	require.NoError(t, err)
 	require.Equal(t, prevBlock.BlockNumber, block3.BlockNumber)
 	require.Equal(t, prevBlock.BlockHash, block3.BlockHash)
 
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, testStore.Commit(ctx, tx))
 }
 
 // Test MerkleTree storage
 func TestMTStorage(t *testing.T) {
-	// Init database instance
-	cfg := pgstorage.NewConfigFromEnv()
-	err := pgstorage.InitOrReset(cfg)
-	require.NoError(t, err)
 	ctx := context.Background()
-	pg, err := pgstorage.NewPostgresStorage(cfg)
+	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
-	tx, err := pg.BeginDBTransaction(ctx)
+	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
 
 	leaf1 := common.FromHex("0xa4bfa0908dc7b06d98da4309f859023d6947561bc19bc00d77f763dea1a0b9f5")
@@ -256,44 +270,40 @@ func TestMTStorage(t *testing.T) {
 	deposit := &etherman.Deposit{
 		Metadata: common.Hex2Bytes("0x0"),
 	}
-	depositID, err := pg.AddDeposit(ctx, deposit, tx)
+	depositID, err := testStore.AddDeposit(ctx, deposit, tx)
 	require.NoError(t, err)
-	err = pg.SetRoot(ctx, root, depositID, 0, tx)
-	require.NoError(t, err)
-
-	err = pg.Set(ctx, root, [][]byte{leaf1, leaf2}, depositID, tx)
+	err = testStore.SetRoot(ctx, root, depositID, 0, tx)
 	require.NoError(t, err)
 
-	vals, err := pg.Get(ctx, root, tx)
+	err = testStore.Set(ctx, root, [][]byte{leaf1, leaf2}, depositID, tx)
+	require.NoError(t, err)
+
+	vals, err := testStore.Get(ctx, root, tx)
 	require.NoError(t, err)
 	require.Equal(t, leaf1, vals[0])
 	require.Equal(t, leaf2, vals[1])
 
-	rRoot, err := pg.GetRoot(ctx, 0, 0, tx)
+	rRoot, err := testStore.GetRoot(ctx, 0, 0, tx)
 	require.NoError(t, err)
 	require.Equal(t, root, rRoot)
 
-	count, err := pg.GetLastDepositCount(ctx, 0, tx)
+	count, err := testStore.GetLastDepositCount(ctx, 0, tx)
 	require.NoError(t, err)
 	require.Equal(t, uint32(0), count)
 
-	dCount, err := pg.GetDepositCountByRoot(ctx, root, 0, tx)
+	dCount, err := testStore.GetDepositCountByRoot(ctx, root, 0, tx)
 	require.NoError(t, err)
 	require.Equal(t, uint32(0), dCount)
 
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, testStore.Commit(ctx, tx))
 }
 
 // Test BridgeService storage
 func TestBSStorage(t *testing.T) {
-	// Init database instance
-	cfg := pgstorage.NewConfigFromEnv()
-	err := pgstorage.InitOrReset(cfg)
-	require.NoError(t, err)
 	ctx := context.Background()
-	pg, err := pgstorage.NewPostgresStorage(cfg)
+	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
-	tx, err := pg.BeginDBTransaction(ctx)
+	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
 
 	block := &etherman.Block{
@@ -301,7 +311,7 @@ func TestBSStorage(t *testing.T) {
 		BlockHash:   common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"),
 		NetworkID:   0,
 	}
-	_, err = pg.AddBlock(ctx, block, tx)
+	_, err = testStore.AddBlock(ctx, block, tx)
 	require.NoError(t, err)
 
 	deposit := &etherman.Deposit{
@@ -316,7 +326,7 @@ func TestBSStorage(t *testing.T) {
 		DepositCount:       1,
 		Metadata:           common.FromHex("0x000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000a0000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000005436f696e410000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003434f410000000000000000000000000000000000000000000000000000000000"),
 	}
-	_, err = pg.AddDeposit(ctx, deposit, tx)
+	_, err = testStore.AddDeposit(ctx, deposit, tx)
 	require.NoError(t, err)
 
 	claim := &etherman.Claim{
@@ -332,34 +342,34 @@ func TestBSStorage(t *testing.T) {
 		RollupIndex:        1,
 		MainnetFlag:        true,
 	}
-	err = pg.AddClaim(ctx, claim, tx)
+	err = testStore.AddClaim(ctx, claim, tx)
 	require.NoError(t, err)
 
-	count, err := pg.GetDepositCount(ctx, deposit.DestinationAddress.String(), tx)
+	count, err := testStore.GetDepositCount(ctx, deposit.DestinationAddress.String(), tx)
 	require.NoError(t, err)
 	require.Equal(t, count, uint64(1))
 
-	rDeposit, err := pg.GetDeposit(ctx, 1, 0, tx)
+	rDeposit, err := testStore.GetDeposit(ctx, 1, 0, tx)
 	require.NoError(t, err)
 	require.Equal(t, rDeposit.DestinationAddress, deposit.DestinationAddress)
 	require.Equal(t, rDeposit.DepositCount, deposit.DepositCount)
 
-	rDeposits, err := pg.GetDeposits(ctx, deposit.DestinationAddress.String(), 10, 0, tx)
+	rDeposits, err := testStore.GetDeposits(ctx, deposit.DestinationAddress.String(), 10, 0, tx)
 	require.NoError(t, err)
 	require.Equal(t, len(rDeposits), 1)
 
-	countND, err := pg.GetNumberDeposits(ctx, 0, 0, tx)
+	countND, err := testStore.GetNumberDeposits(ctx, 0, 0, tx)
 	require.NoError(t, err)
 	require.Equal(t, countND, uint32(0))
-	countND, err = pg.GetNumberDeposits(ctx, 0, 1, tx)
+	countND, err = testStore.GetNumberDeposits(ctx, 0, 1, tx)
 	require.NoError(t, err)
 	require.Equal(t, countND, uint32(2))
 
-	count, err = pg.GetClaimCount(ctx, claim.DestinationAddress.String(), tx)
+	count, err = testStore.GetClaimCount(ctx, claim.DestinationAddress.String(), tx)
 	require.NoError(t, err)
 	require.Equal(t, count, uint64(1))
 
-	rClaim, err := pg.GetClaim(ctx, deposit.DepositCount, deposit.NetworkID, claim.NetworkID, tx)
+	rClaim, err := testStore.GetClaim(ctx, deposit.DepositCount, deposit.NetworkID, claim.NetworkID, tx)
 	require.NoError(t, err)
 	require.Equal(t, rClaim.DestinationAddress, claim.DestinationAddress)
 	require.Equal(t, rClaim.NetworkID, claim.NetworkID)
@@ -367,7 +377,7 @@ func TestBSStorage(t *testing.T) {
 	require.Equal(t, rClaim.RollupIndex, claim.RollupIndex)
 	require.Equal(t, rClaim.MainnetFlag, claim.MainnetFlag)
 
-	rClaims, err := pg.GetClaims(ctx, claim.DestinationAddress.String(), 10, 0, tx)
+	rClaims, err := testStore.GetClaims(ctx, claim.DestinationAddress.String(), 10, 0, tx)
 	require.NoError(t, err)
 	require.Equal(t, len(rClaims), 1)
 
@@ -379,44 +389,119 @@ func TestBSStorage(t *testing.T) {
 		BlockNumber:          1,
 		NetworkID:            1,
 	}
-	metadata, err := pg.GetTokenMetadata(ctx, wrappedToken.OriginalNetwork, wrappedToken.NetworkID, wrappedToken.OriginalTokenAddress, tx)
+	metadata, err := testStore.GetTokenMetadata(ctx, wrappedToken.OriginalNetwork, wrappedToken.NetworkID, wrappedToken.OriginalTokenAddress, tx)
 	require.NoError(t, err)
 	require.Equal(t, metadata, deposit.Metadata)
 
-	err = pg.AddTokenWrapped(ctx, wrappedToken, tx)
+	err = testStore.AddTokenWrapped(ctx, wrappedToken, tx)
 	require.NoError(t, err)
 
-	wt, err := pg.GetTokenWrapped(ctx, wrappedToken.OriginalNetwork, wrappedToken.OriginalTokenAddress, tx)
+	wt, err := testStore.GetTokenWrapped(ctx, wrappedToken.OriginalNetwork, wrappedToken.OriginalTokenAddress, tx)
 	require.NoError(t, err)
 	require.Equal(t, wt.WrappedTokenAddress, wrappedToken.WrappedTokenAddress)
 	require.Equal(t, wt.TokenMetadata.Name, "CoinA")
 	require.Equal(t, wt.TokenMetadata.Symbol, "COA")
 	require.Equal(t, wt.TokenMetadata.Decimals, uint8(12))
 
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, testStore.Commit(ctx, tx))
 }
 
 // Test Set Max uint as networkID into setRoot storage
 func TestSetMaxUintNetworkID(t *testing.T) {
-	// Init database instance
-	cfg := pgstorage.NewConfigFromEnv()
-	err := pgstorage.InitOrReset(cfg)
-	require.NoError(t, err)
 	ctx := context.Background()
-	pg, err := pgstorage.NewPostgresStorage(cfg)
+	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
-	tx, err := pg.BeginDBTransaction(ctx)
+	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
 	deposit := &etherman.Deposit{
 		Metadata: common.Hex2Bytes("0x0"),
 	}
-	depositID, err := pg.AddDeposit(ctx, deposit, tx)
+	depositID, err := testStore.AddDeposit(ctx, deposit, tx)
 	require.NoError(t, err)
 	root := common.FromHex("0x88e652896cb1de5962a0173a222059f51e6b943a2ba6dfc9acbff051ceb1abb5")
-	err = pg.SetRoot(ctx, root, depositID, math.MaxInt32, tx)
+	err = testStore.SetRoot(ctx, root, depositID, math.MaxInt32, tx)
 	require.NoError(t, err)
-	rRoot, err := pg.GetRoot(ctx, 0, math.MaxInt32, tx)
+	rRoot, err := testStore.GetRoot(ctx, 0, math.MaxInt32, tx)
 	require.NoError(t, err)
 	require.Equal(t, root, rRoot)
-	require.NoError(t, tx.Commit(ctx))
+	require.NoError(t, testStore.Commit(ctx, tx))
+}
+
+func TestIncompleteL2GlobalExitRoot(t *testing.T) {
+	ctx := context.Background()
+	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	require.NoError(t, err)
+	tx, err := testStore.BeginDBTransaction(ctx)
+	require.NoError(t, err)
+
+	block := &etherman.Block{
+		BlockNumber: 1,
+		BlockHash:   common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"),
+		NetworkID:   1,
+	}
+
+	blockID, err := testStore.AddBlock(ctx, block, tx)
+	require.NoError(t, err)
+	require.Equal(t, blockID, uint64(1))
+
+	l2GER := &etherman.GlobalExitRoot{
+		NetworkID:      1,
+		BlockNumber:    1,
+		BlockID:        1,
+		GlobalExitRoot: common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9f1"),
+	}
+
+	err = testStore.AddGlobalExitRoot(ctx, l2GER, tx)
+	require.NoError(t, err)
+
+	_, err = testStore.GetLatestTrustedExitRoot(ctx, l2GER.NetworkID, tx)
+	require.Error(t, err)
+	require.NoError(t, testStore.Commit(ctx, tx))
+}
+
+type testStore interface {
+	AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx interface{}) (uint64, error)
+	Rollback(ctx context.Context, dbTx interface{}) error
+	BeginDBTransaction(ctx context.Context) (interface{}, error)
+	AddBlock(ctx context.Context, block *etherman.Block, dbTx interface{}) (uint64, error)
+	Commit(ctx context.Context, dbTx interface{}) error
+	AddGlobalExitRoot(ctx context.Context, exitRoot *etherman.GlobalExitRoot, dbTx interface{}) error
+	GetLatestL1SyncedExitRoot(ctx context.Context, dbTx interface{}) (*etherman.GlobalExitRoot, error)
+	GetLatestExitRoot(ctx context.Context, networkID, destNetwork uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error)
+	AddTrustedGlobalExitRoot(_ context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx interface{}) (bool, error)
+	GetLatestTrustedExitRoot(ctx context.Context, networkID uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error)
+	QueryRowTesting(ctx context.Context, data string, dbTx interface{}) interface{}
+	GetLastBlock(ctx context.Context, networkID uint32, dbTx interface{}) (*etherman.Block, error)
+	GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx interface{}) (etherman.Block, error)
+	// ExecTesting(ctx context.Context, data string) error
+	SetRoot(ctx context.Context, root []byte, depositID uint64, network uint32, dbTx interface{}) error
+	Set(ctx context.Context, key []byte, value [][]byte, depositID uint64, dbTx interface{}) error
+	Get(ctx context.Context, key []byte, dbTx interface{}) ([][]byte, error)
+	GetRoot(ctx context.Context, depositCnt, network uint32, dbTx interface{}) ([]byte, error)
+	GetLastDepositCount(ctx context.Context, networkID uint32, dbTx interface{}) (uint32, error)
+	GetDepositCountByRoot(ctx context.Context, root []byte, network uint32, dbTx interface{}) (uint32, error)
+	AddClaim(ctx context.Context, claim *etherman.Claim, dbTx interface{}) error
+	GetClaim(_ context.Context, depositCount, originNetworkID, networkID uint32, dbTx interface{}) (*etherman.Claim, error)
+	GetClaims(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Claim, error)
+	GetDepositCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error)
+	GetDeposits(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error)
+	GetDeposit(ctx context.Context, depositCounterUser, networkID uint32, dbTx interface{}) (*etherman.Deposit, error)
+	GetNumberDeposits(ctx context.Context, networkID uint32, blockNumber uint64, dbTx interface{}) (uint32, error)
+	GetClaimCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error)
+	GetTokenMetadata(ctx context.Context, networkID, destNet uint32, originalTokenAddr common.Address, dbTx interface{}) ([]byte, error)
+	AddTokenWrapped(ctx context.Context, tokenWrapped *etherman.TokenWrapped, dbTx interface{}) error
+	GetTokenWrapped(ctx context.Context, originalNetwork uint32, originalTokenAddress common.Address, dbTx interface{}) (*etherman.TokenWrapped, error)
+}
+
+func newStorageSettings(storageType string) (testStore, error) {
+	if storageType == "postgres" {
+		dbCfg := pgstorage.NewConfigFromEnv()
+		err := pgstorage.InitOrReset(dbCfg)
+		if err != nil {
+			return nil, err
+		}
+		mt, err := pgstorage.NewPostgresStorage(dbCfg)
+		return mt, err
+	}
+	return nil, fmt.Errorf("unknown storage type: %s", storageType)
 }
