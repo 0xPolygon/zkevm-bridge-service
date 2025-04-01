@@ -542,3 +542,33 @@ services:
       - "/bin/sh"
       - "-c"
       - "cdk-node run -cfg=/app/config.toml -components=aggoracle"
+
+  zkevm-bridge-service-postgres:
+    container_name: zkevm-bridge-service-postgres
+    image: zkevm-bridge-service
+    ports:
+      - 8080:8080
+      - 9090:9090
+      - 8090:8090
+    environment:
+      - POSTGRES_USER=test_user
+      - POSTGRES_PASSWORD=test_password
+      - POSTGRES_DB=test_db
+      - ZKEVM_BRIDGE_SYNCDB_USER=test_user
+      - ZKEVM_BRIDGE_SYNCDB_PASSWORD=test_password
+      - ZKEVM_BRIDGE_SYNCDB_NAME=test_db
+      - ZKEVM_BRIDGE_SYNCDB_HOST=localhost
+      - ZKEVM_BRIDGE_SYNCDB_PORT=5432
+      - ZKEVM_BRIDGE_BRIDGESERVER_DB_USER=test_user
+      - ZKEVM_BRIDGE_BRIDGESERVER_DB_PASSWORD=test_password
+      - ZKEVM_BRIDGE_BRIDGESERVER_DB_NAME=test_db
+      - ZKEVM_BRIDGE_BRIDGESERVER_DB_HOST=localhost
+      - ZKEVM_BRIDGE_BRIDGESERVER_DB_PORT=5432
+      - ZKEVM_BRIDGE_CLAIMTXMANAGER_GROUPINGCLAIMS_ENABLED=${ZKEVM_BRIDGE_CLAIMTXMANAGER_GROUPINGCLAIMS_ENABLED}
+    volumes:
+      - ./test/config/prover/initproverdb.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./test/test.keystore.claimtx:/pk/keystore.claimtxmanager
+      - ./config/config.local.toml:/app/config.toml
+    command: >
+      sh -c "docker-entrypoint.sh postgres -N 500 & sleep 3 && /app/test-deploy-tool deployClaimCompressor --url \"http://zkevm-node:8123\" --bridgeAddress \"0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E\" --walletFile /pk/keystore.claimtxmanager --password \"testonly\" &&
+        /app/zkevm-bridge run --cfg /app/config.toml"
