@@ -1,0 +1,137 @@
+# For testing purposes
+L1TargetBlockConfirmations = 99
+
+[Log]
+Level = "info"
+Outputs = ["stdout"]
+
+[SyncDB]
+Database = "postgres"
+User = "test_user"
+Password = "test_password"
+Name = "test_db"
+Host = "zkevm-bridge-db"
+Port = "5432"
+MaxConns = 20
+
+[ClaimTxManager]
+Enabled = true
+FreeGas = true
+OptClaim = true
+FrequencyToMonitorTxs = "1s"
+PrivateKey = {Path = "/pk/keystore.claimtxmanager", Password = "testonly"}
+RetryInterval = "1s"
+RetryNumber = 10
+AuthorizedClaimMessageAddresses = ["0x90F79bf6EB2c4f870365E785982E1f101E93b906"]
+AreClaimsBetweenL2sEnabled = false
+MonitorTxsLimit = 1234
+[ClaimTxManager.GroupingClaims]
+    Enabled = false
+    TriggerNumberOfClaims = 20
+    MaxNumberOfClaimsPerGroup = 25
+    TriggerRetainedClaimPeriod = "1m"
+    MaxRetries = 2
+    RetryInterval = "10s"
+    RetryTimeout = "30s"
+    FrequencyToProcessCompressedClaims = "1m"
+    GasOffset = 100000
+
+[Etherman]
+L1URL = "http://xlayer-mock-l1-network:8545"
+L2URLs = ["http://xlayer-rpc:8545"] # internal network
+L1ChainId = 5 # XLayer
+L2ChainIds = [1001] # XLayer
+
+[Synchronizer]
+SyncInterval = "1s"
+SyncChunkSize = 100
+ForceL2SyncChunk = false
+LargeTxUsdLimit = 958
+
+[BridgeController]
+Store = "postgres"
+Height = 32
+
+[BridgeServer]
+GRPCPort = "9090"
+HTTPPort = "8080"
+CacheSize = 100000
+DefaultPageLimit = 25
+MaxPageLimit = 100
+SentinelConfigFilePath = "/app/sentinel_config.json" # XLayer
+    [BridgeServer.DB]
+    Database = "postgres"
+    User = "test_user"
+    Password = "test_password"
+    Name = "test_db"
+    Host = "zkevm-bridge-db"
+    Port = "5432"
+    MaxConns = 20
+    [BridgeServer.Redis] # XLayer
+    IsClusterMode = false
+    Addrs = ["xlayer-bridge-redis:6379"]
+    Username = ""
+    Password = ""
+    DB = 0
+    MockPrice = true
+    EnablePrice = true
+
+[NetworkConfig]
+GenBlockNumber = 0
+PolygonBridgeAddress = "0x3a277Fa4E78cc1266F32E26c467F99A8eAEfF7c3"
+PolygonZkEVMGlobalExitRootAddress = "0xB8cedD4B9eF683f0887C44a6E4312dC7A6e2fcdB"
+PolygonRollupManagerAddress = "0x2d42E2899662EFf08b13eeb65b154b904C7a1c8a"
+L2ClaimCompressorAddress = "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
+L2PolygonBridgeAddresses = ["0x3a277Fa4E78cc1266F32E26c467F99A8eAEfF7c3"]
+RequireSovereignChainSmcs = [false]
+L2PolygonZkEVMGlobalExitRootAddresses = ["0xB8cedD4B9eF683f0887C44a6E4312dC7A6e2fcdB"]
+
+[Metrics]
+Enabled = true
+Host = "0.0.0.0"
+Port = 9091
+Env = "testnet" # XLayer
+
+[NacosConfig]
+NacosUrls = ""
+NamespaceId = "public"
+ApplicationName = ""
+ExternalListenAddr = "127.0.0.1:26659"
+
+[BusinessConfig]
+StandardChainIds = [195]
+InnerChainIds = [19500]
+
+[CoinKafkaConsumer]
+Brokers = []
+Topics = ["explorer_chainAddressPrice_push"]
+ConsumerGroupID = "xlayer-bridge-service"
+InitialOffset = -1
+Username = ""
+Password = ""
+
+[MessagePushProducer]
+Enabled = true
+Brokers = ["first", "second"]
+Topic = "blah"
+PushKey = "huh"
+Username = "bruh"
+Password = "password"
+RootCAPath = "ca path"
+BizCode = "hello"
+
+[IPRestriction]
+Enabled = false
+UseNacos = false
+Host = "okcoin-users-service-newex-pre"
+Timeout = "2s"
+
+[TokenLogoServiceConfig]
+Enabled = false
+Scheme = "http"
+LogoServiceNacosName = "testing 123"
+Timeout = "3s"
+
+[EstimateTime]
+SampleLimit = 16
+DefaultTime = [78, 12]

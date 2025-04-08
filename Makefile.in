@@ -1,0 +1,31 @@
+VERSION := $(shell git describe --tags --always)
+GITREV := $(shell git rev-parse --short HEAD)
+GITBRANCH := $(shell git rev-parse --abbrev-ref HEAD)
+DATE := $(shell LANG=US date +"%a, %d %b %Y %X %z")
+
+ARCH := $(shell arch)
+
+ifeq ($(ARCH),x86_64)
+	ARCH = amd64
+else
+	ifeq ($(ARCH),aarch64)
+		ARCH = arm64
+	endif
+endif
+
+LDFLAGS += -X 'github.com/0xPolygonHermez/zkevm-bridge-service.Version=$(VERSION)'
+LDFLAGS += -X 'github.com/0xPolygonHermez/zkevm-bridge-service.GitRev=$(GITREV)'
+LDFLAGS += -X 'github.com/0xPolygonHermez/zkevm-bridge-service.GitBranch=$(GITBRANCH)'
+LDFLAGS += -X 'github.com/0xPolygonHermez/zkevm-bridge-service.BuildDate=$(DATE)'
+
+GO_BASE := $(shell pwd)
+GO_BIN := $(GO_BASE)/dist
+GO_ENV_VARS := GO_BIN=$(GO_BIN) CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH)
+GO_BINARY := xlayer-bridge
+GO_CMD := $(GO_BASE)/cmd
+
+BUILD := $(GO_ENV_VARS) go build -ldflags "all=$(LDFLAGS)" -o $(GO_BIN)/$(GO_BINARY) $(GO_CMD)
+
+.PHONY: build
+build: ## Build the binary locally into ./dist
+	$(BUILD)

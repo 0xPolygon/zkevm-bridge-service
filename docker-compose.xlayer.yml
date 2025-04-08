@@ -1,0 +1,209 @@
+version: '3.5'
+
+networks:
+  default:
+    name: erigon
+    external: true
+
+services:
+  xlayer-bridge-service:
+    container_name: xlayer-bridge-service
+    image: zkevm-bridge-service
+    ports:
+      - 8080:8080
+      - 9090:9090
+      - 9300:9091
+    environment:
+      - ZKEVM_BRIDGE_DATABASE_USER=test_user
+      - ZKEVM_BRIDGE_DATABASE_PASSWORD=test_password
+      - ZKEVM_BRIDGE_DATABASE_NAME=test_db
+      - ZKEVM_BRIDGE_DATABASE_HOST=zkevm-bridge-db
+      - ZKEVM_BRIDGE_DATABASE_PORT=5432
+    volumes:
+      - ./test/test.keystore.claimtx:/pk/keystore.claimtxmanager
+      - ./config/configs_xlayer/xlayer-all-config.local.toml:/app/config.toml
+      - ./xlayer/sentinel/config.json:/app/sentinel_config.json
+    links:
+      - "zkevm-bridge-db"
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "/app/zkevm-bridge run --cfg /app/config.toml"
+
+  xlayer-bridge-service-api:
+    container_name: xlayer-bridge-service-api
+    image: zkevm-bridge-service
+    ports:
+      - 8080:8080
+      - 9090:9090
+      - 9300:9091
+    environment:
+      - ZKEVM_BRIDGE_DATABASE_USER=test_user
+      - ZKEVM_BRIDGE_DATABASE_PASSWORD=test_password
+      - ZKEVM_BRIDGE_DATABASE_NAME=test_db
+      - ZKEVM_BRIDGE_DATABASE_HOST=zkevm-bridge-db
+      - ZKEVM_BRIDGE_DATABASE_PORT=5432
+    volumes:
+      - ./test/test.keystore.claimtx:/pk/keystore.claimtxmanager
+      - ./config/configs_xlayer/xlayer-api-config.local.toml:/app/config.toml
+      - ./xlayer/sentinel/config.json:/app/sentinel_config.json
+    links:
+      - "zkevm-bridge-db"
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "/app/zkevm-bridge runAPI --cfg /app/config.toml"
+
+  xlayer-bridge-service-push:
+    container_name: xlayer-bridge-service-push
+    image: zkevm-bridge-service
+    ports:
+      - 9301:9091
+    environment:
+      - ZKEVM_BRIDGE_DATABASE_USER=test_user
+      - ZKEVM_BRIDGE_DATABASE_PASSWORD=test_password
+      - ZKEVM_BRIDGE_DATABASE_NAME=test_db
+      - ZKEVM_BRIDGE_DATABASE_HOST=zkevm-bridge-db
+      - ZKEVM_BRIDGE_DATABASE_PORT=5432
+    volumes:
+      - ./test/test.keystore.claimtx:/pk/keystore.claimtxmanager
+      - ./config/configs_xlayer/xlayer-push-config.local.toml:/app/config.toml
+    links:
+      - "zkevm-bridge-db"
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "/app/zkevm-bridge runPushTask --cfg /app/config.toml"
+
+  xlayer-bridge-service-task:
+    container_name: xlayer-bridge-service-task
+    image: zkevm-bridge-service
+    ports:
+      - 9302:9091
+    environment:
+      - ZKEVM_BRIDGE_DATABASE_USER=test_user
+      - ZKEVM_BRIDGE_DATABASE_PASSWORD=test_password
+      - ZKEVM_BRIDGE_DATABASE_NAME=test_db
+      - ZKEVM_BRIDGE_DATABASE_HOST=zkevm-bridge-db
+      - ZKEVM_BRIDGE_DATABASE_PORT=5432
+    volumes:
+      - ./test/test.keystore.claimtx:/pk/keystore.claimtxmanager
+      - ./config/configs_xlayer/xlayer-task-config.local.toml:/app/config.toml
+    links:
+      - "zkevm-bridge-db"
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "/app/zkevm-bridge runTask --cfg /app/config.toml"
+
+  xlayer-bridge-redis:
+    container_name: xlayer-bridge-redis
+    image: redis
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+        reservations:
+          memory: 1G
+    expose:
+      - 6379
+    ports:
+      - 6379:6379
+    environment:
+      - REDIS_PASSWORD=my_password
+      - REDIS_PORT=6379
+      - REDIS_DATABASES=8
+
+  xlayer-bridge-coin-kafka:
+    depends_on: 
+      - kafka-zookeeper
+    image: wurstmeister/kafka
+    container_name: xlayer-bridge-coin-kafka
+    expose:
+      - 9092
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INSIDE://:9092,OUTSIDE://localhost:9123
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INSIDE:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_LISTENERS: INSIDE://0.0.0.0:9092,OUTSIDE://0.0.0.0:9123
+      KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
+      KAFKA_ZOOKEEPER_CONNECT: kafka-zookeeper:2181
+      KAFKA_CREATE_TOPICS: "explorer_chainAddressPrice_push:1:1"
+  
+  kafka-zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: kafka-zookeeper
+    ports:
+      - "2181:2181"
+    expose:
+      - 2181
+
+  xlayer-bridge-service-e2e:
+    depends_on:
+      - xlayer-bridge-redis
+      - xlayer-bridge-coin-kafka
+      - zkevm-node
+    restart: on-failure
+    container_name: xlayer-bridge-service-e2e
+    image: zkevm-bridge-service
+    ports:
+      - 8080:8080
+      - 9090:9090
+      - 9300:9091
+    environment:
+      - ZKEVM_BRIDGE_DATABASE_USER=test_user
+      - ZKEVM_BRIDGE_DATABASE_PASSWORD=test_password
+      - ZKEVM_BRIDGE_DATABASE_NAME=test_db
+      - ZKEVM_BRIDGE_DATABASE_HOST=zkevm-bridge-db
+      - ZKEVM_BRIDGE_DATABASE_PORT=5432
+    volumes:
+      - ./test/test.keystore.claimtx:/pk/keystore.claimtxmanager
+      - ./config/configs_xlayer/xlayer-config.e2e.toml:/app/config.toml
+      - ./xlayer/sentinel/config.json:/app/sentinel_config.json
+    links:
+      - "zkevm-bridge-db"
+      - "zkevm-node"
+    command:
+      - "/bin/sh"
+      - "-c"
+      - "/app/zkevm-bridge run --cfg /app/config.toml"
+
+  zkevm-bridge-db:
+    extends:
+      file: docker-compose.yml
+      service: zkevm-bridge-db
+
+  zkevm-state-db:
+    extends:
+      file: docker-compose.yml
+      service: zkevm-state-db
+
+  zkevm-pool-db:
+    extends:
+      file: docker-compose.yml
+      service: zkevm-pool-db
+
+  zkevm-node:
+    depends_on:
+      - zkevm-prover
+      - zkevm-mock-l1-network
+    extends:
+      file: docker-compose.yml
+      service: zkevm-node
+    links:
+      - "zkevm-state-db"
+      - "zkevm-pool-db"
+      - "zkevm-mock-l1-network"
+      - "zkevm-prover"
+
+  zkevm-mock-l1-network:
+    extends:
+      file: docker-compose.yml
+      service: zkevm-mock-l1-network
+
+  zkevm-prover:
+    restart: on-failure
+    extends:
+      file: docker-compose.yml
+      service: zkevm-prover
+    links:
+      - "zkevm-state-db"

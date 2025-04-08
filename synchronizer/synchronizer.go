@@ -11,6 +11,8 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer/metrics"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/xlayer/messagepush"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/xlayer/redisstorage"
 	"github.com/ethereum/go-ethereum/common"
 	pgx "github.com/jackc/pgx/v4"
 )
@@ -41,6 +43,11 @@ type ClientSynchronizer struct {
 	sovereignChain    bool
 	forceSyncChunk    bool
 	waitDuration      time.Duration
+
+	// XLayer
+	messagePushProducer messagepush.KafkaProducer
+	redisStorage        redisstorage.RedisStorage
+	rollupID            uint
 }
 
 // NewSynchronizer creates and initializes an instance of Synchronizer
@@ -240,6 +247,7 @@ func (s *ClientSynchronizer) syncTrustedState() error {
 			exitRoots.MainnetExitRoot,
 			exitRoots.RollupExitRoot,
 		},
+		Time: time.Unix(int64(exitRoots.Timestamp), 0), // XLayer
 	}
 	isUpdated, err := s.storage.AddTrustedGlobalExitRoot(s.ctx, ger, nil)
 	if err != nil {
@@ -318,6 +326,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 		// Name can be different in the order struct. This name is an identifier to check if the next info that must be stored in the db.
 		// The value pos (position) tells what is the array index where this value is.
 		start := time.Now()
+
 		blocks, order, err := s.etherMan.GetRollupInfoByBlockRange(s.ctx, fromBlock, &toBlock)
 		metrics.ReadL1DataTime(time.Since(start))
 		if err != nil {
@@ -838,9 +847,12 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 }
 
 func (s *ClientSynchronizer) processDeposit(deposit etherman.Deposit, blockID uint64, dbTx pgx.Tx) error {
+	if s.redisStorage != nil {
+		s.beforeProcessDeposit(&deposit) // XLayer
+	}
 	deposit.BlockID = blockID
 	deposit.NetworkID = s.networkID
-	depositID, err := s.storage.AddDeposit(s.ctx, &deposit, dbTx)
+	depositID, err := s.storage.AddDepositXLayer(s.ctx, &deposit, dbTx) // XLayer (adds dest contract addr)
 	if err != nil {
 		log.Errorf("networkID: %d, failed to store new deposit locally, BlockNumber: %d, Deposit: %+v err: %v", s.networkID, deposit.BlockNumber, deposit, err)
 		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
@@ -864,6 +876,10 @@ func (s *ClientSynchronizer) processDeposit(deposit etherman.Deposit, blockID ui
 		return err
 	}
 	metrics.DepositAmount(deposit.Amount)
+
+	if s.redisStorage != nil {
+		return s.afterProcessDeposit(&deposit, depositID, dbTx) // XLayer
+	}
 	return nil
 }
 
@@ -882,6 +898,12 @@ func (s *ClientSynchronizer) processClaim(claim etherman.Claim, blockID uint64, 
 		return err
 	}
 	metrics.ClaimAmount(claim.Amount)
+
+	// For X Layer
+	// It shouldn't block the sync process
+	if s.redisStorage != nil {
+		go s.afterProcessClaim(&claim, dbTx)
+	}
 	return nil
 }
 

@@ -4,13 +4,15 @@ import (
 	"fmt"
 	"os"
 
-	zkevmbridgeservice "github.com/0xPolygonHermez/zkevm-bridge-service"
 	cli "github.com/urfave/cli/v2"
+
+	zkevmbridgeservice "github.com/0xPolygonHermez/zkevm-bridge-service"
 )
 
 const (
 	flagCfg     = "cfg"
 	flagNetwork = "network"
+	flagXLayer  = "xlayer"
 )
 
 const (
@@ -35,6 +37,14 @@ func main() {
 			Usage:    "Network: mainnet, testnet, internaltestnet, local. By default it uses mainnet",
 			Required: false,
 		},
+		&cli.BoolFlag{
+			Name:     flagXLayer,
+			Aliases:  []string{"xl"},
+			Usage:    "Enable XLayer, only applies to running bridge as single service.",
+			Required: false,
+			Value:    true,
+			EnvVars:  []string{"XLAYER"},
+		},
 	}
 
 	app.Commands = []*cli.Command{
@@ -48,8 +58,41 @@ func main() {
 			Name:    "run",
 			Aliases: []string{},
 			Usage:   "Run the zkevm bridge",
-			Action:  start,
-			Flags:   flags,
+			Action: func(ctx *cli.Context) error {
+				if ctx.Bool(flagXLayer) {
+					return run(ctx, "all")
+				} else {
+					return start(ctx)
+				}
+			},
+			Flags: flags,
+		},
+		{
+			Name:    "runAPI",
+			Aliases: []string{},
+			Usage:   "Run the xlayer bridge API server",
+			Action: func(ctx *cli.Context) error {
+				return run(ctx, api)
+			},
+			Flags: flags,
+		},
+		{
+			Name:    "runPushTask",
+			Aliases: []string{},
+			Usage:   "Run the xlayer bridge push tasks (monitor the block/batch number and push change event to FE)",
+			Action: func(ctx *cli.Context) error {
+				return run(ctx, push)
+			},
+			Flags: flags,
+		},
+		{
+			Name:    "runTask",
+			Aliases: []string{},
+			Usage:   "Run the xlayer bridge tasks, including synchronizer, claimtxman, kafka consumer",
+			Action: func(ctx *cli.Context) error {
+				return run(ctx, task)
+			},
+			Flags: flags,
 		},
 	}
 

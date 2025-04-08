@@ -1,0 +1,60 @@
+include version.mk
+
+DC_BRIDGE := xlayer-bridge-service-e2e
+# Toggle to enable XLayer/upstream e2e tests to work.
+ifeq ($(XLAYER), false)
+	DC_BRIDGE=zkevm-bridge-service
+endif
+
+DOCKER_COMPOSE_XL := docker compose -f docker-compose.xlayer.yml -f docker-compose.yml
+
+DOCKER_COMPOSE_REDIS := xlayer-bridge-redis
+DOCKER_COMPOSE_BRIDGE_KAFKA := xlayer-bridge-coin-kafka
+DOCKER_COMPOSE_BRIDGE_API := xlayer-bridge-service-api
+DOCKER_COMPOSE_BRIDGE_PUSH := xlayer-bridge-service-push
+DOCKER_COMPOSE_BRIDGE_TASK := xlayer-bridge-service-task
+DOCKER_COMPOSE_BRIDGE_SINGLE := xlayer-bridge-service
+
+RUN_REDIS := $(DOCKER_COMPOSE_XL) up -d $(DOCKER_COMPOSE_REDIS)
+RUN_BRIDGE_KAFKA := $(DOCKER_COMPOSE_XL) up -d $(DOCKER_COMPOSE_BRIDGE_KAFKA)
+RUN_BRIDGE_API := $(DOCKER_COMPOSE_XL) up -d $(DOCKER_COMPOSE_BRIDGE_API)
+RUN_BRIDGE_PUSH := $(DOCKER_COMPOSE_XL) up -d $(DOCKER_COMPOSE_BRIDGE_PUSH)
+RUN_BRIDGE_TASK := $(DOCKER_COMPOSE_XL) up -d $(DOCKER_COMPOSE_BRIDGE_TASK)
+RUN_BRIDGE_SINGLE := $(DOCKER_COMPOSE_XL) up -d $(DOCKER_COMPOSE_BRIDGE_SINGLE)
+
+# This assumes you are running xlayer erigon locally.
+
+# Important for verifying docker compose allowed syntax on test machines.
+version:
+	$(DOCKER_COMPOSE_XL) version
+
+# Run with cdk-erigon 
+run-api:
+	$(RUN_DBS)
+	$(RUN_REDIS)
+	sleep 1
+	$(RUN_BRIDGE_API)
+
+# Run with cdk-erigon 
+run-push:
+	$(RUN_DBS)
+	$(RUN_REDIS)
+	$(RUN_BRIDGE_KAFKA)
+	sleep 3
+	$(RUN_BRIDGE_PUSH)
+
+# Run with cdk-erigon 
+run-task:
+	$(RUN_DBS)
+	$(RUN_REDIS)
+	$(RUN_BRIDGE_KAFKA)
+	sleep 3
+	$(RUN_BRIDGE_TASK)
+
+# Run with cdk-erigon 
+run-single:
+	$(RUN_DBS)
+	$(RUN_REDIS)
+	$(RUN_BRIDGE_KAFKA)
+	sleep 3
+	$(RUN_BRIDGE_SINGLE)

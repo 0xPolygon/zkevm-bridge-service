@@ -343,6 +343,7 @@ func TestSyncTrustedGer(t *testing.T) {
 				exitRootResponse.MainnetExitRoot,
 				exitRootResponse.RollupExitRoot,
 			},
+			Time: time.Unix(0, 0), // XLayer
 		}
 
 		m.Storage.

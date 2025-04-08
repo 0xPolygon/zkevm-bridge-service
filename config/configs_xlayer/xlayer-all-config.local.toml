@@ -1,0 +1,106 @@
+# NOTE: Run with X Layer erigon
+[Log]
+Level = "debug"
+Outputs = ["stdout"]
+
+[ClaimTxManager]
+Enabled = true
+FreeGas = true
+FrequencyToMonitorTxs = "1s"
+PrivateKey = {Path = "/pk/keystore.claimtxmanager", Password = "testonly"}
+RetryInterval = "1s"
+RetryNumber = 10
+OptClaim = true
+AuthorizedClaimMessageAddresses = ["0x90F79bf6EB2c4f870365E785982E1f101E93b906"]
+AreClaimsBetweenL2sEnabled = false
+[ClaimTxManager.GroupingClaims]
+    Enabled = false
+    TriggerNumberOfClaims = 20
+    MaxNumberOfClaimsPerGroup = 25
+    TriggerRetainedClaimPeriod = "1m"
+    MaxRetries = 2
+    RetryInterval = "10s"
+    RetryTimeout = "30s"
+    FrequencyToProcessCompressedClaims = "1m"
+    GasOffset = 100000
+
+[Synchronizer]
+SyncInterval = "3s"
+SyncChunkSize = 100
+ForceL2SyncChunk = true
+
+[SyncDB]
+Database = "postgres"
+User = "test_user"
+Password = "test_password"
+Name = "test_db"
+Host = "zkevm-bridge-db"
+Port = "5432"
+MaxConns = 20
+
+[Etherman]
+L1URL = "http://xlayer-mock-l1-network:8545"
+L2URLs = ["http://xlayer-rpc:8545"] # internal network
+L1ChainId = 1337 # XLayer
+L2ChainIds = [195] # XLayer
+
+[BridgeController]
+Store = "postgres"
+Height = 32
+
+[BridgeServer]
+GRPCPort = "9090"
+HTTPPort = "8080"
+CacheSize = 100000
+DefaultPageLimit = 25
+MaxPageLimit = 100
+SentinelConfigFilePath = "/app/sentinel_config.json" # XLayer
+    [BridgeServer.DB]
+    Database = "postgres"
+    User = "test_user"
+    Password = "test_password"
+    Name = "test_db"
+    Host = "zkevm-bridge-db"
+    Port = "5432"
+    MaxConns = 20
+    [BridgeServer.Redis] # XLayer
+    IsClusterMode = false
+    Addrs = ["xlayer-bridge-redis:6379"]
+    Username = ""
+    Password = ""
+    DB = 0
+    MockPrice = true
+
+[NetworkConfig]
+GenBlockNumber = 0
+PolygonBridgeAddress = "0x3a277Fa4E78cc1266F32E26c467F99A8eAEfF7c3"
+PolygonZkEVMGlobalExitRootAddress = "0xB8cedD4B9eF683f0887C44a6E4312dC7A6e2fcdB"
+PolygonRollupManagerAddress = "0x2d42E2899662EFf08b13eeb65b154b904C7a1c8a"
+L2ClaimCompressorAddress = "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
+L2PolygonBridgeAddresses = ["0x3a277Fa4E78cc1266F32E26c467F99A8eAEfF7c3"]
+RequireSovereignChainSmcs = [false]
+L2PolygonZkEVMGlobalExitRootAddresses = ["0xB8cedD4B9eF683f0887C44a6E4312dC7A6e2fcdB"]
+
+[Metrics]
+Enabled = true
+Host = "0.0.0.0"
+Port = 9091
+Env = "testnet" # XLayer
+
+# XLayer specific
+[BusinessConfig]
+StandardChainIds = [195]
+InnerChainIds = [19500]
+
+[MessagePushProducer] # This is not fake kafka!
+Enabled = true
+Brokers = ["xlayer-bridge-coin-kafka:9092"]
+Topic = "explorer_chainAddressPrice_push"
+
+[CoinKafkaConsumer]
+Brokers = ["xlayer-bridge-coin-kafka:9092"]
+Topics = ["explorer_chainAddressPrice_push"]
+ConsumerGroupID = "xlayer-bridge-service"
+InitialOffset = -1
+Username = ""
+Password = ""

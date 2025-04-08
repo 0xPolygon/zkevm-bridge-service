@@ -240,6 +240,68 @@ func (_c *StorageInterface_Commit_Call) RunAndReturn(run func(context.Context, p
 	return _c
 }
 
+// GetClaim provides a mock function with given fields: ctx, index, depositCount, networkID, dbTx
+func (_m *StorageInterface) GetClaim(ctx context.Context, index uint32, depositCount uint32, networkID uint32, dbTx pgx.Tx) (*etherman.Claim, error) {
+	ret := _m.Called(ctx, index, depositCount, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetClaim")
+	}
+
+	var r0 *etherman.Claim
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, uint32, pgx.Tx) (*etherman.Claim, error)); ok {
+		return rf(ctx, index, depositCount, networkID, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, uint32, pgx.Tx) *etherman.Claim); ok {
+		r0 = rf(ctx, index, depositCount, networkID, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*etherman.Claim)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, uint32, uint32, pgx.Tx) error); ok {
+		r1 = rf(ctx, index, depositCount, networkID, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StorageInterface_GetClaim_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetClaim'
+type StorageInterface_GetClaim_Call struct {
+	*mock.Call
+}
+
+// GetClaim is a helper method to define mock.On call
+//   - ctx context.Context
+//   - index uint32
+//   - depositCount uint32
+//   - networkID uint32
+//   - dbTx pgx.Tx
+func (_e *StorageInterface_Expecter) GetClaim(ctx interface{}, index interface{}, depositCount interface{}, networkID interface{}, dbTx interface{}) *StorageInterface_GetClaim_Call {
+	return &StorageInterface_GetClaim_Call{Call: _e.mock.On("GetClaim", ctx, index, depositCount, networkID, dbTx)}
+}
+
+func (_c *StorageInterface_GetClaim_Call) Run(run func(ctx context.Context, index uint32, depositCount uint32, networkID uint32, dbTx pgx.Tx)) *StorageInterface_GetClaim_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(uint32), args[3].(uint32), args[4].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *StorageInterface_GetClaim_Call) Return(_a0 *etherman.Claim, _a1 error) *StorageInterface_GetClaim_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StorageInterface_GetClaim_Call) RunAndReturn(run func(context.Context, uint32, uint32, uint32, pgx.Tx) (*etherman.Claim, error)) *StorageInterface_GetClaim_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetClaimTxsByStatus provides a mock function with given fields: ctx, statuses, rollupID, dbTx
 func (_m *StorageInterface) GetClaimTxsByStatus(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint32, dbTx pgx.Tx) ([]types.MonitoredTx, error) {
 	ret := _m.Called(ctx, statuses, rollupID, dbTx)
@@ -301,6 +363,129 @@ func (_c *StorageInterface_GetClaimTxsByStatus_Call) RunAndReturn(run func(conte
 	return _c
 }
 
+// GetClaimTxsByStatusWithLimit provides a mock function with given fields: ctx, statuses, limit, offset, dbTx
+func (_m *StorageInterface) GetClaimTxsByStatusWithLimit(ctx context.Context, statuses []types.MonitoredTxStatus, limit uint, offset uint, dbTx pgx.Tx) ([]types.MonitoredTx, error) {
+	ret := _m.Called(ctx, statuses, limit, offset, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetClaimTxsByStatusWithLimit")
+	}
+
+	var r0 []types.MonitoredTx
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint, uint, pgx.Tx) ([]types.MonitoredTx, error)); ok {
+		return rf(ctx, statuses, limit, offset, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []types.MonitoredTxStatus, uint, uint, pgx.Tx) []types.MonitoredTx); ok {
+		r0 = rf(ctx, statuses, limit, offset, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]types.MonitoredTx)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []types.MonitoredTxStatus, uint, uint, pgx.Tx) error); ok {
+		r1 = rf(ctx, statuses, limit, offset, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StorageInterface_GetClaimTxsByStatusWithLimit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetClaimTxsByStatusWithLimit'
+type StorageInterface_GetClaimTxsByStatusWithLimit_Call struct {
+	*mock.Call
+}
+
+// GetClaimTxsByStatusWithLimit is a helper method to define mock.On call
+//   - ctx context.Context
+//   - statuses []types.MonitoredTxStatus
+//   - limit uint
+//   - offset uint
+//   - dbTx pgx.Tx
+func (_e *StorageInterface_Expecter) GetClaimTxsByStatusWithLimit(ctx interface{}, statuses interface{}, limit interface{}, offset interface{}, dbTx interface{}) *StorageInterface_GetClaimTxsByStatusWithLimit_Call {
+	return &StorageInterface_GetClaimTxsByStatusWithLimit_Call{Call: _e.mock.On("GetClaimTxsByStatusWithLimit", ctx, statuses, limit, offset, dbTx)}
+}
+
+func (_c *StorageInterface_GetClaimTxsByStatusWithLimit_Call) Run(run func(ctx context.Context, statuses []types.MonitoredTxStatus, limit uint, offset uint, dbTx pgx.Tx)) *StorageInterface_GetClaimTxsByStatusWithLimit_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]types.MonitoredTxStatus), args[2].(uint), args[3].(uint), args[4].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *StorageInterface_GetClaimTxsByStatusWithLimit_Call) Return(_a0 []types.MonitoredTx, _a1 error) *StorageInterface_GetClaimTxsByStatusWithLimit_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StorageInterface_GetClaimTxsByStatusWithLimit_Call) RunAndReturn(run func(context.Context, []types.MonitoredTxStatus, uint, uint, pgx.Tx) ([]types.MonitoredTx, error)) *StorageInterface_GetClaimTxsByStatusWithLimit_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetDeposit provides a mock function with given fields: ctx, depositCnt, networkID, dbTx
+func (_m *StorageInterface) GetDeposit(ctx context.Context, depositCnt uint32, networkID uint32, dbTx pgx.Tx) (*etherman.Deposit, error) {
+	ret := _m.Called(ctx, depositCnt, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDeposit")
+	}
+
+	var r0 *etherman.Deposit
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, pgx.Tx) (*etherman.Deposit, error)); ok {
+		return rf(ctx, depositCnt, networkID, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, pgx.Tx) *etherman.Deposit); ok {
+		r0 = rf(ctx, depositCnt, networkID, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*etherman.Deposit)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, uint32, pgx.Tx) error); ok {
+		r1 = rf(ctx, depositCnt, networkID, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StorageInterface_GetDeposit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDeposit'
+type StorageInterface_GetDeposit_Call struct {
+	*mock.Call
+}
+
+// GetDeposit is a helper method to define mock.On call
+//   - ctx context.Context
+//   - depositCnt uint32
+//   - networkID uint32
+//   - dbTx pgx.Tx
+func (_e *StorageInterface_Expecter) GetDeposit(ctx interface{}, depositCnt interface{}, networkID interface{}, dbTx interface{}) *StorageInterface_GetDeposit_Call {
+	return &StorageInterface_GetDeposit_Call{Call: _e.mock.On("GetDeposit", ctx, depositCnt, networkID, dbTx)}
+}
+
+func (_c *StorageInterface_GetDeposit_Call) Run(run func(ctx context.Context, depositCnt uint32, networkID uint32, dbTx pgx.Tx)) *StorageInterface_GetDeposit_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(uint32), args[3].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *StorageInterface_GetDeposit_Call) Return(_a0 *etherman.Deposit, _a1 error) *StorageInterface_GetDeposit_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StorageInterface_GetDeposit_Call) RunAndReturn(run func(context.Context, uint32, uint32, pgx.Tx) (*etherman.Deposit, error)) *StorageInterface_GetDeposit_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetDepositsFromOtherL2ToClaim provides a mock function with given fields: ctx, destinationNetwork, dbTx
 func (_m *StorageInterface) GetDepositsFromOtherL2ToClaim(ctx context.Context, destinationNetwork uint32, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
 	ret := _m.Called(ctx, destinationNetwork, dbTx)
@@ -357,6 +542,66 @@ func (_c *StorageInterface_GetDepositsFromOtherL2ToClaim_Call) Return(_a0 []*eth
 }
 
 func (_c *StorageInterface_GetDepositsFromOtherL2ToClaim_Call) RunAndReturn(run func(context.Context, uint32, pgx.Tx) ([]*etherman.Deposit, error)) *StorageInterface_GetDepositsFromOtherL2ToClaim_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetL1Deposits provides a mock function with given fields: ctx, exitRoot, dbTx
+func (_m *StorageInterface) GetL1Deposits(ctx context.Context, exitRoot []byte, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
+	ret := _m.Called(ctx, exitRoot, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetL1Deposits")
+	}
+
+	var r0 []*etherman.Deposit
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, pgx.Tx) ([]*etherman.Deposit, error)); ok {
+		return rf(ctx, exitRoot, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, pgx.Tx) []*etherman.Deposit); ok {
+		r0 = rf(ctx, exitRoot, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*etherman.Deposit)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []byte, pgx.Tx) error); ok {
+		r1 = rf(ctx, exitRoot, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StorageInterface_GetL1Deposits_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetL1Deposits'
+type StorageInterface_GetL1Deposits_Call struct {
+	*mock.Call
+}
+
+// GetL1Deposits is a helper method to define mock.On call
+//   - ctx context.Context
+//   - exitRoot []byte
+//   - dbTx pgx.Tx
+func (_e *StorageInterface_Expecter) GetL1Deposits(ctx interface{}, exitRoot interface{}, dbTx interface{}) *StorageInterface_GetL1Deposits_Call {
+	return &StorageInterface_GetL1Deposits_Call{Call: _e.mock.On("GetL1Deposits", ctx, exitRoot, dbTx)}
+}
+
+func (_c *StorageInterface_GetL1Deposits_Call) Run(run func(ctx context.Context, exitRoot []byte, dbTx pgx.Tx)) *StorageInterface_GetL1Deposits_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]byte), args[2].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *StorageInterface_GetL1Deposits_Call) Return(_a0 []*etherman.Deposit, _a1 error) *StorageInterface_GetL1Deposits_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StorageInterface_GetL1Deposits_Call) RunAndReturn(run func(context.Context, []byte, pgx.Tx) ([]*etherman.Deposit, error)) *StorageInterface_GetL1Deposits_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -518,6 +763,54 @@ func (_c *StorageInterface_UpdateClaimTx_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// UpdateL1DepositStatus provides a mock function with given fields: ctx, depositCount, dbTx
+func (_m *StorageInterface) UpdateL1DepositStatus(ctx context.Context, depositCount uint, dbTx pgx.Tx) error {
+	ret := _m.Called(ctx, depositCount, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateL1DepositStatus")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint, pgx.Tx) error); ok {
+		r0 = rf(ctx, depositCount, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// StorageInterface_UpdateL1DepositStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateL1DepositStatus'
+type StorageInterface_UpdateL1DepositStatus_Call struct {
+	*mock.Call
+}
+
+// UpdateL1DepositStatus is a helper method to define mock.On call
+//   - ctx context.Context
+//   - depositCount uint
+//   - dbTx pgx.Tx
+func (_e *StorageInterface_Expecter) UpdateL1DepositStatus(ctx interface{}, depositCount interface{}, dbTx interface{}) *StorageInterface_UpdateL1DepositStatus_Call {
+	return &StorageInterface_UpdateL1DepositStatus_Call{Call: _e.mock.On("UpdateL1DepositStatus", ctx, depositCount, dbTx)}
+}
+
+func (_c *StorageInterface_UpdateL1DepositStatus_Call) Run(run func(ctx context.Context, depositCount uint, dbTx pgx.Tx)) *StorageInterface_UpdateL1DepositStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint), args[2].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *StorageInterface_UpdateL1DepositStatus_Call) Return(_a0 error) *StorageInterface_UpdateL1DepositStatus_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *StorageInterface_UpdateL1DepositStatus_Call) RunAndReturn(run func(context.Context, uint, pgx.Tx) error) *StorageInterface_UpdateL1DepositStatus_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UpdateL1DepositsStatus provides a mock function with given fields: ctx, exitRoot, destinationNetwork, dbTx
 func (_m *StorageInterface) UpdateL1DepositsStatus(ctx context.Context, exitRoot []byte, destinationNetwork uint32, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
 	ret := _m.Called(ctx, exitRoot, destinationNetwork, dbTx)
@@ -579,6 +872,66 @@ func (_c *StorageInterface_UpdateL1DepositsStatus_Call) RunAndReturn(run func(co
 	return _c
 }
 
+// UpdateL1DepositsStatusXLayer provides a mock function with given fields: ctx, exitRoot, dbTx
+func (_m *StorageInterface) UpdateL1DepositsStatusXLayer(ctx context.Context, exitRoot []byte, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
+	ret := _m.Called(ctx, exitRoot, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateL1DepositsStatusXLayer")
+	}
+
+	var r0 []*etherman.Deposit
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, pgx.Tx) ([]*etherman.Deposit, error)); ok {
+		return rf(ctx, exitRoot, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, pgx.Tx) []*etherman.Deposit); ok {
+		r0 = rf(ctx, exitRoot, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*etherman.Deposit)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []byte, pgx.Tx) error); ok {
+		r1 = rf(ctx, exitRoot, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StorageInterface_UpdateL1DepositsStatusXLayer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateL1DepositsStatusXLayer'
+type StorageInterface_UpdateL1DepositsStatusXLayer_Call struct {
+	*mock.Call
+}
+
+// UpdateL1DepositsStatusXLayer is a helper method to define mock.On call
+//   - ctx context.Context
+//   - exitRoot []byte
+//   - dbTx pgx.Tx
+func (_e *StorageInterface_Expecter) UpdateL1DepositsStatusXLayer(ctx interface{}, exitRoot interface{}, dbTx interface{}) *StorageInterface_UpdateL1DepositsStatusXLayer_Call {
+	return &StorageInterface_UpdateL1DepositsStatusXLayer_Call{Call: _e.mock.On("UpdateL1DepositsStatusXLayer", ctx, exitRoot, dbTx)}
+}
+
+func (_c *StorageInterface_UpdateL1DepositsStatusXLayer_Call) Run(run func(ctx context.Context, exitRoot []byte, dbTx pgx.Tx)) *StorageInterface_UpdateL1DepositsStatusXLayer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]byte), args[2].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *StorageInterface_UpdateL1DepositsStatusXLayer_Call) Return(_a0 []*etherman.Deposit, _a1 error) *StorageInterface_UpdateL1DepositsStatusXLayer_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StorageInterface_UpdateL1DepositsStatusXLayer_Call) RunAndReturn(run func(context.Context, []byte, pgx.Tx) ([]*etherman.Deposit, error)) *StorageInterface_UpdateL1DepositsStatusXLayer_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UpdateL2DepositsStatus provides a mock function with given fields: ctx, exitRoot, rollupID, networkID, dbTx
 func (_m *StorageInterface) UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID uint32, networkID uint32, dbTx pgx.Tx) error {
 	ret := _m.Called(ctx, exitRoot, rollupID, networkID, dbTx)
@@ -625,6 +978,68 @@ func (_c *StorageInterface_UpdateL2DepositsStatus_Call) Return(_a0 error) *Stora
 }
 
 func (_c *StorageInterface_UpdateL2DepositsStatus_Call) RunAndReturn(run func(context.Context, []byte, uint32, uint32, pgx.Tx) error) *StorageInterface_UpdateL2DepositsStatus_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateL2DepositsStatusXLayer provides a mock function with given fields: ctx, exitRoot, rollupID, networkID, dbTx
+func (_m *StorageInterface) UpdateL2DepositsStatusXLayer(ctx context.Context, exitRoot []byte, rollupID uint, networkID uint, dbTx pgx.Tx) ([]*etherman.Deposit, error) {
+	ret := _m.Called(ctx, exitRoot, rollupID, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateL2DepositsStatusXLayer")
+	}
+
+	var r0 []*etherman.Deposit
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint, uint, pgx.Tx) ([]*etherman.Deposit, error)); ok {
+		return rf(ctx, exitRoot, rollupID, networkID, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint, uint, pgx.Tx) []*etherman.Deposit); ok {
+		r0 = rf(ctx, exitRoot, rollupID, networkID, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*etherman.Deposit)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []byte, uint, uint, pgx.Tx) error); ok {
+		r1 = rf(ctx, exitRoot, rollupID, networkID, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// StorageInterface_UpdateL2DepositsStatusXLayer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateL2DepositsStatusXLayer'
+type StorageInterface_UpdateL2DepositsStatusXLayer_Call struct {
+	*mock.Call
+}
+
+// UpdateL2DepositsStatusXLayer is a helper method to define mock.On call
+//   - ctx context.Context
+//   - exitRoot []byte
+//   - rollupID uint
+//   - networkID uint
+//   - dbTx pgx.Tx
+func (_e *StorageInterface_Expecter) UpdateL2DepositsStatusXLayer(ctx interface{}, exitRoot interface{}, rollupID interface{}, networkID interface{}, dbTx interface{}) *StorageInterface_UpdateL2DepositsStatusXLayer_Call {
+	return &StorageInterface_UpdateL2DepositsStatusXLayer_Call{Call: _e.mock.On("UpdateL2DepositsStatusXLayer", ctx, exitRoot, rollupID, networkID, dbTx)}
+}
+
+func (_c *StorageInterface_UpdateL2DepositsStatusXLayer_Call) Run(run func(ctx context.Context, exitRoot []byte, rollupID uint, networkID uint, dbTx pgx.Tx)) *StorageInterface_UpdateL2DepositsStatusXLayer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]byte), args[2].(uint), args[3].(uint), args[4].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *StorageInterface_UpdateL2DepositsStatusXLayer_Call) Return(_a0 []*etherman.Deposit, _a1 error) *StorageInterface_UpdateL2DepositsStatusXLayer_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *StorageInterface_UpdateL2DepositsStatusXLayer_Call) RunAndReturn(run func(context.Context, []byte, uint, uint, pgx.Tx) ([]*etherman.Deposit, error)) *StorageInterface_UpdateL2DepositsStatusXLayer_Call {
 	_c.Call.Return(run)
 	return _c
 }

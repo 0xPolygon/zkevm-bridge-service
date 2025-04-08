@@ -3,7 +3,6 @@ package migrations_test
 import (
 	"database/sql"
 	"testing"
-	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -29,10 +28,11 @@ func (m migrationTest0016) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 	err := db.QueryRow(selectHashParent).Scan(&hashParent)
 	assert.Error(t, err)
 
-	selectReceivedAt := `SELECT received_at FROM sync.block limit 1;`
-	var receivedAt time.Time
-	err = db.QueryRow(selectReceivedAt).Scan(&receivedAt)
-	assert.Error(t, err)
+	// XLayer uses this field
+	// selectReceivedAt := `SELECT received_at FROM sync.block limit 1;`
+	// var receivedAt time.Time
+	// err = db.QueryRow(selectReceivedAt).Scan(&receivedAt)
+	// assert.Error(t, err)
 
 	selectCount := `SELECT count(*) FROM sync.block;`
 	var count uint64
@@ -49,10 +49,11 @@ func (m migrationTest0016) RunAssertsAfterMigrationDown(t *testing.T, db *sql.DB
 	assert.NoError(t, err)
 	assert.Equal(t, common.Hash{}, hashParent)
 
-	selectReceivedAt := `SELECT received_at FROM sync.block where block_num='2803824' AND network_id = 0;`
-	var receivedAt time.Time
-	err = db.QueryRow(selectReceivedAt).Scan(&receivedAt)
-	assert.NoError(t, err)
+	// XLayer uses this field
+	// selectReceivedAt := `SELECT received_at FROM sync.block where block_num='2803824' AND network_id = 0;`
+	// var receivedAt time.Time
+	// err = db.QueryRow(selectReceivedAt).Scan(&receivedAt)
+	// assert.NoError(t, err)
 
 	selectCount := `SELECT count(*) FROM sync.block;`
 	var count uint64

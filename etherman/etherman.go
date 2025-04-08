@@ -588,17 +588,21 @@ func (etherMan *Client) updateL1InfoTreeEvent(vLog types.Log, blocks *[]Block, b
 }
 
 func (etherMan *Client) processUpdateGlobalExitRootEvent(mainnetExitRoot, rollupExitRoot common.Hash, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+	fullBlockTime := etherMan.getFullBlockTime(vLog) // XLayer
+
 	var gExitRoot GlobalExitRoot
 	gExitRoot.ExitRoots = make([]common.Hash, 0)
 	gExitRoot.ExitRoots = append(gExitRoot.ExitRoots, mainnetExitRoot)
 	gExitRoot.ExitRoots = append(gExitRoot.ExitRoots, rollupExitRoot)
 	gExitRoot.GlobalExitRoot = hash(mainnetExitRoot, rollupExitRoot)
 	gExitRoot.BlockNumber = vLog.BlockNumber
+	gExitRoot.Time = fullBlockTime // XLayer
 
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
 		var block = Block{
 			BlockNumber: vLog.BlockNumber,
 			BlockHash:   vLog.BlockHash,
+			ReceivedAt:  fullBlockTime, // XLayer
 		}
 		block.GlobalExitRoots = append(block.GlobalExitRoots, gExitRoot)
 		*blocks = append(*blocks, block)
@@ -634,14 +638,19 @@ func (etherMan *Client) depositEvent(vLog types.Log, blocks *[]Block, blocksOrde
 	deposit.Metadata = d.Metadata
 	deposit.LeafType = d.LeafType
 
+	log.Debugf("Deposit event[%+v] blockNumber[%v]", deposit, vLog.BlockNumber) // XLayer
+
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
 		var block = Block{
 			BlockNumber: vLog.BlockNumber,
 			BlockHash:   vLog.BlockHash,
+			ReceivedAt:  etherMan.getFullBlockTime(vLog), // XLayer
 		}
 		block.Deposits = append(block.Deposits, deposit)
+		deposit.Time = block.ReceivedAt // XLayer
 		*blocks = append(*blocks, block)
 	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
+		deposit.Time = (*blocks)[len(*blocks)-1].ReceivedAt // XLayer
 		(*blocks)[len(*blocks)-1].Deposits = append((*blocks)[len(*blocks)-1].Deposits, deposit)
 	} else {
 		etherMan.logger.Error("Error processing deposit event. BlockHash:", vLog.BlockHash, ". BlockNumber: ", vLog.BlockNumber)
@@ -689,14 +698,19 @@ func (etherMan *Client) claimEvent(vLog types.Log, blocks *[]Block, blocksOrder 
 	claim.RollupIndex = rollupIndex
 	claim.MainnetFlag = mainnetFlag
 
+	log.Debugf("Claim event[%+v] blockNumber[%v]", claim, vLog.BlockNumber) // XLayer
+
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
 		var block = Block{
 			BlockNumber: vLog.BlockNumber,
 			BlockHash:   vLog.BlockHash,
+			ReceivedAt:  etherMan.getFullBlockTime(vLog), // XLayer
 		}
 		block.Claims = append(block.Claims, claim)
+		claim.Time = block.ReceivedAt // XLayer
 		*blocks = append(*blocks, block)
 	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
+		claim.Time = (*blocks)[len(*blocks)-1].ReceivedAt // XLayer
 		(*blocks)[len(*blocks)-1].Claims = append((*blocks)[len(*blocks)-1].Claims, claim)
 	} else {
 		etherMan.logger.Error("Error processing claim event. BlockHash:", vLog.BlockHash, ". BlockNumber: ", vLog.BlockNumber)
@@ -726,6 +740,7 @@ func (etherMan *Client) tokenWrappedEvent(vLog types.Log, blocks *[]Block, block
 		var block = Block{
 			BlockNumber: vLog.BlockNumber,
 			BlockHash:   vLog.BlockHash,
+			ReceivedAt:  etherMan.getFullBlockTime(vLog), // XLayer
 		}
 		block.Tokens = append(block.Tokens, tokenWrapped)
 		*blocks = append(*blocks, block)
@@ -798,6 +813,7 @@ func (etherMan *Client) verifyBatches(vLog types.Log, blocks *[]Block, blocksOrd
 		var block = Block{
 			BlockNumber: vLog.BlockNumber,
 			BlockHash:   vLog.BlockHash,
+			ReceivedAt:  etherMan.getFullBlockTime(vLog), // XLayer
 		}
 		block.VerifiedBatches = append(block.VerifiedBatches, verifyBatch)
 		*blocks = append(*blocks, block)

@@ -39,6 +39,12 @@ type storageInterface interface {
 	GetL2ExitRootsByGER(ctx context.Context, ger common.Hash, dbTx pgx.Tx) ([]etherman.GlobalExitRoot, error)
 	UpdateL2GER(ctx context.Context, ger etherman.GlobalExitRoot, dbTx pgx.Tx) error
 	AddRemoveL2GER(ctx context.Context, globalExitRoot etherman.GlobalExitRoot, dbTx pgx.Tx) error
+
+	// XLayer
+	GetDeposit(ctx context.Context, depositCounterUser uint32, networkID uint32, dbTx pgx.Tx) (*etherman.Deposit, error)
+	AddDepositXLayer(ctx context.Context, deposit *etherman.Deposit, dbTx pgx.Tx) (uint64, error)
+	GetBridgeBalance(ctx context.Context, originalTokenAddr common.Address, networkID uint, forUpdate bool, dbTx pgx.Tx) (*big.Int, error)
+	SetBridgeBalance(ctx context.Context, originalTokenAddr common.Address, networkID uint, balance *big.Int, dbTx pgx.Tx) error
 }
 
 type bridgectrlInterface interface {

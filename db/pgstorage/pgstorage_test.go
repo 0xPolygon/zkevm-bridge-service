@@ -15,11 +15,11 @@ import (
 
 func TestGetLeaves(t *testing.T) {
 	data := `INSERT INTO sync.block
-	(id, block_num, block_hash, network_id)
-	VALUES(1, 1, decode('5C7831','hex'), 0);
+	(id, block_num, block_hash, network_id, received_at)
+	VALUES(1, 1, decode('5C7831','hex'), 0, '1970-01-01 01:00:00.000');
 	INSERT INTO sync.block
-	(id, block_num, block_hash, network_id)
-	VALUES(2, 2, decode('5C7832','hex'), 0);
+	(id, block_num, block_hash, network_id, received_at)
+	VALUES(2, 2, decode('5C7832','hex'), 0, '1970-01-01 01:00:00.000');
 	
 	INSERT INTO mt.rollup_exit
 	(leaf, rollup_id, root, block_id)

@@ -72,6 +72,101 @@ service BridgeService {
             get: "/v2/merkle-proof"
         };
     }
+
+    /*
+     * ---------- XLayer endpoints ----------
+     */
+
+    /// Get the latest price of the specified coins
+    rpc GetCoinPrice(GetCoinPriceRequest) returns (CommonCoinPricesResponse) {
+        option (google.api.http) = {
+            post: "/coin-price",
+            body: "*",
+        };
+    }
+
+    /// Get the list of all the main coins of a specified network
+    rpc GetMainCoins(GetMainCoinsRequest) returns (CommonCoinsResponse) {
+        option (google.api.http) = {
+            get: "/main-coins/{networkId}",
+        };
+    }
+
+    /// Get the pending (not claimed) transactions of an account
+    rpc GetPendingTransactions(GetPendingTransactionsRequest) returns (CommonTransactionsResponse) {
+        option (google.api.http) = {
+            get: "/pending/{destAddr}",
+        };
+    }
+
+    /// Get all the transactions of an account. Similar to GetBridges but the field names are changed
+    rpc GetAllTransactions(GetAllTransactionsRequest) returns (CommonTransactionsResponse) {
+        option (google.api.http) = {
+            get: "/all/{destAddr}",
+        };
+    }
+
+    rpc GetSmtProof(GetSmtProofRequest) returns (CommonProofResponse) {
+        option (google.api.http) = {
+            get: "/smt-proof",
+        };
+    }
+
+    /// Get all transactions with ready_for_claim = false
+    rpc GetNotReadyTransactions(GetNotReadyTransactionsRequest) returns (CommonTransactionsResponse) {
+        option (google.api.http) = {
+            get: "/not-ready",
+        };
+    }
+
+    /// Get list of monitored transactions, filtered by status
+    rpc GetMonitoredTxsByStatus(GetMonitoredTxsByStatusRequest) returns (CommonMonitoredTxsResponse) {
+        option (google.api.http) = {
+            get: "/monitored-txs/status/{status}",
+        };
+    }
+
+    /// Return the estimated deposit wait time for L1 and L2
+    rpc GetEstimateTime(GetEstimateTimeRequest) returns (CommonEstimateTimeResponse) {
+        option (google.api.http) = {
+            get: "/estimate-time",
+        };
+    }
+
+    rpc ManualClaim(ManualClaimRequest) returns (CommonManualClaimResponse) {
+        option (google.api.http) = {
+            post: "/manual-claim",
+            body: "*",
+        };
+    }
+
+    /// Returns all transactions from a network that are ready_for_claim but not claimed
+    rpc GetReadyPendingTransactions(GetReadyPendingTransactionsRequest) returns (CommonTransactionsResponse) {
+        option (google.api.http) = {
+            get: "/ready-pending/{networkId}",
+        };
+    }
+
+    /// Return the messages from the fake producer, only for testing when UseFakeProducer is enabled
+    /// Return at most 100 latest messages, there's no offset management so client should handle duplications
+    rpc GetFakePushMessages(GetFakePushMessagesRequest) returns (GetFakePushMessagesResponse) {
+        option (google.api.http) = {
+            get: "/fake-push-messages/{topic}",
+        };
+    }
+
+    /// Return large transaction infos
+    rpc GetLargeTransactionInfos(LargeTxsRequest) returns (LargeTxsResponse) {
+        option (google.api.http) = {
+            get: "/large-transactions",
+        };
+    }
+
+    rpc GetWstEthTokenNotWithdrawn(GetWstEthTokenNotWithdrawnRequest) returns (GetWstEthTokenNotWithdrawnResponse) {
+        option (google.api.http) = {
+            get: "/wsteth/token-not-withdrawn",
+        };
+    }
 }
 
 // TokenWrapped message
@@ -201,4 +296,286 @@ message GetBridgeResponse {
 message GetClaimsResponse {
     repeated Claim claims = 1;
     uint64 total_cnt = 2;
+}
+
+/*
+ * ---------- XLayer protos ----------
+ */
+
+enum TransactionStatus {
+    TX_CREATED = 0;
+    TX_PENDING_USER_CLAIM = 1;
+    TX_CLAIMED = 2;
+    TX_PENDING_AUTO_CLAIM = 3; // Only for L1->L2
+    TX_PENDING_VERIFICATION = 4; // Only for L2->L1
+}
+
+enum ErrorCode {
+    ERROR_OK = 0;
+    // Start from 1000 so that it will not conflict with gRPC error code range
+    ERROR_DEFAULT = 1000;
+    ERROR_BUSINESS = 1001; // General business error
+    ERROR_IP_RESTRICTED = 1009;
+}
+
+// Symbol info message
+message SymbolInfo {
+    uint64 chainId = 1;
+    string address = 2;
+}
+
+message SymbolPrice {
+    string symbol = 1;
+    double price = 2;
+    uint64 time = 3;
+    string address = 4;
+    uint64 chainId = 5;
+}
+
+// Coin info message
+message CoinInfo {
+    string symbol = 1;
+    string name = 2;
+    uint64 decimals = 3;
+    uint64 chainId = 4;
+    uint32 networkId = 5;
+    string logoLink = 6;
+    string address = 7;
+}
+
+// Transaction message
+message Transaction {
+    uint32 fromChain = 1; // 0:L1, 1:L2
+    uint32 toChain = 2; // 0:L1, 1:L2
+    string bridgeToken = 3;
+    string tokenAmount = 4;
+    uint32 estimateTime = 5;
+    uint32 status = 6; // Enum: TransactionStatus
+    uint64 time = 7; // Deposit's block time
+    string txHash = 8; // Deposit tx hash
+    string claimTxHash = 9;
+    uint64 claimTime = 10; // Claim's block time
+    uint32 fromChainId = 11;
+    uint32 toChainId = 12;
+    uint64 id = 13;
+    uint64 index = 14;
+    string metadata = 15;
+    string destAddr = 16;
+    uint32 leafType = 17;
+    uint64 blockNumber = 18;
+    string globalIndex = 19;
+    string destContractAddr = 20;
+    TokenLogoInfo logoInfo = 21;
+    uint32 originalNetwork = 22;
+}
+
+message TokenLogoInfo {
+    string symbol = 1;
+    string tokenName = 2;
+    string logoOssUrl = 3;
+    uint32 decimal = 4;
+}
+
+// Monitored tx
+message MonitoredTx {
+    uint64 id = 1;
+    string from = 2; // Sender address of the tx
+    string to = 3; // Receiver address of the tx
+    uint64 nonce = 4; // Nonce used to create the tx
+    string value = 5; // Transaction value
+    string data = 6; // Transaction data
+    uint64 gas = 7;
+    string gasPrice = 8;
+    string status = 9; // created/confirmed/failed
+    uint64 blockId = 10;
+    repeated string history = 11; // List of all transaction hashes created from this tx and sent to the network. The order of transactions is NOT guaranteed.
+    uint64 createdAt = 12; // Unix timestamp ms
+    uint64 updatedAt = 13; // Unix timestamp ms
+}
+
+message GetCoinPriceRequest {
+    repeated SymbolInfo symbolInfos = 1;
+}
+
+message CommonCoinPricesResponse {
+    uint32 code = 1;
+    string msg = 2;
+    string error_code = 3;
+    string error_message = 4;
+    string detailMsg = 5;
+    repeated SymbolPrice data = 6;
+}
+
+message GetMainCoinsRequest {
+    uint32 networkId = 1;
+}
+
+message CommonCoinsResponse {
+    uint32 code = 1;
+    string msg = 2;
+    string error_code = 3;
+    string error_message = 4;
+    string detailMsg = 5;
+    repeated CoinInfo data = 6;
+}
+
+message GetPendingTransactionsRequest {
+    string destAddr = 1;
+    uint64 offset = 2;
+    uint32 limit = 3;
+}
+message CommonTransactionsResponse {
+    uint32 code = 1;
+    string msg = 2;
+    string error_code = 3;
+    string error_message = 4;
+    string detailMsg = 5;
+    TransactionDetail data = 6;
+}
+
+message TransactionDetail {
+    bool hasNext = 1;
+    repeated Transaction transactions = 2;
+}
+
+message GetAllTransactionsRequest {
+    string destAddr = 1;
+    uint64 offset = 2;
+    uint32 limit = 3;
+}
+
+message GetSmtProofRequest {
+    uint64 index = 1;
+    uint32 fromChain = 2;
+}
+
+message CommonProofResponse {
+    uint32 code = 1;
+    string msg = 2;
+    string error_code = 3;
+    string error_message = 4;
+    string detailMsg = 5;
+    ProofDetail data = 6;
+}
+
+message ProofDetail {
+    repeated string smtProof = 1;
+    repeated string rollupSmtProof = 2;
+    string mainnetExitRoot = 3;
+    string rollupExitRoot = 4;
+}
+
+message GetNotReadyTransactionsRequest {
+    uint64 offset = 1;
+    uint32 limit = 2;
+}
+
+message GetMonitoredTxsByStatusRequest {
+    string status = 1; // created/failed/confirmed
+    uint64 offset = 2;
+    uint32 limit = 3;
+}
+
+message CommonMonitoredTxsResponse {
+    uint32 code = 1;
+    string msg = 2;
+    string error_code = 3;
+    string error_message = 4;
+    string detailMsg = 5;
+    MonitoredTxsDetail data = 6;
+}
+
+message MonitoredTxsDetail {
+    bool hasNext = 1;
+    repeated MonitoredTx transactions = 2;
+}
+
+message GetEstimateTimeRequest {}
+
+message CommonEstimateTimeResponse {
+    uint32 code = 1;
+    string msg = 2;
+    string error_code = 3;
+    string error_message = 4;
+    string detailMsg = 5;
+    repeated uint32 data = 6; // Has 2 numbers which are the estimate time of L1 and L2
+}
+
+message ManualClaimRequest {
+    uint32 fromChain = 1; // L1: 0; L2: 1
+    string destAddr = 2;
+    string depositTxHash = 3;
+}
+
+message ManualClaimResponse {
+    string claimTxHash = 1; // Claim tx hash
+}
+
+message CommonManualClaimResponse {
+    uint32 code = 1;
+    string msg = 2;
+    string error_code = 3;
+    string error_message = 4;
+    string detailMsg = 5;
+    ManualClaimResponse data = 6;
+}
+
+message GetReadyPendingTransactionsRequest {
+    uint32 networkId = 1;
+    uint64 offset = 2;
+    uint32 limit = 3;
+}
+
+message GetFakePushMessagesRequest {
+    string topic = 1;
+}
+
+message GetFakePushMessagesResponse {
+    uint32 code = 1;
+    string msg = 2;
+    string error_code = 3;
+    string error_message = 4;
+    string detailMsg = 5;
+    repeated string data = 6;
+}
+
+message CommonResponse {
+    uint32 code = 1;
+    string msg = 2;
+    string error_code = 3;
+    string error_message = 4;
+    string detailMsg = 5;
+}
+
+message LargeTxInfo {
+    uint64 chainId = 1;
+    string symbol = 2;
+    double amount = 3;
+    double usdAmount = 4;
+    string hash = 5;
+    string address = 6;
+}
+
+message LargeTxsRequest {
+    uint32 networkId = 1;
+}
+
+message LargeTxsResponse {
+    uint32 code = 1;
+    string msg = 2;
+    string error_code = 3;
+    string error_message = 4;
+    string detailMsg = 5;
+    repeated LargeTxInfo data = 6;
+}
+
+message GetWstEthTokenNotWithdrawnRequest {}
+
+message GetWstEthTokenNotWithdrawnResponse {
+    uint32 code = 1;
+    string msg = 2;
+    string error_code = 3;
+    string error_message = 4;
+    string detailMsg = 5;
+    repeated string data = 6; // Big integer
 }

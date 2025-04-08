@@ -1,0 +1,97 @@
+# NOTE: For e2e test
+[Log]
+Level = "info"
+Outputs = ["stdout"]
+
+[Etherman]
+L1URL = "http://zkevm-mock-l1-network:8545"
+L2URLs = ["http://zkevm-node:8123"]
+
+[ClaimTxManager]
+Enabled = true
+FreeGas = false # Must disable otherwise tests will fail
+FrequencyToMonitorTxs = "1s"
+PrivateKey = {Path = "/pk/keystore.claimtxmanager", Password = "testonly"}
+RetryInterval = "1s"
+RetryNumber = 10
+OptClaim = true
+AuthorizedClaimMessageAddresses = ["0x90F79bf6EB2c4f870365E785982E1f101E93b906"]
+AreClaimsBetweenL2sEnabled = false
+[ClaimTxManager.GroupingClaims]
+    Enabled = false
+    TriggerNumberOfClaims = 20
+    MaxNumberOfClaimsPerGroup = 25
+    TriggerRetainedClaimPeriod = "1m"
+    MaxRetries = 2
+    RetryInterval = "10s"
+    RetryTimeout = "30s"
+    FrequencyToProcessCompressedClaims = "1m"
+    GasOffset = 100000
+
+[SyncDB]
+Database = "postgres"
+User = "test_user"
+Password = "test_password"
+Name = "test_db"
+Host = "zkevm-bridge-db"
+Port = "5432"
+MaxConns = 20
+
+[Synchronizer]
+SyncInterval = "3s"
+SyncChunkSize = 100
+ForceL2SyncChunk = true
+
+[BridgeController]
+Store = "postgres"
+Height = 32
+
+[BridgeServer]
+GRPCPort = "9090"
+HTTPPort = "8080"
+CacheSize = 100000
+DefaultPageLimit = 25
+MaxPageLimit = 100
+SentinelConfigFilePath = "/app/sentinel_config.json" # XLayer
+    [BridgeServer.DB]
+    Database = "postgres"
+    User = "test_user"
+    Password = "test_password"
+    Name = "test_db"
+    Host = "zkevm-bridge-db"
+    Port = "5432"
+    MaxConns = 20
+    [BridgeServer.Redis] # XLayer
+    IsClusterMode = false
+    Addrs = ["xlayer-bridge-redis:6379"]
+    Username = ""
+    Password = ""
+    DB = 0
+    MockPrice = true
+
+[NetworkConfig]
+GenBlockNumber = 0
+PolygonBridgeAddress = "0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E"
+PolygonZkEVMGlobalExitRootAddress = "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
+PolygonRollupManagerAddress = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
+L2ClaimCompressorAddress = "0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6"
+L2PolygonBridgeAddresses = ["0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E"]
+RequireSovereignChainSmcs = [false]
+L2PolygonZkEVMGlobalExitRootAddresses = ["0xa40d5f56745a118d0906a34e69aec8c0db1cb8fa"]
+
+[BusinessConfig]
+StandardChainIds = [195]
+InnerChainIds = [19500]
+
+[MessagePushProducer] # This is not fake kafka!
+Enabled = true
+Brokers = ["xlayer-bridge-coin-kafka:9092"]
+Topic = "explorer_chainAddressPrice_push"
+
+[CoinKafkaConsumer]
+Brokers = ["xlayer-bridge-coin-kafka:9092"]
+Topics = ["explorer_chainAddressPrice_push"]
+ConsumerGroupID = "xlayer-bridge-service"
+InitialOffset = -1
+Username = ""
+Password = ""

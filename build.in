@@ -1,0 +1,21 @@
+go env -w GONOPROXY=gitlab.okg.com && GOPROXY=goproxy.okg.com && go env -w GOPRIVATE=gitlab.okg.com && git config --global url."https://gitlab-ci-token:${CI_JOB_TOKEN}@gitlab.okg.com/".insteadOf https://gitlab.okg.com/
+
+go mod edit -dropreplace=gitlab.okg.com/okcoin-commons/ok-kms-go-client
+
+echo "------"
+cat go.mod
+echo "------"
+
+go mod tidy && go mod download && go mod verify
+
+echo "finish replace..."
+
+go install github.com/gobuffalo/packr/v2/packr2@latest
+
+cd db && packr2
+
+cd ..
+# BUILD BINARY
+make -f ./Makefile.in build
+
+echo "finish build..."

@@ -88,13 +88,15 @@ func (p *PostgresStorage) GetLastBlock(ctx context.Context, networkID uint32, db
 func (p *PostgresStorage) AddBlock(ctx context.Context, block *etherman.Block, dbTx pgx.Tx) (uint64, error) {
 	var blockID uint64
 	const addBlockSQL = `WITH block_id AS 
-		(INSERT INTO sync.block (block_num, block_hash, network_id) 
-		VALUES ($1, $2, $3) ON CONFLICT (block_hash) DO NOTHING RETURNING id)
+		(INSERT INTO sync.block (block_num, block_hash, network_id, received_at) 
+		VALUES ($1, $2, $3, $4) ON CONFLICT (block_hash) DO NOTHING RETURNING id)
 		SELECT * from block_id
 		UNION ALL
 		SELECT id FROM sync.block WHERE block_hash = $2;`
 	e := p.getExecQuerier(dbTx)
-	err := e.QueryRow(ctx, addBlockSQL, block.BlockNumber, block.BlockHash, block.NetworkID).Scan(&blockID)
+	err := e.QueryRow(ctx, addBlockSQL, block.BlockNumber, block.BlockHash, block.NetworkID,
+		block.ReceivedAt, // XLayer
+	).Scan(&blockID)
 
 	if err == pgx.ErrNoRows {
 		err = nil

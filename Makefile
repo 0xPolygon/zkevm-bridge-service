@@ -1,6 +1,7 @@
 include version.mk
+include Makefile.xlayer
 
-DOCKER_COMPOSE := docker compose -f docker-compose.yml
+DOCKER_COMPOSE := docker compose -f docker-compose.yml -f docker-compose.xlayer.yml
 DOCKER_COMPOSE_STATE_DB := zkevm-state-db
 DOCKER_COMPOSE_POOL_DB := zkevm-pool-db
 DOCKER_COMPOSE_BRIDGE_DB := zkevm-bridge-db
@@ -19,7 +20,7 @@ DOCKER_COMPOSE_ZKPROVER := zkevm-prover
 DOCKER_COMPOSE_ZKPROVER_V1TOV2 := zkevm-prover-v1tov2
 DOCKER_COMPOSE_ZKPROVER_1 := zkevm-prover-1
 DOCKER_COMPOSE_ZKPROVER_2 := zkevm-prover-2
-DOCKER_COMPOSE_BRIDGE := zkevm-bridge-service
+DOCKER_COMPOSE_BRIDGE := ${DC_BRIDGE}
 DOCKER_COMPOSE_BRIDGE_V1TOV2 := zkevm-bridge-service-v1tov2
 DOCKER_COMPOSE_BRIDGE_1 := zkevm-bridge-service-1
 DOCKER_COMPOSE_BRIDGE_2 := zkevm-bridge-service-2

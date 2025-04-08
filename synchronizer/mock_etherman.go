@@ -28,7 +28,7 @@ func (_m *ethermanMock) EXPECT() *ethermanMock_Expecter {
 	return &ethermanMock_Expecter{mock: &_m.Mock}
 }
 
-// GetNetworkID provides a mock function with given fields:
+// GetNetworkID provides a mock function with no fields
 func (_m *ethermanMock) GetNetworkID() uint32 {
 	ret := _m.Called()
 

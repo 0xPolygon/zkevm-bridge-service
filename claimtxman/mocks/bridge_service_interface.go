@@ -27,6 +27,84 @@ func (_m *bridgeServiceInterface) EXPECT() *bridgeServiceInterface_Expecter {
 	return &bridgeServiceInterface_Expecter{mock: &_m.Mock}
 }
 
+// GetClaimProof provides a mock function with given fields: depositCnt, networkID, dbTx
+func (_m *bridgeServiceInterface) GetClaimProof(depositCnt uint32, networkID uint32, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][32]byte, [][32]byte, error) {
+	ret := _m.Called(depositCnt, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetClaimProof")
+	}
+
+	var r0 *etherman.GlobalExitRoot
+	var r1 [][32]byte
+	var r2 [][32]byte
+	var r3 error
+	if rf, ok := ret.Get(0).(func(uint32, uint32, pgx.Tx) (*etherman.GlobalExitRoot, [][32]byte, [][32]byte, error)); ok {
+		return rf(depositCnt, networkID, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(uint32, uint32, pgx.Tx) *etherman.GlobalExitRoot); ok {
+		r0 = rf(depositCnt, networkID, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*etherman.GlobalExitRoot)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(uint32, uint32, pgx.Tx) [][32]byte); ok {
+		r1 = rf(depositCnt, networkID, dbTx)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).([][32]byte)
+		}
+	}
+
+	if rf, ok := ret.Get(2).(func(uint32, uint32, pgx.Tx) [][32]byte); ok {
+		r2 = rf(depositCnt, networkID, dbTx)
+	} else {
+		if ret.Get(2) != nil {
+			r2 = ret.Get(2).([][32]byte)
+		}
+	}
+
+	if rf, ok := ret.Get(3).(func(uint32, uint32, pgx.Tx) error); ok {
+		r3 = rf(depositCnt, networkID, dbTx)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
+}
+
+// bridgeServiceInterface_GetClaimProof_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetClaimProof'
+type bridgeServiceInterface_GetClaimProof_Call struct {
+	*mock.Call
+}
+
+// GetClaimProof is a helper method to define mock.On call
+//   - depositCnt uint32
+//   - networkID uint32
+//   - dbTx pgx.Tx
+func (_e *bridgeServiceInterface_Expecter) GetClaimProof(depositCnt interface{}, networkID interface{}, dbTx interface{}) *bridgeServiceInterface_GetClaimProof_Call {
+	return &bridgeServiceInterface_GetClaimProof_Call{Call: _e.mock.On("GetClaimProof", depositCnt, networkID, dbTx)}
+}
+
+func (_c *bridgeServiceInterface_GetClaimProof_Call) Run(run func(depositCnt uint32, networkID uint32, dbTx pgx.Tx)) *bridgeServiceInterface_GetClaimProof_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(uint32), args[1].(uint32), args[2].(pgx.Tx))
+	})
+	return _c
+}
+
+func (_c *bridgeServiceInterface_GetClaimProof_Call) Return(_a0 *etherman.GlobalExitRoot, _a1 [][32]byte, _a2 [][32]byte, _a3 error) *bridgeServiceInterface_GetClaimProof_Call {
+	_c.Call.Return(_a0, _a1, _a2, _a3)
+	return _c
+}
+
+func (_c *bridgeServiceInterface_GetClaimProof_Call) RunAndReturn(run func(uint32, uint32, pgx.Tx) (*etherman.GlobalExitRoot, [][32]byte, [][32]byte, error)) *bridgeServiceInterface_GetClaimProof_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetClaimProofForCompressed provides a mock function with given fields: ger, depositCnt, networkID, dbTx
 func (_m *bridgeServiceInterface) GetClaimProofForCompressed(ger common.Hash, depositCnt uint32, networkID uint32, dbTx pgx.Tx) (*etherman.GlobalExitRoot, [][32]byte, [][32]byte, error) {
 	ret := _m.Called(ger, depositCnt, networkID, dbTx)
