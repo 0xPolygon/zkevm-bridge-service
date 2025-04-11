@@ -22,17 +22,17 @@ func (_m *bridgectrlMock) EXPECT() *bridgectrlMock_Expecter {
 	return &bridgectrlMock_Expecter{mock: &_m.Mock}
 }
 
-// AddDeposit provides a mock function with given fields: ctx, deposit, depositID, dbTx
-func (_m *bridgectrlMock) AddDeposit(ctx context.Context, deposit *etherman.Deposit, depositID uint64, dbTx interface{}) error {
-	ret := _m.Called(ctx, deposit, depositID, dbTx)
+// AddDeposit provides a mock function with given fields: ctx, deposit, dbTx
+func (_m *bridgectrlMock) AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx interface{}) error {
+	ret := _m.Called(ctx, deposit, dbTx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AddDeposit")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *etherman.Deposit, uint64, interface{}) error); ok {
-		r0 = rf(ctx, deposit, depositID, dbTx)
+	if rf, ok := ret.Get(0).(func(context.Context, *etherman.Deposit, interface{}) error); ok {
+		r0 = rf(ctx, deposit, dbTx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -48,15 +48,14 @@ type bridgectrlMock_AddDeposit_Call struct {
 // AddDeposit is a helper method to define mock.On call
 //   - ctx context.Context
 //   - deposit *etherman.Deposit
-//   - depositID uint64
 //   - dbTx interface{}
-func (_e *bridgectrlMock_Expecter) AddDeposit(ctx interface{}, deposit interface{}, depositID interface{}, dbTx interface{}) *bridgectrlMock_AddDeposit_Call {
-	return &bridgectrlMock_AddDeposit_Call{Call: _e.mock.On("AddDeposit", ctx, deposit, depositID, dbTx)}
+func (_e *bridgectrlMock_Expecter) AddDeposit(ctx interface{}, deposit interface{}, dbTx interface{}) *bridgectrlMock_AddDeposit_Call {
+	return &bridgectrlMock_AddDeposit_Call{Call: _e.mock.On("AddDeposit", ctx, deposit, dbTx)}
 }
 
-func (_c *bridgectrlMock_AddDeposit_Call) Run(run func(ctx context.Context, deposit *etherman.Deposit, depositID uint64, dbTx interface{})) *bridgectrlMock_AddDeposit_Call {
+func (_c *bridgectrlMock_AddDeposit_Call) Run(run func(ctx context.Context, deposit *etherman.Deposit, dbTx interface{})) *bridgectrlMock_AddDeposit_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*etherman.Deposit), args[2].(uint64), args[3].(interface{}))
+		run(args[0].(context.Context), args[1].(*etherman.Deposit), args[2].(interface{}))
 	})
 	return _c
 }
@@ -66,7 +65,7 @@ func (_c *bridgectrlMock_AddDeposit_Call) Return(_a0 error) *bridgectrlMock_AddD
 	return _c
 }
 
-func (_c *bridgectrlMock_AddDeposit_Call) RunAndReturn(run func(context.Context, *etherman.Deposit, uint64, interface{}) error) *bridgectrlMock_AddDeposit_Call {
+func (_c *bridgectrlMock_AddDeposit_Call) RunAndReturn(run func(context.Context, *etherman.Deposit, interface{}) error) *bridgectrlMock_AddDeposit_Call {
 	_c.Call.Return(run)
 	return _c
 }

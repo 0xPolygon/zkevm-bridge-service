@@ -765,7 +765,7 @@ func (s *ClientSynchronizer) processDeposit(deposit etherman.Deposit, blockID ui
 		return s.rollback(deposit.BlockNumber, err, dbTx)
 	}
 	deposit.Id = depositID
-	err = s.bridgeCtrl.AddDeposit(s.ctx, &deposit, depositID, dbTx)
+	err = s.bridgeCtrl.AddDeposit(s.ctx, &deposit, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, failed to store new deposit in the bridge tree, BlockNumber: %d, Deposit: %+v err: %v", s.networkID, deposit.BlockNumber, deposit, err)
 		return s.rollback(deposit.BlockNumber, err, dbTx)
