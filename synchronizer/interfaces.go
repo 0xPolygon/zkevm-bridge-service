@@ -41,8 +41,9 @@ type storageInterface interface {
 }
 
 type bridgectrlInterface interface {
-	AddDeposit(ctx context.Context, deposit *etherman.Deposit, depositID uint64, dbTx interface{}) error
+	AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx interface{}) error
 	ReorgMT(ctx context.Context, depositCount, networkID uint32, dbTx interface{}) error
+	RollbackMT(ctx context.Context, networkID uint32, dbTx interface{}) error
 	AddRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx interface{}) error
 }
 

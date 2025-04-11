@@ -78,7 +78,8 @@ func TestBridgeTree(t *testing.T) {
 			assert.Equal(t, testVector.ExpectedHash, hex.EncodeToString(leafHash[:]))
 			depositID, err := testStore.AddDeposit(ctx, deposit, nil)
 			require.NoError(t, err)
-			err = bt.AddDeposit(ctx, deposit, depositID, nil)
+			deposit.Id = depositID
+			err = bt.AddDeposit(ctx, deposit, nil)
 			require.NoError(t, err)
 
 			// test reorg
@@ -92,7 +93,8 @@ func TestBridgeTree(t *testing.T) {
 			deposit.BlockID = blockID
 			depositID, err = testStore.AddDeposit(ctx, deposit, nil)
 			require.NoError(t, err)
-			err = bt.AddDeposit(ctx, deposit, depositID, nil)
+			deposit.Id = depositID
+			err = bt.AddDeposit(ctx, deposit, nil)
 			require.NoError(t, err)
 			newRoot, err := bt.exitTrees[0].store.GetRoot(ctx, uint32(i), 0, nil) // nolint:gosec
 			require.NoError(t, err)
