@@ -163,6 +163,21 @@ func (mt *MerkleTree) resetLeaf(ctx context.Context, depositCount uint32, dbTx i
 	return err
 }
 
+func (mt *MerkleTree) rollbackMT(ctx context.Context, networkID uint32, dbTx interface{}) error {
+	depositCnt, err := mt.store.GetLastDepositCount(ctx, networkID, nil)
+	if err != nil {
+		if err != gerror.ErrStorageNotFound {
+			return err
+		}
+		depositCnt = 0
+	} else {
+		depositCnt++
+	}
+	mt.count = depositCnt
+	mt.siblings, err = mt.initSiblings(ctx, dbTx)
+	return err
+}
+
 // this function is used to get the current root of the merkle tree
 func (mt *MerkleTree) getRoot(ctx context.Context, dbTx interface{}) ([]byte, error) {
 	if mt.count == 0 {
