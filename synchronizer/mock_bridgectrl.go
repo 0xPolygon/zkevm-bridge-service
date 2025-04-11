@@ -168,6 +168,54 @@ func (_c *bridgectrlMock_ReorgMT_Call) RunAndReturn(run func(context.Context, ui
 	return _c
 }
 
+// RollbackMT provides a mock function with given fields: ctx, networkID, dbTx
+func (_m *bridgectrlMock) RollbackMT(ctx context.Context, networkID uint32, dbTx interface{}) error {
+	ret := _m.Called(ctx, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RollbackMT")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, interface{}) error); ok {
+		r0 = rf(ctx, networkID, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// bridgectrlMock_RollbackMT_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RollbackMT'
+type bridgectrlMock_RollbackMT_Call struct {
+	*mock.Call
+}
+
+// RollbackMT is a helper method to define mock.On call
+//   - ctx context.Context
+//   - networkID uint32
+//   - dbTx interface{}
+func (_e *bridgectrlMock_Expecter) RollbackMT(ctx interface{}, networkID interface{}, dbTx interface{}) *bridgectrlMock_RollbackMT_Call {
+	return &bridgectrlMock_RollbackMT_Call{Call: _e.mock.On("RollbackMT", ctx, networkID, dbTx)}
+}
+
+func (_c *bridgectrlMock_RollbackMT_Call) Run(run func(ctx context.Context, networkID uint32, dbTx interface{})) *bridgectrlMock_RollbackMT_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *bridgectrlMock_RollbackMT_Call) Return(_a0 error) *bridgectrlMock_RollbackMT_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *bridgectrlMock_RollbackMT_Call) RunAndReturn(run func(context.Context, uint32, interface{}) error) *bridgectrlMock_RollbackMT_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // newBridgectrlMock creates a new instance of bridgectrlMock. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func newBridgectrlMock(t interface {

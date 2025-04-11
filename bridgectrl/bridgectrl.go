@@ -76,6 +76,15 @@ func (bt *BridgeController) ReorgMT(ctx context.Context, depositCount uint32, ne
 	return bt.exitTrees[tID].resetLeaf(ctx, depositCount, dbTx)
 }
 
+// RollbackMT resets the specific merkle tree.
+func (bt *BridgeController) RollbackMT(ctx context.Context, networkID uint32, dbTx interface{}) error {
+	tID, err := bt.GetMerkleTreeID(networkID)
+	if err != nil {
+		return err
+	}
+	return bt.exitTrees[tID].rollbackMT(ctx, networkID, dbTx)
+}
+
 // GetExitRoot returns the dedicated merkle tree's root.
 // only use for the test purpose
 func (bt *BridgeController) GetExitRoot(ctx context.Context, tID uint8, dbTx interface{}) ([]byte, error) {
