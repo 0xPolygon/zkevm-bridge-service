@@ -21,7 +21,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/prometheus/client_golang v1.22.0
-	github.com/prometheus/client_model v0.6.1
+	github.com/prometheus/client_model v0.6.2
 	github.com/rubenv/sql-migrate v1.7.1
 	github.com/spf13/afero v1.14.0
 	github.com/spf13/viper v1.20.1
