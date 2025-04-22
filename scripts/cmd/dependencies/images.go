@@ -177,7 +177,7 @@ func (iu *imageUpdater) readLatestTag(imageName string) (string, error) {
 	items := strings.Split(r.Results[0].RepoDigests[0], "@")
 	const requiredItems = 2
 	if len(items) < requiredItems {
-		return "", fmt.Errorf("Returned image does not include digest %q", r.Results[0].RepoDigests[0])
+		return "", fmt.Errorf("returned image does not include digest %q", r.Results[0].RepoDigests[0])
 	}
 	log.Infof("Remote digest of %q is %q", imageName, items[1])
 	return items[1], nil

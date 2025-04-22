@@ -192,7 +192,7 @@ func buildIntermediate(leaves [][KeyLen]byte) ([][][]byte, [][32]byte) {
 		hashes [][KeyLen]byte
 	)
 	for i := 0; i < len(leaves); i += 2 {
-		var left, right int = i, i + 1
+		left, right := i, i + 1
 		hash := Hash(leaves[left], leaves[right])
 		nodes = append(nodes, [][]byte{hash[:], leaves[left][:], leaves[right][:]})
 		hashes = append(hashes, hash)
@@ -389,7 +389,7 @@ func ComputeSiblings(rollupIndex uint32, leaves [][KeyLen]byte, height uint8) ([
 			hashes [][KeyLen]byte
 		)
 		for i := 0; i < len(leaves); i += 2 {
-			var left, right int = i, i + 1
+			left, right := i, i + 1
 			hash := Hash(leaves[left], leaves[right])
 			nsi = append(nsi, [][]byte{hash[:], leaves[left][:], leaves[right][:]})
 			hashes = append(hashes, hash)

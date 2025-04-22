@@ -72,7 +72,7 @@ func (c *Client) GetSigner(ctx context.Context, accHexPrivateKey string) (*bind.
 	if err != nil {
 		return nil, err
 	}
-	chainID, err := c.Client.ChainID(ctx)
+	chainID, err := c.ChainID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +89,7 @@ func (c *Client) GetSignerFromKeystore(ctx context.Context, ks zkevmtypes.Keysto
 	if err != nil {
 		return nil, err
 	}
-	chainID, err := c.Client.ChainID(ctx)
+	chainID, err := c.ChainID(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (c *Client) GetKeyFromKeystore(ctx context.Context, ks zkevmtypes.KeystoreF
 	if err != nil {
 		return nil, nil, err
 	}
-	chainID, err := c.Client.ChainID(ctx)
+	chainID, err := c.ChainID(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -115,7 +115,7 @@ func (c *Client) GetKeyFromKeystore(ctx context.Context, ks zkevmtypes.KeystoreF
 
 // CheckTxWasMined check if a tx was already mined
 func (c *Client) CheckTxWasMined(ctx context.Context, txHash common.Hash) (bool, *types.Receipt, error) {
-	receipt, err := c.Client.TransactionReceipt(ctx, txHash)
+	receipt, err := c.TransactionReceipt(ctx, txHash)
 	if errors.Is(err, ethereum.NotFound) {
 		return false, nil, nil
 	} else if err != nil {
@@ -241,10 +241,11 @@ func (c *Client) BuildSendClaim(ctx context.Context, deposit *etherman.Deposit, 
 	}
 	localExitRootIndex := deposit.DepositCount
 	globalIndex := etherman.GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
-	if deposit.LeafType == LeafTypeAsset {
+	switch deposit.LeafType {
+    case LeafTypeAsset:
 		tx, err = c.Bridge.ClaimAsset(&opts, smtProof, smtRollupProof,
 			globalIndex, globalExitRoot.ExitRoots[0], globalExitRoot.ExitRoots[1], uint32(deposit.OriginalNetwork), deposit.OriginalAddress, uint32(deposit.DestinationNetwork), deposit.DestinationAddress, deposit.Amount, deposit.Metadata)
-	} else if deposit.LeafType == LeafTypeMessage {
+	case LeafTypeMessage:
 		tx, err = c.Bridge.ClaimMessage(&opts, smtProof, smtRollupProof, globalIndex, globalExitRoot.ExitRoots[0], globalExitRoot.ExitRoots[1], uint32(deposit.OriginalNetwork), deposit.OriginalAddress, uint32(deposit.DestinationNetwork), deposit.DestinationAddress, deposit.Amount, deposit.Metadata)
 	}
 	if err != nil {
