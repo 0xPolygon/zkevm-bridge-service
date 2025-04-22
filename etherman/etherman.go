@@ -106,7 +106,7 @@ var (
 	transferAdminRoleSignatureHash      = crypto.Keccak256Hash([]byte("TransferAdminRole(address)"))               // Used in oldZkEvm as well
 
 	// ErrNotFound is used when the object is not found
-	ErrNotFound = errors.New("Not found")
+	ErrNotFound = errors.New("not found")
 )
 
 // EventOrder is the the type used to identify the events order

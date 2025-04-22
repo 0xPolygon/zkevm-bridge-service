@@ -116,7 +116,7 @@ func deployClaimCompressor(ctx *cli.Context) error {
 	}
 	log.Debug("networkID: ", networkID)
 	log.Debug("auth.From: ", auth.From)
-	balance, err := c.Client.BalanceAt(ctx.Context, auth.From, nil)
+	balance, err := c.BalanceAt(ctx.Context, auth.From, nil)
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -150,7 +150,7 @@ func deploySovereignChainSMC(ctx *cli.Context) error {
 	}
 
 	log.Debug("auth.From: ", auth.From)
-	balance, err := c.Client.BalanceAt(ctx.Context, auth.From, nil)
+	balance, err := c.BalanceAt(ctx.Context, auth.From, nil)
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -237,7 +237,7 @@ func sendETH(ctx *cli.Context) error {
 
 	log.Debug("destAddress: ", destAddress)
 	destAddr := common.HexToAddress(destAddress)
-	balance, err := c.Client.BalanceAt(ctx.Context, destAddr, nil)
+	balance, err := c.BalanceAt(ctx.Context, destAddr, nil)
 	if err != nil {
 		log.Error("Error: ", err)
 		return err
@@ -245,14 +245,14 @@ func sendETH(ctx *cli.Context) error {
 	log.Debug("init balance: ", balance)
 
 	fromAddress := key.Address
-	nonce, err := c.Client.PendingNonceAt(ctx.Context, fromAddress)
+	nonce, err := c.PendingNonceAt(ctx.Context, fromAddress)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	value, _ := big.NewInt(0).SetString("20000000000000000000", 0) // in wei (20 eth)
 	gasLimit := uint64(21000)                                      //nolint:mnd
-	gasPrice, err := c.Client.SuggestGasPrice(ctx.Context)
+	gasPrice, err := c.SuggestGasPrice(ctx.Context)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -264,14 +264,14 @@ func sendETH(ctx *cli.Context) error {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = c.Client.SendTransaction(ctx.Context, signedTx)
+	err = c.SendTransaction(ctx.Context, signedTx)
 	if err != nil {
 		log.Fatal(err)
 	}
 	log.Infof("tx sent: %s", signedTx.Hash().Hex())
 
 	time.Sleep(3 * time.Second) //nolint:mnd
-	balance, err = c.Client.BalanceAt(ctx.Context, destAddr, nil)
+	balance, err = c.BalanceAt(ctx.Context, destAddr, nil)
 	if err != nil {
 		log.Error("Error: ", err)
 		return err

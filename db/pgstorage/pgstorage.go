@@ -69,7 +69,7 @@ func (p *PostgresStorage) Commit(ctx context.Context, dbTx interface{}) error {
 
 // BeginDBTransaction starts a transaction block.
 func (p *PostgresStorage) BeginDBTransaction(ctx context.Context) (interface{}, error) {
-	return p.Pool.Begin(ctx)
+	return p.Begin(ctx)
 }
 
 // GetLastBlock gets the last block.

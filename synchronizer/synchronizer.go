@@ -689,7 +689,7 @@ func (s *ClientSynchronizer) processVerifyBatch(verifyBatch etherman.VerifiedBat
 			} else {
 				log.Infof("NetworkID: %d, Root: %s doesn't found yet. Retrying...", s.networkID, verifyBatch.LocalExitRoot.String())
 			}
-			return s.rollback(verifyBatch.BlockNumber, fmt.Errorf("networkID: %d, Root: %s doesn't exist!", s.networkID, verifyBatch.LocalExitRoot.String()), dbTx)
+			return s.rollback(verifyBatch.BlockNumber, fmt.Errorf("networkID: %d, Root: %s doesn't exist! ", s.networkID, verifyBatch.LocalExitRoot.String()), dbTx)
 		}
 	}
 	rollupLeaf := etherman.RollupExitLeaf{

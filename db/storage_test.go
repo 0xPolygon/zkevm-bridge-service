@@ -399,9 +399,9 @@ func TestBSStorage(t *testing.T) {
 	wt, err := testStore.GetTokenWrapped(ctx, wrappedToken.OriginalNetwork, wrappedToken.OriginalTokenAddress, tx)
 	require.NoError(t, err)
 	require.Equal(t, wt.WrappedTokenAddress, wrappedToken.WrappedTokenAddress)
-	require.Equal(t, wt.TokenMetadata.Name, "CoinA")
-	require.Equal(t, wt.TokenMetadata.Symbol, "COA")
-	require.Equal(t, wt.TokenMetadata.Decimals, uint8(12))
+	require.Equal(t, wt.Name, "CoinA")
+	require.Equal(t, wt.Symbol, "COA")
+	require.Equal(t, wt.Decimals, uint8(12))
 
 	require.NoError(t, testStore.Commit(ctx, tx))
 }

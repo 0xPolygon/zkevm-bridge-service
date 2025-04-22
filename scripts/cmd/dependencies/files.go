@@ -20,7 +20,7 @@ func updateFiles(fs afero.Fs, sourceDir, targetDir string) error {
 		if info == nil || info.IsDir() {
 			return nil
 		}
-		relativePath := strings.Replace(wpath, targetDir, "", -1)
+		relativePath := strings.ReplaceAll(wpath, targetDir, "")
 		sourcePath := path.Join(sourceDir, relativePath)
 
 		sourceFile, err := fs.Open(sourcePath)
