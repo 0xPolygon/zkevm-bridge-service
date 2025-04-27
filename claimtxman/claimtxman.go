@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
-	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
@@ -69,7 +68,7 @@ func NewClaimTxManager(ctx context.Context, cfg Config, chExitRootEvent chan *et
 	}
 	ctx, cancel := context.WithCancel(ctx)
 
-	var monitorTx ctmtypes.TxMonitorer
+	var monitorTx types.TxMonitorer
 	if cfg.GroupingClaims.Enabled {
 		log.Info("ClaimTxManager working in compressor mode to group claim txs")
 		monitorTx = NewMonitorCompressedTxs(ctx, storage.(StorageCompressedInterface), client, cfg, nonceCache, auth, etherMan, utils.NewTimeProviderSystemLocalTime(), cfg.GroupingClaims.GasOffset, rollupID)
@@ -303,7 +302,7 @@ func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *
 	}
 	if err != nil {
 		var b string
-		block, err2 := tm.l2Node.Client.BlockByNumber(tm.ctx, nil)
+		block, err2 := tm.l2Node.BlockByNumber(tm.ctx, nil)
 		if err2 != nil {
 			log.Error("error getting blockNumber. Error: ", err2)
 			b = "latest"
@@ -331,10 +330,10 @@ func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *
 	}
 
 	// create monitored tx
-	mTx := ctmtypes.MonitoredTx{
+	mTx := types.MonitoredTx{
 		DepositID: depositID, From: from, To: to,
 		Nonce: nonce, Value: value, Data: data,
-		Gas: gas, Status: ctmtypes.MonitoredTxStatusCreated,
+		Gas: gas, Status: types.MonitoredTxStatusCreated,
 		GlobalExitRoot: ger,
 	}
 

@@ -140,7 +140,8 @@ func (bm *Client) SendClaim(leafType, origNet uint32,
 		tx  *types.Transaction
 		err error
 	)
-	if leafType == LeafTypeAsset {
+	switch leafType {
+    case LeafTypeAsset:
 		tx, err = bm.PolygonBridge.ClaimAsset(bm.auth, smtProof, smtRollupProof, globalIndex, mainnetExitRoot, rollupExitRoot, origNet, origAddr, destNet, destAddr, amount, metadata)
 		if err != nil {
 			a, _ := polygonzkevmbridgev2.Polygonzkevmbridgev2MetaData.GetAbi()
@@ -158,7 +159,7 @@ func (bm *Client) SendClaim(leafType, origNet uint32,
 				"id": 1
 			}'`, bm.auth.From, bm.cfg.PolygonBridgeAddress.String(), common.Bytes2Hex(input))
 		}
-	} else if leafType == LeafTypeMessage {
+	case LeafTypeMessage:
 		tx, err = bm.PolygonBridge.ClaimMessage(bm.auth, smtProof, smtRollupProof, globalIndex, mainnetExitRoot, rollupExitRoot, origNet, origAddr, destNet, destAddr, amount, metadata)
 	}
 	if err != nil {
@@ -174,10 +175,11 @@ func (bm *Client) EstimateGasClaim(metadata []byte, amount *big.Int, originalAdd
 		tx  *types.Transaction
 		err error
 	)
-	if leafType == LeafTypeAsset {
+	switch leafType {
+    case LeafTypeAsset:
 		tx, err = bm.PolygonBridge.ClaimAsset(&opts, smtProof, smtRollupProof,
 			globalIndex, mainnetExitRoot, rollupExitRoot, originalNetwork, originalAddress, destinationNetwork, destinationAddress, amount, metadata)
-	} else if leafType == LeafTypeMessage {
+	case LeafTypeMessage:
 		tx, err = bm.PolygonBridge.ClaimMessage(&opts, smtProof, smtRollupProof, globalIndex, mainnetExitRoot, rollupExitRoot, originalNetwork, originalAddress, destinationNetwork, destinationAddress, amount, metadata)
 	}
 	if err != nil {

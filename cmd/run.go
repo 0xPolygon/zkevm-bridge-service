@@ -109,10 +109,10 @@ func start(ctx *cli.Context) error {
 		chSyncedL2 := make(chan uint32)
 		chsExitRootEvent = append(chsExitRootEvent, chExitRootEventL2)
 		chsSyncedL2 = append(chsSyncedL2, chSyncedL2)
-		go runSynchronizer(ctx.Context, 0, bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint32{}, c.NetworkConfig.RequireSovereignChainSmcs[i])
+		go runSynchronizer(ctx.Context, 0, bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint32{}, c.RequireSovereignChainSmcs[i])
 	}
 	chSynced := make(chan uint32)
-	go runSynchronizer(ctx.Context, c.NetworkConfig.GenBlockNumber, bridgeController, l1Etherman, c.Synchronizer, storage, nil, nil, chsExitRootEvent, chSynced, networkIDs, false)
+	go runSynchronizer(ctx.Context, c.GenBlockNumber, bridgeController, l1Etherman, c.Synchronizer, storage, nil, nil, chsExitRootEvent, chSynced, networkIDs, false)
 	go func() {
 		for {
 			select {
@@ -132,7 +132,7 @@ func start(ctx *cli.Context) error {
 			// we should match the orders of L2URLs between etherman and claimtxman
 			// since we are using the networkIDs in the same order
 			ctx := context.Background()
-			client, err := utils.NewClient(ctx, c.Etherman.L2URLs[i], c.NetworkConfig.L2PolygonBridgeAddresses[i])
+			client, err := utils.NewClient(ctx, c.Etherman.L2URLs[i], c.L2PolygonBridgeAddresses[i])
 			if err != nil {
 				log.Fatalf("error creating client for L2 %s. Error: %v", c.Etherman.L2URLs[i], err)
 			}
@@ -146,7 +146,7 @@ func start(ctx *cli.Context) error {
 			}
 			rollupID := l2Ethermans[i].GetNetworkID() // RollupID == networkID
 			claimTxManager, err := claimtxman.NewClaimTxManager(ctx, c.ClaimTxManager, chsExitRootEvent[i], chsSyncedL2[i],
-				c.Etherman.L2URLs[i], networkIDs[i+1], c.NetworkConfig.L2PolygonBridgeAddresses[i], bridgeService, storage, rollupID, l2Ethermans[i], nonceCache, auth)
+				c.Etherman.L2URLs[i], networkIDs[i+1], c.L2PolygonBridgeAddresses[i], bridgeService, storage, rollupID, l2Ethermans[i], nonceCache, auth)
 			if err != nil {
 				log.Fatalf("error creating claim tx manager for L2 %s. Error: %v", c.Etherman.L2URLs[i], err)
 			}
@@ -230,9 +230,9 @@ func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalEx
 }
 func newEthermans(c *config.Config) (*etherman.Client, []*etherman.Client, error) {
 	l1Etherman, err := etherman.NewClient(c.Etherman,
-		c.NetworkConfig.PolygonBridgeAddress,
-		c.NetworkConfig.PolygonZkEVMGlobalExitRootAddress,
-		c.NetworkConfig.PolygonRollupManagerAddress)
+		c.PolygonBridgeAddress,
+		c.PolygonZkEVMGlobalExitRootAddress,
+		c.PolygonRollupManagerAddress)
 	if err != nil {
 		log.Error("L1 etherman error: ", err)
 		return nil, nil, err
@@ -242,7 +242,7 @@ func newEthermans(c *config.Config) (*etherman.Client, []*etherman.Client, error
 	}
 	var l2Ethermans []*etherman.Client
 	for i, addr := range c.L2PolygonBridgeAddresses {
-		l2Etherman, err := etherman.NewL2Client(c.Etherman.L2URLs[i], addr, c.NetworkConfig.L2ClaimCompressorAddress, c.NetworkConfig.L2PolygonZkEVMGlobalExitRootAddresses[i], c.NetworkConfig.RequireSovereignChainSmcs[i])
+		l2Etherman, err := etherman.NewL2Client(c.Etherman.L2URLs[i], addr, c.L2ClaimCompressorAddress, c.L2PolygonZkEVMGlobalExitRootAddresses[i], c.RequireSovereignChainSmcs[i])
 		if err != nil {
 			log.Error("L2 etherman array position: ", i, ". ", c.Etherman.L2URLs[i], ", error: ", err)
 			return l1Etherman, nil, err

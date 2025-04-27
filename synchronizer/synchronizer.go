@@ -456,13 +456,7 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 		blockID, err := s.storage.AddBlock(s.ctx, &blocks[i], dbTx)
 		if err != nil {
 			log.Errorf("networkID: %d, error storing block. BlockNumber: %d, error: %v", s.networkID, blocks[i].BlockNumber, err)
-			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-			if rollbackErr != nil {
-				log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, err: %s",
-					s.networkID, blocks[i].BlockNumber, rollbackErr, err.Error())
-				return rollbackErr
-			}
-			return err
+			return s.rollback(blocks[i].BlockNumber, err, dbTx)
 		}
 		for _, element := range order[blocks[i].BlockHash] {
 			switch element.Name {
@@ -534,13 +528,7 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 		if err != nil {
 			log.Errorf("networkID: %d, error committing state to store block. BlockNumber: %d, err: %v",
 				s.networkID, blocks[i].BlockNumber, err)
-			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-			if rollbackErr != nil {
-				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, err: %s",
-					s.networkID, blocks[i].BlockNumber, rollbackErr, err.Error())
-				return rollbackErr
-			}
-			return err
+			return s.rollback(blocks[i].BlockNumber, err, dbTx)
 		}
 	}
 	if isNewL1Ger {
@@ -582,47 +570,23 @@ func (s *ClientSynchronizer) resetState(blockNumber uint64) error {
 	err = s.storage.Reset(s.ctx, blockNumber, s.networkID, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error resetting the state. Error: %v", s.networkID, err)
-		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, error : %s",
-				s.networkID, blockNumber, rollbackErr, err.Error())
-			return rollbackErr
-		}
-		return err
+		return s.rollback(blockNumber, err, dbTx)
 	}
 	depositCnt, err := s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error getting GetNumberDeposits. Error: %v", s.networkID, err)
-		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, error : %s",
-				s.networkID, blockNumber, rollbackErr, err.Error())
-			return rollbackErr
-		}
-		return err
+		return s.rollback(blockNumber, err, dbTx)
 	}
 
 	err = s.bridgeCtrl.ReorgMT(s.ctx, depositCnt, s.networkID, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error resetting ReorgMT the state. Error: %v", s.networkID, err)
-		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, error : %s",
-				s.networkID, blockNumber, rollbackErr, err.Error())
-			return rollbackErr
-		}
-		return err
+		return s.rollback(blockNumber, err, dbTx)
 	}
 	err = s.storage.Commit(s.ctx, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error committing the resetted state. Error: %v", s.networkID, err)
-		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, error : %s",
-				s.networkID, blockNumber, rollbackErr, err.Error())
-			return rollbackErr
-		}
-		return err
+		return s.rollback(blockNumber, err, dbTx)
 	}
 
 	return nil
@@ -717,23 +681,15 @@ func (s *ClientSynchronizer) processVerifyBatch(verifyBatch etherman.VerifiedBat
 		ok, err := s.storage.CheckIfRootExists(s.ctx, verifyBatch.LocalExitRoot.Bytes(), verifyBatch.RollupID, dbTx)
 		if err != nil {
 			log.Errorf("networkID: %d, error Checking if root exists. Error: %v", s.networkID, err)
-			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-			if rollbackErr != nil {
-				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
-					s.networkID, verifyBatch.BlockNumber, rollbackErr, err.Error())
-				return rollbackErr
-			}
-			return err
+			return s.rollback(verifyBatch.BlockNumber, err, dbTx)
 		}
 		if !ok {
-			log.Errorf("networkID: %d, Root: %s doesn't exist!", s.networkID, verifyBatch.LocalExitRoot.String())
-			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-			if rollbackErr != nil {
-				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v",
-					s.networkID, verifyBatch.BlockNumber, rollbackErr)
-				return rollbackErr
+			if s.synced {
+				log.Errorf("networkID: %d, Root: %s doesn't exist!", s.networkID, verifyBatch.LocalExitRoot.String())
+			} else {
+				log.Infof("NetworkID: %d, Root: %s doesn't found yet. Retrying...", s.networkID, verifyBatch.LocalExitRoot.String())
 			}
-			return fmt.Errorf("networkID: %d, Root: %s doesn't exist!", s.networkID, verifyBatch.LocalExitRoot.String())
+			return s.rollback(verifyBatch.BlockNumber, fmt.Errorf("networkID: %d, Root: %s doesn't exist! ", s.networkID, verifyBatch.LocalExitRoot.String()), dbTx)
 		}
 	}
 	rollupLeaf := etherman.RollupExitLeaf{
@@ -745,13 +701,7 @@ func (s *ClientSynchronizer) processVerifyBatch(verifyBatch etherman.VerifiedBat
 	err := s.bridgeCtrl.AddRollupExitLeaf(s.ctx, rollupLeaf, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error adding rollup exit leaf. Error: %v", s.networkID, err)
-		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
-				s.networkID, verifyBatch.BlockNumber, rollbackErr, err.Error())
-			return rollbackErr
-		}
-		return err
+		return s.rollback(verifyBatch.BlockNumber, err, dbTx)
 	}
 	return nil
 }
@@ -761,44 +711,26 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 	globalExitRoot.BlockID = blockID
 	globalExitRoot.NetworkID = s.networkID
 	if len(globalExitRoot.ExitRoots) == 2 { //nolint:mnd
-		log.Debugf("networkID: %d, Storing L1 Ger: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
+		log.Debugf("NetworkID: %d, Storing L1 Ger: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
 		// Check if there is some globalExitRoot in L2. If so, it must be incompleted. It must be updated.
 		// A race condition between dbTxs (L1 dbTx and L2 dbTxs) is very unlikely because L1 sync takes usually takes more time than L2 sync.
 		gers, err := s.storage.GetL2ExitRootsByGER(s.ctx, globalExitRoot.GlobalExitRoot, nil)
 		if err != nil && !errors.Is(err, gerror.ErrStorageNotFound) {
 			log.Errorf("networkID: %d, error reading L2ExitRootsByGER in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
-			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-			if rollbackErr != nil {
-				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
-					s.networkID, globalExitRoot.BlockNumber, rollbackErr, err.Error())
-				return rollbackErr
-			}
-			return err
+			return s.rollback(globalExitRoot.BlockNumber, err, dbTx)
 		}
 		for _, ger := range gers {
 			ger.ExitRoots = globalExitRoot.ExitRoots
 			err = s.storage.UpdateL2GER(s.ctx, ger, dbTx)
 			if err != nil {
 				log.Errorf("networkID: %d, error storing the GlobalExitRoot updated in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
-				rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-				if rollbackErr != nil {
-					log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
-						s.networkID, globalExitRoot.BlockNumber, rollbackErr, err.Error())
-					return rollbackErr
-				}
-				return err
+				return s.rollback(globalExitRoot.BlockNumber, err, dbTx)
 			}
 		}
 		err = s.storage.AddGlobalExitRoot(s.ctx, &globalExitRoot, dbTx)
 		if err != nil {
 			log.Errorf("networkID: %d, error storing the GlobalExitRoot in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
-			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-			if rollbackErr != nil {
-				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
-					s.networkID, globalExitRoot.BlockNumber, rollbackErr, err.Error())
-				return rollbackErr
-			}
-			return err
+			return s.rollback(globalExitRoot.BlockNumber, err, dbTx)
 		}
 	} else if len(globalExitRoot.ExitRoots) == 0 {
 		log.Debugf("networkID: %d, Storing L2 Ger: %s", s.networkID, globalExitRoot.GlobalExitRoot)
@@ -808,13 +740,7 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 			log.Warnf("networkID: %d, L1Ger entry not found in the database. GER: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
 		} else if err != nil {
 			log.Errorf("networkID: %d, error getting the GlobalExitRoot in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
-			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-			if rollbackErr != nil {
-				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
-					s.networkID, globalExitRoot.BlockNumber, rollbackErr, err.Error())
-				return rollbackErr
-			}
-			return err
+			return s.rollback(globalExitRoot.BlockNumber, err, dbTx)
 		} else {
 			globalExitRoot.ExitRoots = ger.ExitRoots
 		}
@@ -822,13 +748,7 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 		err = s.storage.AddGlobalExitRoot(s.ctx, &globalExitRoot, dbTx)
 		if err != nil {
 			log.Errorf("networkID: %d, error storing the GlobalExitRoot in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
-			rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-			if rollbackErr != nil {
-				log.Errorf("networkID: %d, error rolling back state. BlockNumber: %d, rollbackErr: %v, error : %s",
-					s.networkID, globalExitRoot.BlockNumber, rollbackErr, err.Error())
-				return rollbackErr
-			}
-			return err
+			return s.rollback(globalExitRoot.BlockNumber, err, dbTx)
 		}
 	} else {
 		return fmt.Errorf("networkID: %d, error exitRoots have a wrong length. Length: %d", s.networkID, len(globalExitRoot.ExitRoots))
@@ -842,25 +762,13 @@ func (s *ClientSynchronizer) processDeposit(deposit etherman.Deposit, blockID ui
 	depositID, err := s.storage.AddDeposit(s.ctx, &deposit, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, failed to store new deposit locally, BlockNumber: %d, Deposit: %+v err: %v", s.networkID, deposit.BlockNumber, deposit, err)
-		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %v, rollbackErr: %v, err: %s",
-				s.networkID, deposit.BlockNumber, rollbackErr, err.Error())
-			return rollbackErr
-		}
-		return err
+		return s.rollback(deposit.BlockNumber, err, dbTx)
 	}
-
-	err = s.bridgeCtrl.AddDeposit(s.ctx, &deposit, depositID, dbTx)
+	deposit.Id = depositID
+	err = s.bridgeCtrl.AddDeposit(s.ctx, &deposit, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, failed to store new deposit in the bridge tree, BlockNumber: %d, Deposit: %+v err: %v", s.networkID, deposit.BlockNumber, deposit, err)
-		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %v, rollbackErr: %v, err: %s",
-				s.networkID, deposit.BlockNumber, rollbackErr, err.Error())
-			return rollbackErr
-		}
-		return err
+		return s.rollback(deposit.BlockNumber, err, dbTx)
 	}
 	metrics.DepositAmount(deposit.Amount)
 	return nil
@@ -872,13 +780,7 @@ func (s *ClientSynchronizer) processClaim(claim etherman.Claim, blockID uint64, 
 	err := s.storage.AddClaim(s.ctx, &claim, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error storing new Claim in Block:  %d, Claim: %+v, err: %v", s.networkID, claim.BlockNumber, claim, err)
-		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, err: %s",
-				s.networkID, claim.BlockNumber, rollbackErr, err.Error())
-			return rollbackErr
-		}
-		return err
+		return s.rollback(claim.BlockNumber, err, dbTx)
 	}
 	metrics.ClaimAmount(claim.Amount)
 	return nil
@@ -890,13 +792,7 @@ func (s *ClientSynchronizer) processTokenWrapped(tokenWrapped etherman.TokenWrap
 	err := s.storage.AddTokenWrapped(s.ctx, &tokenWrapped, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error storing new L1 TokenWrapped in Block:  %d, TokenWrapped: %+v, err: %v", s.networkID, tokenWrapped.BlockNumber, tokenWrapped, err)
-		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, err: %s",
-				s.networkID, tokenWrapped.BlockNumber, rollbackErr, err.Error())
-			return rollbackErr
-		}
-		return err
+		return s.rollback(tokenWrapped.BlockNumber, err, dbTx)
 	}
 	metrics.WrappedTokensCounter()
 	return nil
@@ -908,13 +804,24 @@ func (s *ClientSynchronizer) processRemoveL2GlobalExitRoot(ger etherman.GlobalEx
 	err := s.storage.AddRemoveL2GER(s.ctx, ger, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error storing removeL2Ger in Block:  %d, GER: %+v, err: %v", s.networkID, ger.BlockNumber, ger, err)
-		rollbackErr := s.storage.Rollback(s.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("networkID: %d, error rolling back state to store block. BlockNumber: %d, rollbackErr: %v, err: %s",
-				s.networkID, ger.BlockNumber, rollbackErr, err.Error())
-			return rollbackErr
-		}
-		return err
+		return s.rollback(ger.BlockNumber, err, dbTx)
 	}
 	return nil
+}
+
+func (s *ClientSynchronizer) rollback(blockNumber uint64, err error, dbTx interface{}) error {
+	log.Debug("networkID: ", s.networkID, ", Rolling back the MT. BlockNumber: ", blockNumber)
+	mtErr := s.bridgeCtrl.RollbackMT(s.ctx, s.networkID, nil)
+	for mtErr != nil {
+		log.Errorf("networkID: %d, error rolling back the Merkle tree. BlockNumber: %d, mtErr: %v, err: %s", s.networkID, blockNumber, mtErr, err.Error())
+		mtErr = s.bridgeCtrl.RollbackMT(s.ctx, s.networkID, nil)
+	}
+	log.Debug("networkID: ", s.networkID, ", Rolling back the state. BlockNumber: ", blockNumber)
+	rollbackErr := s.storage.Rollback(s.ctx, dbTx)
+	if rollbackErr != nil {
+		log.Errorf("networkID: %d, error rolling back the state. BlockNumber: %d, rollbackErr: %v, err: %s",
+			s.networkID, blockNumber, rollbackErr, err.Error())
+		return rollbackErr
+	}
+	return err
 }

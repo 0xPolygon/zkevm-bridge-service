@@ -204,10 +204,7 @@ func (ac *autoclaim) claimGrouped() error {
 
 func arraySplitter[T *pb.Deposit | *pb.GetProofResponse](arr []T, size int) [][]T {
 	var chunks [][]T
-	for {
-		if len(arr) == 0 {
-			break
-		}
+    for len(arr) > 0 {
 		if len(arr) < size {
 			size = len(arr)
 		}

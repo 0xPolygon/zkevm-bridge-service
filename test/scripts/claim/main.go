@@ -72,7 +72,7 @@ func main() {
 		log.Fatal("error: ", err)
 	}
 	log.Info("Success!")
-	balance, err := c.Client.BalanceAt(ctx, common.HexToAddress(l2AccHexAddress), nil)
+	balance, err := c.BalanceAt(ctx, common.HexToAddress(l2AccHexAddress), nil)
 	if err != nil {
 		log.Fatal("error getting balance: ", err)
 	}

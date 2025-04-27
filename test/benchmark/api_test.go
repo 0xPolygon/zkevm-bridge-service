@@ -87,7 +87,8 @@ func initServer(b *testing.B, bench benchmark) *bridgectrl.BridgeController {
 		counts[networkID]++
 		depositID, err := store.AddDeposit(context.TODO(), deposit, dbTx)
 		require.NoError(b, err)
-		require.NoError(b, bt.AddDeposit(ctx, deposit, depositID, dbTx))
+		deposit.Id = depositID
+		require.NoError(b, bt.AddDeposit(ctx, deposit, dbTx))
 		if i > bench.initSize {
 			require.NoError(b, store.Commit(context.TODO(), dbTx))
 			continue
@@ -139,22 +140,19 @@ func addDeposit(b *testing.B, bench benchmark) {
 	r := rand.New(rand.NewSource(bench.seed)) //nolint: gosec
 	bt, store, err := operations.RunMockServer(bench.store, bench.mtHeight, networks)
 	require.NoError(b, err)
-	var (
-		deposits   []*etherman.Deposit
-		depositIDs []uint64
-	)
+	var deposits []*etherman.Deposit
 	for i := 0; i < bench.initSize; i++ {
 		deposit := randDeposit(r, uint32(i), 0, 0) // nolint:gosec
 		depositID, err := store.AddDeposit(context.TODO(), deposit, nil)
 		require.NoError(b, err)
+		deposit.Id = depositID
 		deposits = append(deposits, deposit)
-		depositIDs = append(depositIDs, depositID)
 	}
 	b.StartTimer()
 	for i := 0; i < bench.initSize; i++ {
 		dbTx, err := store.BeginDBTransaction(context.Background())
 		require.NoError(b, err)
-		require.NoError(b, bt.AddDeposit(ctx, deposits[i], depositIDs[i], dbTx))
+		require.NoError(b, bt.AddDeposit(ctx, deposits[i], dbTx))
 		require.NoError(b, store.Commit(context.TODO(), dbTx))
 	}
 }

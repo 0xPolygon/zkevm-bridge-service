@@ -163,6 +163,21 @@ func (mt *MerkleTree) resetLeaf(ctx context.Context, depositCount uint32, dbTx i
 	return err
 }
 
+func (mt *MerkleTree) rollbackMT(ctx context.Context, networkID uint32, dbTx interface{}) error {
+	depositCnt, err := mt.store.GetLastDepositCount(ctx, networkID, nil)
+	if err != nil {
+		if err != gerror.ErrStorageNotFound {
+			return err
+		}
+		depositCnt = 0
+	} else {
+		depositCnt++
+	}
+	mt.count = depositCnt
+	mt.siblings, err = mt.initSiblings(ctx, dbTx)
+	return err
+}
+
 // this function is used to get the current root of the merkle tree
 func (mt *MerkleTree) getRoot(ctx context.Context, dbTx interface{}) ([]byte, error) {
 	if mt.count == 0 {
@@ -177,7 +192,7 @@ func buildIntermediate(leaves [][KeyLen]byte) ([][][]byte, [][32]byte) {
 		hashes [][KeyLen]byte
 	)
 	for i := 0; i < len(leaves); i += 2 {
-		var left, right int = i, i + 1
+		left, right := i, i + 1
 		hash := Hash(leaves[left], leaves[right])
 		nodes = append(nodes, [][]byte{hash[:], leaves[left][:], leaves[right][:]})
 		hashes = append(hashes, hash)
@@ -374,7 +389,7 @@ func ComputeSiblings(rollupIndex uint32, leaves [][KeyLen]byte, height uint8) ([
 			hashes [][KeyLen]byte
 		)
 		for i := 0; i < len(leaves); i += 2 {
-			var left, right int = i, i + 1
+			left, right := i, i + 1
 			hash := Hash(leaves[left], leaves[right])
 			nsi = append(nsi, [][]byte{hash[:], leaves[left][:], leaves[right][:]})
 			hashes = append(hashes, hash)

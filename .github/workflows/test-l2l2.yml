@@ -11,7 +11,7 @@ jobs:
   test-l2l2:
     strategy:
       matrix:
-        go-version: [ 1.23.x ]
+        go-version: [ 1.24.x ]
         goarch: [ "amd64" ]
     runs-on: ubuntu-latest
     steps:

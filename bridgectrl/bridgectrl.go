@@ -58,13 +58,13 @@ func (bt *BridgeController) GetMerkleTreeID(networkID uint32) (uint8, error) {
 }
 
 // AddDeposit adds deposit information to the bridge tree.
-func (bt *BridgeController) AddDeposit(ctx context.Context, deposit *etherman.Deposit, depositID uint64, dbTx interface{}) error {
+func (bt *BridgeController) AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx interface{}) error {
 	leaf := hashDeposit(deposit)
 	tID, err := bt.GetMerkleTreeID(deposit.NetworkID)
 	if err != nil {
 		return err
 	}
-	return bt.exitTrees[tID].addLeaf(ctx, depositID, leaf, deposit.DepositCount, dbTx)
+	return bt.exitTrees[tID].addLeaf(ctx, deposit.Id, leaf, deposit.DepositCount, dbTx)
 }
 
 // ReorgMT reorg the specific merkle tree.
@@ -74,6 +74,15 @@ func (bt *BridgeController) ReorgMT(ctx context.Context, depositCount uint32, ne
 		return err
 	}
 	return bt.exitTrees[tID].resetLeaf(ctx, depositCount, dbTx)
+}
+
+// RollbackMT resets the specific merkle tree.
+func (bt *BridgeController) RollbackMT(ctx context.Context, networkID uint32, dbTx interface{}) error {
+	tID, err := bt.GetMerkleTreeID(networkID)
+	if err != nil {
+		return err
+	}
+	return bt.exitTrees[tID].rollbackMT(ctx, networkID, dbTx)
 }
 
 // GetExitRoot returns the dedicated merkle tree's root.

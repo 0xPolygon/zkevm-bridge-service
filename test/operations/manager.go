@@ -870,7 +870,8 @@ func (m *Manager) ERC20Transfer(ctx context.Context, erc20Addr, to common.Addres
 
 func (m *Manager) GetTokenAddress(ctx context.Context, network NetworkSID, originalNetwork uint32, originalTokenAddr common.Address) (common.Address, error) {
 	zeroAddr := common.Address{}
-	if network == L1 {
+	switch network {
+	case L1:
 		if originalNetwork == 0 {
 			return originalTokenAddr, nil
 		}
@@ -879,7 +880,7 @@ func (m *Manager) GetTokenAddress(ctx context.Context, network NetworkSID, origi
 			return common.Address{}, err
 		}
 		return token.WrappedTokenAddress, nil
-	} else if network == L2 {
+	case L2:
 		if originalNetwork == 0 && originalTokenAddr == zeroAddr {
 			return zeroAddr, nil
 		}
@@ -895,7 +896,7 @@ func (m *Manager) GetTokenAddress(ctx context.Context, network NetworkSID, origi
 			return common.Address{}, err
 		}
 		return token.WrappedTokenAddress, nil
-	} else {
+	default:
 		return common.Address{}, errors.New("unexpected network")
 	}
 }
