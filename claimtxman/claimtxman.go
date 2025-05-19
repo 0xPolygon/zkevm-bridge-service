@@ -99,7 +99,7 @@ func NewClaimTxManager(ctx context.Context, cfg Config, chExitRootEvent chan *et
 func (tm *ClaimTxManager) Start() {
 	ticker := time.NewTicker(tm.cfg.FrequencyToMonitorTxs.Duration)
 	compressorTicker := time.NewTicker(tm.cfg.GroupingClaims.FrequencyToProcessCompressedClaims.Duration)
-	var ger = &etherman.GlobalExitRoot{}
+	var ger = etherman.GlobalExitRoot{}
 	var latestProcessedGer common.Hash
 	for {
 		select {
@@ -115,7 +115,8 @@ func (tm *ClaimTxManager) Start() {
 				log.Infof("RollupID: %d, L1 network synced. GERs ready for ClaimTxManager", tm.rollupID)
 				tm.l1Synced = true
 			}
-		case ger = <-tm.chExitRootEvent:
+		case channelGer := <-tm.chExitRootEvent:
+			ger = *channelGer
 			if tm.l2Synced && tm.l1Synced {
 				log.Debugf("RollupID: %d UpdateDepositsStatus for ger: %s", tm.rollupID, ger.GlobalExitRoot.String())
 				if tm.cfg.GroupingClaims.Enabled {
@@ -151,7 +152,7 @@ func (tm *ClaimTxManager) Start() {
 	}
 }
 
-func (tm *ClaimTxManager) updateDepositsStatus(ger *etherman.GlobalExitRoot) error {
+func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) error {
 	dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
 	if err != nil {
 		return err
@@ -179,7 +180,7 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger *etherman.GlobalExitRoot) err
 	return nil
 }
 
-func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbTx interface{}) error {
+func (tm *ClaimTxManager) processDepositStatus(ger etherman.GlobalExitRoot, dbTx interface{}) error {
 	var (
 		deposits       []*etherman.Deposit
 		globalExitRoot = ger.GlobalExitRoot
@@ -243,7 +244,7 @@ func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbT
 		}
 
 		log.Infof("RollupID: %d, create the claim tx for the deposit count %d. Deposit Id: %d", tm.rollupID, deposit.DepositCount, deposit.Id)
-		ger, proof, rollupProof, err := tm.bridgeService.GetClaimProofForCompressed(globalExitRoot, deposit.DepositCount, deposit.NetworkID, dbTx)
+		claimGer, proof, rollupProof, err := tm.bridgeService.GetClaimProofForCompressed(globalExitRoot, deposit.DepositCount, deposit.NetworkID, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error getting Claim Proof for deposit Id %d. Error: %v", tm.rollupID, deposit.Id, err)
 			return err
@@ -259,15 +260,15 @@ func (tm *ClaimTxManager) processDepositStatus(ger *etherman.GlobalExitRoot, dbT
 		tx, err := tm.l2Node.BuildSendClaim(tm.ctx, deposit, mtProof, mtRollupProof,
 			&etherman.GlobalExitRoot{
 				ExitRoots: []common.Hash{
-					ger.ExitRoots[0],
-					ger.ExitRoots[1],
+					claimGer.ExitRoots[0],
+					claimGer.ExitRoots[1],
 				}}, 1, 1, 1,
 			tm.auth)
 		if err != nil {
 			log.Errorf("rollupID: %d, error BuildSendClaim tx for deposit Id: %d. Error: %v", tm.rollupID, deposit.Id, err)
 			return err
 		}
-		if err = tm.addClaimTx(deposit.Id, tm.auth.From, tx.To(), nil, tx.Data(), ger.GlobalExitRoot, dbTx); err != nil {
+		if err = tm.addClaimTx(deposit.Id, tm.auth.From, tx.To(), nil, tx.Data(), claimGer.GlobalExitRoot, dbTx); err != nil {
 			log.Errorf("rollupID: %d, error adding claim tx for deposit Id: %d Error: %v", tm.rollupID, deposit.Id, err)
 			return err
 		}
