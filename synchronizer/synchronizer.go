@@ -608,7 +608,7 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock etherman.Block, synced
 	block := syncedBlock
 	for {
 		if block == nil {
-			log.Infof("NetworkID: %d, [checkReorg function] Checking Block %d in L1", s.networkID, reorgedBlock.BlockNumber)
+			log.Infof("NetworkID: %d, [checkReorg function] Checking Block %d", s.networkID, reorgedBlock.BlockNumber)
 			b, err := s.etherMan.HeaderByNumber(s.ctx, new(big.Int).SetUint64(reorgedBlock.BlockNumber))
 			if err != nil {
 				log.Errorf("networkID: %d, error getting latest block synced from blockchain. Block: %d, error: %v", s.networkID, reorgedBlock.BlockNumber, err)
