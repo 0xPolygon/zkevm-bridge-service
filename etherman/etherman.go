@@ -27,11 +27,7 @@ import (
 )
 
 var (
-	// Old SovereignChain L2GERManager events
-	insertGlobalExitRootSignatureHash     = crypto.Keccak256Hash([]byte("InsertGlobalExitRoot(bytes32)"))
-	removeLastGlobalExitRootSignatureHash = crypto.Keccak256Hash([]byte("RemoveLastGlobalExitRoot(bytes32)"))
-
-	// New SovereignChain L2GERManager events
+	// SovereignChain L2GERManager events
 	updateHashChainValueSignatureHash        = crypto.Keccak256Hash([]byte("UpdateHashChainValue(bytes32,bytes32)"))
 	updateRemovalHashChainValueSignatureHash = crypto.Keccak256Hash([]byte("UpdateRemovalHashChainValue(bytes32,bytes32)"))
 
@@ -274,8 +270,6 @@ func (etherMan *Client) GetRollupInfoByBlockRange(ctx context.Context, fromBlock
 			newWrappedTokenEventSignatureHash,
 			verifyBatchesTrustedAggregatorSignatureHash,
 			rollupManagerVerifyBatchesSignatureHash,
-			insertGlobalExitRootSignatureHash,
-			removeLastGlobalExitRootSignatureHash,
 			updateHashChainValueSignatureHash,
 			updateRemovalHashChainValueSignatureHash,
 		}},
@@ -459,10 +453,6 @@ func (etherMan *Client) processEvent(vLog types.Log, blocks *[]Block, blocksOrde
 	case transferAdminRoleSignatureHash:
 		etherMan.logger.Debug("TransferAdminRole event detected. Ignoring...")
 		return nil
-	case insertGlobalExitRootSignatureHash:
-		return etherMan.insertSovereignChainL2GER(vLog, blocks, blocksOrder)
-	case removeLastGlobalExitRootSignatureHash:
-		return etherMan.removeLastL2GER(vLog, blocks, blocksOrder)
 	case updateHashChainValueSignatureHash:
 		return etherMan.updateHashSovereignChainValue(vLog, blocks, blocksOrder)
 	case updateRemovalHashChainValueSignatureHash:
@@ -485,15 +475,6 @@ func (etherMan *Client) processEvent(vLog types.Log, blocks *[]Block, blocksOrde
 	}
 	etherMan.logger.Warnf("Event not registered: %+v", vLog)
 	return nil
-}
-
-func (etherMan *Client) removeLastL2GER(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
-	etherMan.logger.Debug("removeLastGlobalExitRoot event detected. Processing...")
-	l2GER, err := etherMan.OldGerL2SovereignChain.ParseRemoveLastGlobalExitRoot(vLog)
-	if err != nil {
-		return err
-	}
-	return etherMan.removeL2GER(l2GER.RemovedGlobalExitRoot, vLog, blocks, blocksOrder)
 }
 
 func (etherMan *Client) updateRemovalHashSovereignChainValue(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
@@ -529,15 +510,6 @@ func (etherMan *Client) removeL2GER(removedGlobalExitRoot common.Hash, vLog type
 	}
 	(*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash] = append((*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash], or)
 	return nil
-}
-
-func (etherMan *Client) insertSovereignChainL2GER(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
-	etherMan.logger.Debug("insertSovereignChainL2GER event detected. Processing...")
-	l2GER, err := etherMan.OldGerL2SovereignChain.ParseInsertGlobalExitRoot(vLog)
-	if err != nil {
-		return err
-	}
-	return etherMan.addSovereignChainL2GER(l2GER.NewGlobalExitRoot, vLog, blocks, blocksOrder)
 }
 
 func (etherMan *Client) updateHashSovereignChainValue(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
