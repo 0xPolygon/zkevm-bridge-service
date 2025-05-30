@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	// New SovereignChain L2GERManager events
+	// SovereignChain L2GERManager events
 	updateHashChainValueSignatureHash        = crypto.Keccak256Hash([]byte("UpdateHashChainValue(bytes32,bytes32)"))
 	updateRemovalHashChainValueSignatureHash = crypto.Keccak256Hash([]byte("UpdateRemovalHashChainValue(bytes32,bytes32)"))
 
