@@ -116,6 +116,7 @@ func (s *ClientSynchronizer) Sync() error {
 	// Get the latest synced block. If there is no block on db, use genesis block
 	log.Infof("NetworkID: %d, Synchronization started", s.networkID)
 	lastBlockSynced, err := s.storage.GetLastBlock(s.ctx, s.networkID, nil)
+	s.metrics.LatestBlockSynced(lastBlockSynced.BlockNumber)
 	if err != nil {
 		if err == gerror.ErrStorageNotFound {
 			log.Warnf("networkID: %d, error getting the latest ethereum block. No data stored. Setting genesis block. Error: %v", s.networkID, err)
