@@ -73,6 +73,9 @@ const (
 
 	// LatestBlockSyncedName is the name of the label to get the latest block synced.
 	LatestBlockSyncedName = "latest_block_synced"
+
+	// LatestBlockRollupInfoName is the name of the label to get the latest block rollup info.
+	LatestBlockRollupInfoName = "latest_block_rollup_info"
 )
 
 var (
@@ -81,6 +84,7 @@ var (
 
 type MetricsInterface interface {
 	LatestBlockSynced(blockNumber uint64)
+	LatestBlockRollupInfo(blockNumber uint64)
 	IncrementsPendingBridgesToClaim()
 	DecrementsPendingBridgesToClaim()
 	DepositAmount(amount *big.Int)
@@ -123,6 +127,10 @@ func Register(networkID uint32) MetricsInterface {
 		{
 			Name: prefix + LatestBlockSyncedName,
 			Help: "[SYNCHRONIZER] latest block synced",
+		},
+		{
+			Name: prefix + LatestBlockRollupInfoName,
+			Help: "[SYNCHRONIZER] latest block rollup info",
 		},
 	}
 	counters := []prometheus.CounterOpts{
@@ -219,6 +227,12 @@ func Register(networkID uint32) MetricsInterface {
 func (m *Metrics) LatestBlockSynced(blockNumber uint64) {
 	// Be careful, this uint64 to float64 converion can overflow
 	metrics.GaugeSet(m.prefix+LatestBlockSyncedName, float64(blockNumber))
+}
+
+// LatestBlockRollupInfo sets the latest block rollup info on the gauge.
+func (m *Metrics) LatestBlockRollupInfo(blockNumber uint64) {
+	// Be careful, this uint64 to float64 converion can overflow
+	metrics.GaugeSet(m.prefix+LatestBlockRollupInfoName, float64(blockNumber))
 }
 
 // IncrementsPendingBridgesToClaim increments the current pending bridges to claim on the gauge.

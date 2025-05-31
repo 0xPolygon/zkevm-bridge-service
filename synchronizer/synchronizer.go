@@ -323,9 +323,10 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 		blocks, order, err := s.etherMan.GetRollupInfoByBlockRange(s.ctx, fromBlock, &toBlock)
 		s.metrics.ReadL1DataTime(time.Since(start))
 		if err != nil {
+			log.Errorf("networkID: %d, error getting rollup info from block %d to block %d. Error: %v", s.networkID, fromBlock, toBlock, err)
 			return &lastBlockSynced, err
 		}
-
+		s.metrics.LatestBlockRollupInfo(toBlock)
 		if fromBlock == s.genBlockNumber && !s.forceSyncChunk {
 			if len(blocks) == 0 || (len(blocks) != 0 && blocks[0].BlockNumber != s.genBlockNumber) {
 				log.Debugf("NetworkID: %d. adding genesis empty block", s.networkID)
