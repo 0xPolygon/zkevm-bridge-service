@@ -27,6 +27,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/xlayer/utils/messagebridge"
 
 	client "github.com/0xPolygonHermez/zkevm-bridge-service/jsonrpcclient"
+	xlayerUtils "github.com/0xPolygonHermez/zkevm-bridge-service/xlayer/utils"
 )
 
 const (
@@ -78,6 +79,11 @@ func run(ctx *cli.Context, choice string) error {
 }
 
 func runAPI(ctx context.Context, c *config.XLayerConfig) error {
+	// Some API use this information to filter deposits.
+	messagebridge.InitUSDCLxLyProcessor(c.BusinessConfig.USDCContractAddresses, c.BusinessConfig.USDCTokenAddresses)
+	messagebridge.InitWstETHProcessor(c.BusinessConfig.WstETHContractAddresses, c.BusinessConfig.WstETHTokenAddresses)
+	messagebridge.InitEURCProcessor(c.BusinessConfig.EURCContractAddresses, c.BusinessConfig.EURCTokenAddresses)
+
 	redisStorage, err := redisstorage.NewRedisStorage(c.BridgeServer.Redis)
 	if err != nil {
 		return err
@@ -96,10 +102,6 @@ func runAPI(ctx context.Context, c *config.XLayerConfig) error {
 		return err
 	}
 
-	l1ChainId := c.Etherman.L1ChainId
-	l2ChainIds := c.Etherman.L2ChainIds
-	var chainIDs = []uint{l1ChainId}
-	chainIDs = append(chainIDs, l2ChainIds...)
 	l1Etherman, l2Ethermans, err := newEthermans(c.UpstreamCfg)
 	if err != nil {
 		return err
@@ -107,6 +109,12 @@ func runAPI(ctx context.Context, c *config.XLayerConfig) error {
 
 	networkID := l1Etherman.GetNetworkID()
 	networkIDs := setupNetworkIDs(networkID, l2Ethermans)
+
+	l1ChainId := c.Etherman.L1ChainId
+	l2ChainIds := c.Etherman.L2ChainIds
+	var chainIDs = []uint{l1ChainId}
+	chainIDs = append(chainIDs, l2ChainIds...)
+	xlayerUtils.InitChainIdManager(networkIDs, chainIDs)
 
 	l2NodeClients := make([]*utils.Client, len(c.UpstreamCfg.Etherman.L2URLs))
 	l2Auths := make([]*bind.TransactOpts, len(c.UpstreamCfg.Etherman.L2URLs))
@@ -230,6 +238,12 @@ func runTask(ctx context.Context, c *config.XLayerConfig) error {
 
 	networkID := l1Etherman.GetNetworkID()
 	networkIDs := setupNetworkIDs(networkID, l2Ethermans)
+
+	l1ChainId := c.Etherman.L1ChainId
+	l2ChainIds := c.Etherman.L2ChainIds
+	var chainIDs = []uint{l1ChainId}
+	chainIDs = append(chainIDs, l2ChainIds...)
+	xlayerUtils.InitChainIdManager(networkIDs, chainIDs)
 
 	var bridgeController *bridgectrl.BridgeController
 	if c.UpstreamCfg.BridgeController.Store == "postgres" {
