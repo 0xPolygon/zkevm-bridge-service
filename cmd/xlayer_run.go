@@ -65,14 +65,17 @@ func run(ctx *cli.Context, choice string) error {
 	case task:
 		return runTask(ctx.Context, c)
 	default:
+		log.Info("Disable Push = ", c.DisablePush)
 		if err = db.RunMigrations(c.UpstreamCfg.SyncDB); err != nil {
 			return err
 		}
 		if err = runAPI(ctx.Context, c); err != nil {
 			return err
 		}
-		if err = runPushTask(ctx.Context, c); err != nil {
-			return err
+		if !c.DisablePush {
+			if err = runPushTask(ctx.Context, c); err != nil {
+				return err
+			}
 		}
 		return runTask(ctx.Context, c) // Blocking
 	}

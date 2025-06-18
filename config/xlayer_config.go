@@ -67,6 +67,13 @@ type XLayerConfig struct {
 	CoinKafkaConsumer          coinmiddleware.Config
 	MessagePushProducer        messagepush.Config
 	EstimateTime               estimatetime.Config
+
+	// Allows us to deploy a simplified bridge service for testing
+	// without having to configure push service, which is often
+	// not important.
+	//
+	// Only supported when not running any specific service.
+	DisablePush bool `mapstructure:"DisablePush"`
 }
 
 // Load the same config file, but this time load all X Layer config here.
