@@ -635,7 +635,7 @@ func (etherMan *Client) oldClaimEvent(vLog types.Log, blocks *[]Block, blocksOrd
 	if err != nil {
 		return err
 	}
-	return etherMan.claimEvent(vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, c.Index, c.OriginNetwork, 0, false)
+	return etherMan.claimEvent(vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, c.Index, c.OriginNetwork, 0, false, nil)
 }
 
 func (etherMan *Client) newClaimEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
@@ -648,10 +648,10 @@ func (etherMan *Client) newClaimEvent(vLog types.Log, blocks *[]Block, blocksOrd
 	if err != nil {
 		return err
 	}
-	return etherMan.claimEvent(vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, localExitRootIndex, c.OriginNetwork, rollupIndex, mainnetFlag)
+	return etherMan.claimEvent(vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, localExitRootIndex, c.OriginNetwork, rollupIndex, mainnetFlag, c.GlobalIndex)
 }
 
-func (etherMan *Client) claimEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, amount *big.Int, destinationAddress, originAddress common.Address, Index, originNetwork, rollupIndex uint32, mainnetFlag bool) error {
+func (etherMan *Client) claimEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, amount *big.Int, destinationAddress, originAddress common.Address, Index, originNetwork, rollupIndex uint32, mainnetFlag bool, globalIndex *big.Int) error {
 	var claim Claim
 	claim.Amount = amount
 	claim.DestinationAddress = destinationAddress
@@ -662,6 +662,7 @@ func (etherMan *Client) claimEvent(vLog types.Log, blocks *[]Block, blocksOrder 
 	claim.TxHash = vLog.TxHash
 	claim.RollupIndex = rollupIndex
 	claim.MainnetFlag = mainnetFlag
+	claim.GlobalIndex = globalIndex.String()
 
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
 		var block = Block{

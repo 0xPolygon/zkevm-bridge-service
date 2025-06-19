@@ -430,6 +430,7 @@ func (s *bridgeService) GetClaims(ctx context.Context, req *pb.GetClaimsRequest)
 			TxHash:      claim.TxHash.String(),
 			RollupIndex: claim.RollupIndex,
 			MainnetFlag: claim.MainnetFlag,
+			GlobalIndex: claim.GlobalIndex,
 		})
 	}
 
