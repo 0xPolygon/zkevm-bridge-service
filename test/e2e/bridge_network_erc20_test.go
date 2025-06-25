@@ -38,19 +38,11 @@ func TestERC20TransferL1toL2(t *testing.T) {
 
 	// Do Asset L1 -> L2
 	amount := big.NewInt(143210000000001234) // 0.14321 ETH
-	log.Infof("ERC20 [L1->L2] assetERC20L2ToL1")
+	log.Infof("ERC20 [L1->L2] assetERC20L1ToL2")
 	txAssetHash := assetERC20L1ToL2(ctx, testData, t, tokenAddr, amount)
-	log.Infof("ERC20 [L1->L2] assetERC20L2ToL1 txAssetHash: %s ", txAssetHash.String())
+	log.Infof("ERC20 [L1->L2] assetERC20L1ToL2 txAssetHash: %s ", txAssetHash.String())
 	log.Infof("ERC20 [L1->L2] waitToAutoClaim")
-	//waitToAutoClaim(t, ctx, testData, txAssetHash, maxTimeToClaimReady)
-	deposit, err := waitDepositToBeReadyToClaim(ctx, testData, txAssetHash, maxTimeToClaimReady, testData.auth[operations.L1].From.String())
-	require.NoError(t, err)
-	err = waitToAutoClaimTx(t, ctx, testData, deposit, 60*time.Second)
-	if err != nil {
-		log.Errorf("ERC20 [L1->L2] Doing manual claim")
-		err = manualClaimDepositL2(ctx, testData, deposit)
-		require.NoError(t, err)
-	}
+	waitToAutoClaim2(t, ctx, testData, txAssetHash, maxTimeToClaimReady)
 }
 
 func TestERC20TransferL2toL1(t *testing.T) {

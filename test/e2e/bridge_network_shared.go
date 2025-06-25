@@ -43,7 +43,7 @@ const (
 	maxTimeToAutoClaim = 60 * time.Minute
 	// Tipically the time to claim a deposit is 1 hours (L2 -> L1)
 	maxTimeToClaimReady   = 120 * time.Minute
-	timeBetweenCheckClaim = 60 * time.Second
+	timeBetweenCheckClaim = 10 * time.Second
 	mtHeight              = 32
 )
 
@@ -406,6 +406,7 @@ func waitToAutoClaimTx(t *testing.T, ctx context.Context, testData *bridge2e2Tes
 		// The claim from L1 -> L2 is done by the bridge service to L2
 		receipt, err := waitTxToBeMinedByTxHash(ctx, testData.L2Client, claimTxHash, 60*time.Second)
 		if err != nil {
+			log.Errorf("Error waiting for claim tx to be mined: %v", err)
 			return err
 		}
 		log.Debug("Receipt: ", receipt, " Elapsed time: ", time.Since(startTime))
