@@ -13,6 +13,7 @@ type bridgeServiceStorage interface {
 	GetDepositCountByRoot(ctx context.Context, root []byte, network uint32, dbTx interface{}) (uint32, error)
 	GetLatestExitRoot(ctx context.Context, networkID, destNetwork uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error)
 	GetL1ExitRootByGER(ctx context.Context, ger common.Hash, dbTx interface{}) (*etherman.GlobalExitRoot, error)
+	GetLatestTrustedExitRoot(ctx context.Context, networkID uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error)
 	GetClaim(ctx context.Context, index, originNetworkID, networkID uint32, dbTx interface{}) (*etherman.Claim, error)
 	GetClaims(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Claim, error)
 	GetClaimCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error)
