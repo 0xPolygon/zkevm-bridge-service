@@ -167,7 +167,7 @@ func (s *bridgeService) GetClaimProof(depositCnt, networkID uint32, dbTx interfa
 	}
 
 	var globalExitRoot *etherman.GlobalExitRoot
-	if s.finalizedGER { // This flag must be disabled if all networks are synced in the same bridge service.
+	if s.finalizedGER && deposit.DestinationNetwork != 0 && networkID != 0 { // This finalizedGER flag must be disabled if all networks are synced in the same bridge service.
 		globalExitRoot, err = s.storage.GetLatestTrustedExitRoot(ctx, networkID, dbTx)
 		if err != nil {
 			return nil, nil, nil, err
