@@ -628,6 +628,66 @@ func (_c *bridgeServiceStorageMock_GetLatestExitRoot_Call) RunAndReturn(run func
 	return _c
 }
 
+// GetLatestTrustedExitRoot provides a mock function with given fields: ctx, networkID, dbTx
+func (_m *bridgeServiceStorageMock) GetLatestTrustedExitRoot(ctx context.Context, networkID uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error) {
+	ret := _m.Called(ctx, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestTrustedExitRoot")
+	}
+
+	var r0 *etherman.GlobalExitRoot
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, interface{}) (*etherman.GlobalExitRoot, error)); ok {
+		return rf(ctx, networkID, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, interface{}) *etherman.GlobalExitRoot); ok {
+		r0 = rf(ctx, networkID, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*etherman.GlobalExitRoot)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, interface{}) error); ok {
+		r1 = rf(ctx, networkID, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// bridgeServiceStorageMock_GetLatestTrustedExitRoot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLatestTrustedExitRoot'
+type bridgeServiceStorageMock_GetLatestTrustedExitRoot_Call struct {
+	*mock.Call
+}
+
+// GetLatestTrustedExitRoot is a helper method to define mock.On call
+//   - ctx context.Context
+//   - networkID uint32
+//   - dbTx interface{}
+func (_e *bridgeServiceStorageMock_Expecter) GetLatestTrustedExitRoot(ctx interface{}, networkID interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetLatestTrustedExitRoot_Call {
+	return &bridgeServiceStorageMock_GetLatestTrustedExitRoot_Call{Call: _e.mock.On("GetLatestTrustedExitRoot", ctx, networkID, dbTx)}
+}
+
+func (_c *bridgeServiceStorageMock_GetLatestTrustedExitRoot_Call) Run(run func(ctx context.Context, networkID uint32, dbTx interface{})) *bridgeServiceStorageMock_GetLatestTrustedExitRoot_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *bridgeServiceStorageMock_GetLatestTrustedExitRoot_Call) Return(_a0 *etherman.GlobalExitRoot, _a1 error) *bridgeServiceStorageMock_GetLatestTrustedExitRoot_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *bridgeServiceStorageMock_GetLatestTrustedExitRoot_Call) RunAndReturn(run func(context.Context, uint32, interface{}) (*etherman.GlobalExitRoot, error)) *bridgeServiceStorageMock_GetLatestTrustedExitRoot_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPendingDepositsToClaim provides a mock function with given fields: ctx, destAddress, destNetwork, leafType, limit, offset, dbTx
 func (_m *bridgeServiceStorageMock) GetPendingDepositsToClaim(ctx context.Context, destAddress common.Address, destNetwork uint32, leafType uint32, limit uint32, offset uint32, dbTx interface{}) ([]*etherman.Deposit, uint64, error) {
 	ret := _m.Called(ctx, destAddress, destNetwork, leafType, limit, offset, dbTx)
