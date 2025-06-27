@@ -23,6 +23,7 @@ type bridgeService struct {
 	defaultPageLimit uint32
 	maxPageLimit     uint32
 	version          string
+	finalizedGER     bool
 	cache            *lru.Cache[string, [][]byte]
 	pb.UnimplementedBridgeServiceServer
 }
@@ -37,6 +38,9 @@ func NewBridgeService(cfg Config, height uint8, networks []uint32, storage inter
 	if err != nil {
 		panic(err)
 	}
+	if cfg.FinalizedGEREnabled {
+		log.Info("Finalized flag activated to compute proofs")
+	}
 	return &bridgeService{
 		storage:          storage.(bridgeServiceStorage),
 		height:           height,
@@ -44,6 +48,7 @@ func NewBridgeService(cfg Config, height uint8, networks []uint32, storage inter
 		defaultPageLimit: cfg.DefaultPageLimit,
 		maxPageLimit:     cfg.MaxPageLimit,
 		version:          cfg.BridgeVersion,
+		finalizedGER:     cfg.FinalizedGEREnabled,    
 		cache:            cache,
 	}
 }
@@ -161,9 +166,17 @@ func (s *bridgeService) GetClaimProof(depositCnt, networkID uint32, dbTx interfa
 		return nil, nil, nil, gerror.ErrDepositNotSynced
 	}
 
-	globalExitRoot, err := s.storage.GetLatestExitRoot(ctx, networkID, deposit.DestinationNetwork, dbTx)
-	if err != nil {
-		return nil, nil, nil, err
+	var globalExitRoot *etherman.GlobalExitRoot
+	if s.finalizedGER { // This flag must be disabled if all networks are synced in the same bridge service.
+		globalExitRoot, err = s.storage.GetLatestTrustedExitRoot(ctx, networkID, dbTx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+	} else {
+		globalExitRoot, err = s.storage.GetLatestExitRoot(ctx, networkID, deposit.DestinationNetwork, dbTx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
 	}
 
 	var (

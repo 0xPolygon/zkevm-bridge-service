@@ -49,6 +49,7 @@ HTTPPort = "8080"
 CacheSize = 100000
 DefaultPageLimit = 25
 MaxPageLimit = 100
+FinalizedGEREnabled = true
     [BridgeServer.DB]
         Database = "postgres"
         [BridgeServer.DB.PgStorage]
