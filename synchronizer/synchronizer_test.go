@@ -11,6 +11,7 @@ import (
 	rpcTypes "github.com/0xPolygonHermez/zkevm-bridge-service/jsonrpcclient/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer/metrics"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/mock"
@@ -66,6 +67,7 @@ func NewSynchronizerTest(
 			synced:           true,
 			forceSyncChunk:   false,
 			waitDuration:     time.Duration(1 * time.Second),
+			metrics:          metrics.Register(networkID),
 		}, nil
 	}
 	return &ClientSynchronizer{
@@ -84,6 +86,7 @@ func NewSynchronizerTest(
 		sovereignChain:    sovereignChain,
 		forceSyncChunk:    cfg.ForceL2SyncChunk,
 		waitDuration:      time.Duration(1 * time.Second),
+		metrics:          metrics.Register(networkID),
 	}, nil
 }
 
