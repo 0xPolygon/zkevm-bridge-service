@@ -6,6 +6,7 @@ package e2e
 import (
 	"context"
 	"math/big"
+	"os"
 	"testing"
 	"time"
 
@@ -24,10 +25,17 @@ func TestMultipleRollups(t *testing.T) {
 		rollup1ID uint32 = 1
 		rollup2ID uint32 = 2
 	)
-	ctx := context.Background()
-	opsman1, err := operations.GetOpsman(ctx, "http://localhost:8123", "test_db", "8080", "9090", "5435", 1)
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
 	require.NoError(t, err)
-	opsman2, err := operations.GetOpsman(ctx, "http://localhost:8124", "test_db", "8080", "9090", "5435", 2)
+
+	ctx := context.Background()
+	databaseType, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	if !exists {
+		panic("ZKEVM_BRIDGE_SYNCDB_DATABASE env var not set")
+	}
+	opsman1, err := operations.GetOpsman(ctx, databaseType, "http://localhost:8123", "test_db", "8080", "9090", "5435", 1)
+	require.NoError(t, err)
+	opsman2, err := operations.GetOpsman(ctx, databaseType, "http://localhost:8124", "test_db", "8080", "9090", "5435", 2)
 	require.NoError(t, err)
 
 	// Fund L2 sequencer for rollup 2. This is super dirty, but have no better way to do this at the moment

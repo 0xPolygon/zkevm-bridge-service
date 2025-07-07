@@ -16,7 +16,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/xlayer/coinmiddleware"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/xlayer/estimatetime"
@@ -246,14 +245,10 @@ func runTask(ctx context.Context, c *config.XLayerConfig) error {
 	xlayerUtils.InitChainIdManager(networkIDs, chainIDs)
 
 	var bridgeController *bridgectrl.BridgeController
-	if c.UpstreamCfg.BridgeController.Store == "postgres" {
-		bridgeController, err = bridgectrl.NewBridgeController(
-			ctx, c.UpstreamCfg.BridgeController, networkIDs, storage)
-		if err != nil {
-			return err
-		}
-	} else {
-		return gerror.ErrStorageNotRegister
+	bridgeController, err = bridgectrl.NewBridgeController(
+		ctx, c.UpstreamCfg.BridgeController, networkIDs, storage)
+	if err != nil {
+		return err
 	}
 
 	messagePushProducer, closeKafka, err := setupKafkaProducer(c.MessagePushProducer)

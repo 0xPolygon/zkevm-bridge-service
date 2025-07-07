@@ -25,6 +25,7 @@ DOCKER_COMPOSE_BRIDGE_V1TOV2 := zkevm-bridge-service-v1tov2
 DOCKER_COMPOSE_BRIDGE_1 := zkevm-bridge-service-1
 DOCKER_COMPOSE_BRIDGE_2 := zkevm-bridge-service-2
 DOCKER_COMPOSE_BRIDGE_3 := zkevm-bridge-service-3
+DOCKER_COMPOSE_BRIDGE_POSTGRES := zkevm-bridge-service-postgres
 DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN := zkevm-bridge-service-sovereign-chain
 DOCKER_COMPOSE_AGGORACLE := aggoracle
 
@@ -52,6 +53,7 @@ RUN_BRIDGE := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE)
 RUN_BRIDGE_1 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_1)
 RUN_BRIDGE_2 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_2)
 RUN_BRIDGE_3 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_3)
+RUN_BRIDGE_POSTGRES := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_POSTGRES)
 RUN_BRIDGE_V1TOV2 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_V1TOV2)
 RUN_BRIDGE_SOVEREIGN_CHAIN := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN)
 RUN_AGGORACLE := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_AGGORACLE)
@@ -75,6 +77,7 @@ STOP_BRIDGE := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE) && $(DOCKER_COMPO
 STOP_BRIDGE_1 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_1) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_1)
 STOP_BRIDGE_2 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_2) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_2)
 STOP_BRIDGE_3 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_3) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_3)
+STOP_BRIDGE_POSTGRES := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_POSTGRES) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_POSTGRES)
 STOP_BRIDGE_V1TOV2 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_V1TOV2) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_V1TOV2)
 STOP_BRIDGE_SOVEREIGN_CHAIN := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN)
 STOP_AGGORACLE := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_AGGORACLE) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_AGGORACLE)
@@ -95,7 +98,7 @@ GO_DEPLOY_SCRIPT_BINARY := test-deploy-tool
 GO_DEPLOY_AUTOCLAIMER := $(GO_BASE)/autoclaimservice
 GO_DEPLOY_AUTOCLAIMER_BINARY := zkevm-autoclaimer
 
-LINT := $$(go env GOPATH)/bin/golangci-lint run --timeout=5m -E whitespace -E gosec -E gci -E misspell -E mnd -E gofmt -E goimports --exclude-use-default=false --max-same-issues 0
+LINT := $$(go env GOPATH)/bin/golangci-lint run --timeout=5m -E whitespace -E gosec -E misspell -E mnd --max-same-issues 0
 BUILD := $(GO_ENV_VARS) go build -ldflags "all=$(LDFLAGS)" -o $(GO_BIN)/$(GO_BINARY) $(GO_CMD)
 BUILDSCRIPTEPLOY := $(GO_ENV_VARS) go build -o $(GO_BIN)/$(GO_DEPLOY_SCRIPT_BINARY) $(GO_DEPLOY_SCRIPT)
 BUILDAUTOCLAIMER := $(GO_ENV_VARS) go build -o $(GO_BIN)/$(GO_DEPLOY_AUTOCLAIMER_BINARY) $(GO_DEPLOY_AUTOCLAIMER)
@@ -122,7 +125,7 @@ test: ## Runs only short tests without checking race conditions
 
 .PHONY: install-linter
 install-linter: ## Installs the linter
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.63.4
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v2.1.2
 
 .PHONY: build-docker
 build-docker: ## Builds a docker image with the zkevm bridge binary
@@ -294,6 +297,14 @@ run-bridge-3: ## Runs the bridge service
 stop-bridge-3: ## Stops the bridge service
 	$(STOP_BRIDGE_3)
 
+.PHONY: run-bridge-postgres
+run-bridge-postgres: ## Runs the bridge service
+	$(RUN_BRIDGE_POSTGRES)
+
+.PHONY: stop-bridge-postgres
+stop-bridge-postgres: ## Stops the bridge service
+	$(STOP_BRIDGE_POSTGRES)
+
 .PHONY: run-bridge-v1tov2
 run-bridge-v1tov2: ## Runs the bridge service
 	$(RUN_BRIDGE_V1TOV2)
@@ -442,7 +453,7 @@ bench: ## benchmark test
 	trap '$(STOP_BRIDGE_DB)' EXIT; go test -run=NOTEST -timeout=30m -bench=Small ./test/benchmark/...
 
 .PHONY: bench-full
-bench-full: export ZKEVM_BRIDGE_DATABASE_PORT = 5432
+bench-full: export ZKEVM_BRIDGE_SYNCDB_PGSTORAGE_PORT = 5432
 bench-full: ## benchmark full test
 	cd test/benchmark && \
 	go test -run=NOTEST -bench=Small . && \

@@ -99,22 +99,11 @@ func NewManager(ctx context.Context, cfg *Config) (*Manager, error) {
 		ctx: ctx,
 	}
 
-	pgst, err := pgstorage.NewPostgresStorage(pgstorage.Config{
-		Name:     cfg.Storage.Name,
-		User:     cfg.Storage.User,
-		Password: cfg.Storage.Password,
-		Host:     cfg.Storage.Host,
-		Port:     cfg.Storage.Port,
-		MaxConns: cfg.Storage.MaxConns,
-	})
-	if err != nil {
-		return nil, err
-	}
 	st, err := db.NewStorage(cfg.Storage)
 	if err != nil {
 		return nil, err
 	}
-	bt, err := bridgectrl.NewBridgeController(ctx, cfg.BT, []uint32{0, cfg.L2NetworkID}, pgst)
+	bt, err := bridgectrl.NewBridgeController(ctx, cfg.BT, []uint32{0, cfg.L2NetworkID}, st)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +115,7 @@ func NewManager(ctx context.Context, cfg *Config) (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
-	bService := server.NewBridgeService(cfg.BS, cfg.BT.Height, []uint32{0, cfg.L2NetworkID}, pgst)
+	bService := server.NewBridgeService(cfg.BS, cfg.BT.Height, []uint32{0, cfg.L2NetworkID}, st)
 	opsman.storage = st.(StorageInterface)
 	opsman.bridgetree = bt
 	opsman.bridgeService = bService
@@ -881,7 +870,8 @@ func (m *Manager) ERC20Transfer(ctx context.Context, erc20Addr, to common.Addres
 
 func (m *Manager) GetTokenAddress(ctx context.Context, network NetworkSID, originalNetwork uint32, originalTokenAddr common.Address) (common.Address, error) {
 	zeroAddr := common.Address{}
-	if network == L1 {
+	switch network {
+	case L1:
 		if originalNetwork == 0 {
 			return originalTokenAddr, nil
 		}
@@ -890,7 +880,7 @@ func (m *Manager) GetTokenAddress(ctx context.Context, network NetworkSID, origi
 			return common.Address{}, err
 		}
 		return token.WrappedTokenAddress, nil
-	} else if network == L2 {
+	case L2:
 		if originalNetwork == 0 && originalTokenAddr == zeroAddr {
 			return zeroAddr, nil
 		}
@@ -906,7 +896,7 @@ func (m *Manager) GetTokenAddress(ctx context.Context, network NetworkSID, origi
 			return common.Address{}, err
 		}
 		return token.WrappedTokenAddress, nil
-	} else {
+	default:
 		return common.Address{}, errors.New("unexpected network")
 	}
 }
@@ -965,23 +955,24 @@ func (m *Manager) GetL2Balance(ctx context.Context, originalNetwork uint32, orig
 	return m.CheckAccountTokenBalance(ctx, L2, rollupAddr, &holder)
 }
 
-func GetOpsman(ctx context.Context, l2NetworkURL, dbName, bridgeServiceHTTPPort, bridgeServiceGRPCPort, port string, networkID uint32) (*Manager, error) {
+func GetOpsman(ctx context.Context, databaseType, l2NetworkURL, dbName, bridgeServiceHTTPPort, bridgeServiceGRPCPort, port string, networkID uint32) (*Manager, error) {
 	//nolint:mnd
 	opsCfg := &Config{
 		L1NetworkURL: "http://localhost:8545",
 		L2NetworkURL: l2NetworkURL,
 		L2NetworkID:  networkID,
 		Storage: db.Config{
-			Database: "postgres",
-			Name:     dbName,
-			User:     "test_user",
-			Password: "test_password",
-			Host:     "localhost",
-			Port:     port,
-			MaxConns: 10,
+			Database: databaseType,
+			PgStorage: pgstorage.Config{
+				Name:     dbName,
+				User:     "test_user",
+				Password: "test_password",
+				Host:     "localhost",
+				Port:     port,
+				MaxConns: 10,
+			},
 		},
 		BT: bridgectrl.Config{
-			Store:  "postgres",
 			Height: uint8(32),
 		},
 		BS: server.Config{

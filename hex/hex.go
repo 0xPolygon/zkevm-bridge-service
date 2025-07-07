@@ -108,14 +108,3 @@ func DecodeBig(hexNum string) *big.Int {
 
 	return createdNum
 }
-
-// IsValid checks if the provided string is a valid hexadecimal value
-func IsValid(s string) bool {
-	str := strings.TrimPrefix(s, "0x")
-	for _, b := range []byte(str) {
-		if !(b >= '0' && b <= '9' || b >= 'a' && b <= 'f' || b >= 'A' && b <= 'F') {
-			return false
-		}
-	}
-	return true
-}

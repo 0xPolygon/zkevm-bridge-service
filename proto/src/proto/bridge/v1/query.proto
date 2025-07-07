@@ -210,6 +210,7 @@ message Claim {
     string tx_hash = 8;
     uint32 rollup_index = 9;
     bool   mainnet_flag = 10;
+    string global_index = 11;
 }
 
 // Merkle Proof message

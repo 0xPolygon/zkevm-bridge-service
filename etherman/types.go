@@ -75,6 +75,7 @@ type Claim struct {
 	BlockNumber        uint64
 	NetworkID          uint32
 	TxHash             common.Hash
+	GlobalIndex        string
 
 	// XLayer
 	Time time.Time

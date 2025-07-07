@@ -6,7 +6,6 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl/pb"
@@ -39,7 +38,7 @@ func (s *ClientSynchronizer) beforeProcessDeposit(deposit *etherman.Deposit) {
 	messagebridge.ReplaceDepositDestAddresses(deposit)
 }
 
-func (s *ClientSynchronizer) afterProcessDeposit(deposit *etherman.Deposit, depositID uint64, dbTx pgx.Tx) error {
+func (s *ClientSynchronizer) afterProcessDeposit(deposit *etherman.Deposit, depositID uint64, dbTx interface{}) error {
 	// Add the deposit to Redis for L1
 	if deposit.NetworkID == 0 {
 		err := s.redisStorage.AddBlockDeposit(s.ctx, deposit)
@@ -188,7 +187,7 @@ func (s *ClientSynchronizer) getEstimateTimeForDepositCreated(networkId uint) ui
 	return uint32(pushtask.GetAvgCommitDuration(s.ctx, s.redisStorage))
 }
 
-func (s *ClientSynchronizer) afterProcessClaim(claim *etherman.Claim, dbTx pgx.Tx) {
+func (s *ClientSynchronizer) afterProcessClaim(claim *etherman.Claim, dbTx interface{}) {
 	// Try to retrieve deposit transaction info
 	deposit, err := s.storage.GetDeposit(s.ctx, claim.Index, claim.OriginalNetwork, nil)
 	if err != nil || deposit == nil {
@@ -255,7 +254,7 @@ func (s *ClientSynchronizer) RecordLatestBlockNum() {
 }
 
 // processWstETHDeposit increases the l2TokenNotWithdrawn value for wstETH bridge, used for reconciliation purpose
-func (s *ClientSynchronizer) processWstETHDeposit(deposit *etherman.Deposit, dbTx pgx.Tx) error {
+func (s *ClientSynchronizer) processWstETHDeposit(deposit *etherman.Deposit, dbTx interface{}) error {
 	amount := deposit.Amount
 	processor := messagebridge.GetProcessorByType(messagebridge.WstETH)
 	if processor == nil || !processor.CheckContractAddress(deposit.OriginalAddress) {
@@ -268,7 +267,7 @@ func (s *ClientSynchronizer) processWstETHDeposit(deposit *etherman.Deposit, dbT
 }
 
 // processWstETHClaim decrease the l2TokenNotWithdrawn value for wstETH bridge, used for reconciliation purpose
-func (s *ClientSynchronizer) processWstETHClaim(deposit *etherman.Deposit, dbTx pgx.Tx) error {
+func (s *ClientSynchronizer) processWstETHClaim(deposit *etherman.Deposit, dbTx interface{}) error {
 	amount := deposit.Amount
 	processor := messagebridge.GetProcessorByType(messagebridge.WstETH)
 	if processor == nil || !processor.CheckContractAddress(deposit.OriginalAddress) {
@@ -280,7 +279,7 @@ func (s *ClientSynchronizer) processWstETHClaim(deposit *etherman.Deposit, dbTx 
 	}, dbTx)
 }
 
-func (s *ClientSynchronizer) processWstETHCommon(deposit *etherman.Deposit, valueUpdateFn func(*big.Int), dbTx pgx.Tx) error {
+func (s *ClientSynchronizer) processWstETHCommon(deposit *etherman.Deposit, valueUpdateFn func(*big.Int), dbTx interface{}) error {
 	processor := messagebridge.GetProcessorByType(messagebridge.WstETH)
 	if processor == nil {
 		return nil

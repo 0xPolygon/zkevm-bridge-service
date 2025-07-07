@@ -8,7 +8,6 @@ import (
 
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
-	pgx "github.com/jackc/pgx/v4"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl/pb"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
@@ -209,7 +208,7 @@ func (tm *ClaimTxManager) processDepositStatusL1(newGer *etherman.GlobalExitRoot
 	return nil
 }
 
-func (tm *ClaimTxManager) processDepositStatusXLayer(ger *etherman.GlobalExitRoot, dbTx pgx.Tx) error {
+func (tm *ClaimTxManager) processDepositStatusXLayer(ger *etherman.GlobalExitRoot, dbTx interface{}) error {
 	if ger.BlockID != 0 { // L2 exit root is updated
 		log.Infof("Rollup exitroot %v is updated", ger.ExitRoots[1])
 		deposits, err := tm.storage.UpdateL2DepositsStatusXLayer(tm.ctx, ger.ExitRoots[1][:], uint(tm.rollupID), uint(tm.l2NetworkID), dbTx)
@@ -334,7 +333,7 @@ func (tm *ClaimTxManager) ReviewMonitoredTxXLayer(ctx context.Context, mTx *ctmt
 	return nil
 }
 
-func (tm *ClaimTxManager) addClaimTxXLayer(depositCount uint, from common.Address, to *common.Address, value *big.Int, data []byte, dbTx pgx.Tx) error {
+func (tm *ClaimTxManager) addClaimTxXLayer(depositCount uint, from common.Address, to *common.Address, value *big.Int, data []byte, dbTx interface{}) error {
 	// get gas
 	tx := ethereum.CallMsg{
 		From:  from,
@@ -423,7 +422,7 @@ func (tm *ClaimTxManager) getDeposits(ger *etherman.GlobalExitRoot) ([]*etherman
 	return deposits, nil
 }
 
-func (tm *ClaimTxManager) rollbackStore(dbTx pgx.Tx) {
+func (tm *ClaimTxManager) rollbackStore(dbTx interface{}) {
 	if rollbackErr := tm.storage.Rollback(tm.ctx, dbTx); rollbackErr != nil {
 		log.Errorf("claimtxman error rolling back state. RollbackErr: %v", rollbackErr)
 	}

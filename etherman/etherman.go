@@ -27,11 +27,7 @@ import (
 )
 
 var (
-	// Old SovereignChain L2GERManager events
-	insertGlobalExitRootSignatureHash     = crypto.Keccak256Hash([]byte("InsertGlobalExitRoot(bytes32)"))
-	removeLastGlobalExitRootSignatureHash = crypto.Keccak256Hash([]byte("RemoveLastGlobalExitRoot(bytes32)"))
-
-	// New SovereignChain L2GERManager events
+	// SovereignChain L2GERManager events
 	updateHashChainValueSignatureHash        = crypto.Keccak256Hash([]byte("UpdateHashChainValue(bytes32,bytes32)"))
 	updateRemovalHashChainValueSignatureHash = crypto.Keccak256Hash([]byte("UpdateRemovalHashChainValue(bytes32,bytes32)"))
 
@@ -106,7 +102,7 @@ var (
 	transferAdminRoleSignatureHash      = crypto.Keccak256Hash([]byte("TransferAdminRole(address)"))               // Used in oldZkEvm as well
 
 	// ErrNotFound is used when the object is not found
-	ErrNotFound = errors.New("Not found")
+	ErrNotFound = errors.New("not found")
 )
 
 // EventOrder is the the type used to identify the events order
@@ -221,6 +217,8 @@ func NewL2Client(url string, polygonBridgeAddress, claimCompressorAddress, polyg
 	networkID, err := bridge.NetworkID(&bind.CallOpts{Pending: false})
 	if err != nil {
 		return nil, err
+	} else if networkID == 0 {
+		return nil, fmt.Errorf("l2 networkID received is 0. It can't be the same value as L1")
 	}
 	scAddresses := []common.Address{polygonBridgeAddress}
 	logger := log.WithFields("networkID", networkID)
@@ -272,8 +270,6 @@ func (etherMan *Client) GetRollupInfoByBlockRange(ctx context.Context, fromBlock
 			newWrappedTokenEventSignatureHash,
 			verifyBatchesTrustedAggregatorSignatureHash,
 			rollupManagerVerifyBatchesSignatureHash,
-			insertGlobalExitRootSignatureHash,
-			removeLastGlobalExitRootSignatureHash,
 			updateHashChainValueSignatureHash,
 			updateRemovalHashChainValueSignatureHash,
 		}},
@@ -306,7 +302,7 @@ func (etherMan *Client) readEvents(ctx context.Context, query ethereum.FilterQue
 	startProcess := time.Now()
 	for _, vLog := range logs {
 		startProcessSingleEvent := time.Now()
-		err := etherMan.processEvent(ctx, vLog, &blocks, &blocksOrder)
+		err := etherMan.processEvent(vLog, &blocks, &blocksOrder)
 		metrics.ProcessSingleEventTime(time.Since(startProcessSingleEvent))
 		metrics.EventCounter()
 		if err != nil {
@@ -319,7 +315,7 @@ func (etherMan *Client) readEvents(ctx context.Context, query ethereum.FilterQue
 	return blocks, blocksOrder, nil
 }
 
-func (etherMan *Client) processEvent(ctx context.Context, vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) processEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	switch vLog.Topics[0] {
 	case updateGlobalExitRootSignatureHash:
 		return etherMan.updateGlobalExitRootEvent(vLog, blocks, blocksOrder)
@@ -457,10 +453,6 @@ func (etherMan *Client) processEvent(ctx context.Context, vLog types.Log, blocks
 	case transferAdminRoleSignatureHash:
 		etherMan.logger.Debug("TransferAdminRole event detected. Ignoring...")
 		return nil
-	case insertGlobalExitRootSignatureHash:
-		return etherMan.insertSovereignChainL2GER(vLog, blocks, blocksOrder)
-	case removeLastGlobalExitRootSignatureHash:
-		return etherMan.removeLastL2GER(vLog, blocks, blocksOrder)
 	case updateHashChainValueSignatureHash:
 		return etherMan.updateHashSovereignChainValue(vLog, blocks, blocksOrder)
 	case updateRemovalHashChainValueSignatureHash:
@@ -483,15 +475,6 @@ func (etherMan *Client) processEvent(ctx context.Context, vLog types.Log, blocks
 	}
 	etherMan.logger.Warnf("Event not registered: %+v", vLog)
 	return nil
-}
-
-func (etherMan *Client) removeLastL2GER(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
-	etherMan.logger.Debug("removeLastGlobalExitRoot event detected. Processing...")
-	l2GER, err := etherMan.OldGerL2SovereignChain.ParseRemoveLastGlobalExitRoot(vLog)
-	if err != nil {
-		return err
-	}
-	return etherMan.removeL2GER(l2GER.RemovedGlobalExitRoot, vLog, blocks, blocksOrder)
 }
 
 func (etherMan *Client) updateRemovalHashSovereignChainValue(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
@@ -527,15 +510,6 @@ func (etherMan *Client) removeL2GER(removedGlobalExitRoot common.Hash, vLog type
 	}
 	(*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash] = append((*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash], or)
 	return nil
-}
-
-func (etherMan *Client) insertSovereignChainL2GER(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
-	etherMan.logger.Debug("insertSovereignChainL2GER event detected. Processing...")
-	l2GER, err := etherMan.OldGerL2SovereignChain.ParseInsertGlobalExitRoot(vLog)
-	if err != nil {
-		return err
-	}
-	return etherMan.addSovereignChainL2GER(l2GER.NewGlobalExitRoot, vLog, blocks, blocksOrder)
 }
 
 func (etherMan *Client) updateHashSovereignChainValue(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
@@ -670,7 +644,7 @@ func (etherMan *Client) oldClaimEvent(vLog types.Log, blocks *[]Block, blocksOrd
 	if err != nil {
 		return err
 	}
-	return etherMan.claimEvent(vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, c.Index, c.OriginNetwork, 0, false)
+	return etherMan.claimEvent(vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, c.Index, c.OriginNetwork, 0, false, "")
 }
 
 func (etherMan *Client) newClaimEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
@@ -683,10 +657,10 @@ func (etherMan *Client) newClaimEvent(vLog types.Log, blocks *[]Block, blocksOrd
 	if err != nil {
 		return err
 	}
-	return etherMan.claimEvent(vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, localExitRootIndex, c.OriginNetwork, rollupIndex, mainnetFlag)
+	return etherMan.claimEvent(vLog, blocks, blocksOrder, c.Amount, c.DestinationAddress, c.OriginAddress, localExitRootIndex, c.OriginNetwork, rollupIndex, mainnetFlag, c.GlobalIndex.String())
 }
 
-func (etherMan *Client) claimEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, amount *big.Int, destinationAddress, originAddress common.Address, Index, originNetwork, rollupIndex uint32, mainnetFlag bool) error {
+func (etherMan *Client) claimEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order, amount *big.Int, destinationAddress, originAddress common.Address, Index, originNetwork, rollupIndex uint32, mainnetFlag bool, globalIndex string) error {
 	var claim Claim
 	claim.Amount = amount
 	claim.DestinationAddress = destinationAddress
@@ -697,6 +671,7 @@ func (etherMan *Client) claimEvent(vLog types.Log, blocks *[]Block, blocksOrder 
 	claim.TxHash = vLog.TxHash
 	claim.RollupIndex = rollupIndex
 	claim.MainnetFlag = mainnetFlag
+	claim.GlobalIndex = globalIndex
 
 	log.Debugf("Claim event[%+v] blockNumber[%v]", claim, vLog.BlockNumber) // XLayer
 

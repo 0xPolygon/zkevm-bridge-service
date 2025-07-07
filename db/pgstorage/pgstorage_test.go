@@ -54,7 +54,7 @@ func TestGetLeaves(t *testing.T) {
 
 	store, err := NewPostgresStorage(dbCfg)
 	require.NoError(t, err)
-	_, err = store.Pool.Exec(ctx, data)
+	_, err = store.Exec(ctx, data)
 	require.NoError(t, err)
 
 	leaves, err := store.GetLatestRollupExitLeaves(ctx, nil)
@@ -110,7 +110,7 @@ func TestIsRollupExitRoot(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, false, exist)
 
-	_, err = store.Pool.Exec(ctx, data)
+	_, err = store.Exec(ctx, data)
 	require.NoError(t, err)
 
 	exist, err = store.IsRollupExitRoot(ctx, root, nil)
@@ -191,7 +191,7 @@ func TestGetPendingDepositsToClaim(t *testing.T) {
 	store, err := NewPostgresStorage(dbCfg)
 	require.NoError(t, err)
 
-	_, err = store.Pool.Exec(ctx, data)
+	_, err = store.Exec(ctx, data)
 	require.NoError(t, err)
 	deposits, totalCount, err := store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 2, 0, nil)
 	require.NoError(t, err)

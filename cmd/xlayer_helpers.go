@@ -21,11 +21,11 @@ import (
 
 func loadKmsPasswords(c *config.Config) error {
 	var err error
-	c.BridgeServer.DB.Password, err = kmsDB.GetDBPassword(c.BridgeServer.DB.Password)
+	c.BridgeServer.DB.PgStorage.Password, err = kmsDB.GetDBPassword(c.BridgeServer.DB.PgStorage.Password)
 	if err != nil {
 		log.Fatal(err)
 	}
-	c.SyncDB.Password, err = kmsDB.GetDBPassword(c.SyncDB.Password)
+	c.SyncDB.PgStorage.Password, err = kmsDB.GetDBPassword(c.SyncDB.PgStorage.Password)
 	if err != nil {
 		log.Fatal(err)
 	}
