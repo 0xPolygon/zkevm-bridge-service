@@ -129,9 +129,9 @@ func (p *PostgresStorage) AddDeposit(ctx context.Context, deposit *etherman.Depo
 
 // AddClaim adds new claim to the storage.
 func (p *PostgresStorage) AddClaim(ctx context.Context, claim *etherman.Claim, dbTx interface{}) error {
-	const addClaimSQL = "INSERT INTO sync.claim (network_id, index, orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)"
+	const addClaimSQL = "INSERT INTO sync.claim (network_id, index, orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag, global_index) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
 	e := p.getExecQuerier(dbTx)
-	_, err := e.Exec(ctx, addClaimSQL, claim.NetworkID, claim.Index, claim.OriginalNetwork, claim.OriginalAddress, claim.Amount.String(), claim.DestinationAddress, claim.BlockID, claim.TxHash, claim.RollupIndex, claim.MainnetFlag)
+	_, err := e.Exec(ctx, addClaimSQL, claim.NetworkID, claim.Index, claim.OriginalNetwork, claim.OriginalAddress, claim.Amount.String(), claim.DestinationAddress, claim.BlockID, claim.TxHash, claim.RollupIndex, claim.MainnetFlag, claim.GlobalIndex)
 	return err
 }
 
@@ -218,13 +218,13 @@ func (p *PostgresStorage) GetClaim(ctx context.Context, depositCount, originNetw
 	// destination rollup ID == network_id: network that has received the claim, therefore, the destination rollupID of the claim
 
 	const getClaimSQLOriginMainnet = `
-	SELECT index, orig_net, orig_addr, amount, dest_addr, block_id, network_id, tx_hash, rollup_index 
+	SELECT index, orig_net, orig_addr, amount, dest_addr, block_id, network_id, tx_hash, rollup_index, global_index
 	FROM sync.claim 
 	WHERE index = $1 AND mainnet_flag AND network_id = $2;
 	`
 
 	const getClaimSQLOriginRollup = `
-	SELECT index, orig_net, orig_addr, amount, dest_addr, block_id, network_id, tx_hash, rollup_index 
+	SELECT index, orig_net, orig_addr, amount, dest_addr, block_id, network_id, tx_hash, rollup_index, global_index
 	FROM sync.claim 
 	WHERE index = $1 AND NOT mainnet_flag AND rollup_index + 1 = $2 AND network_id = $3;
 	`
@@ -238,7 +238,7 @@ func (p *PostgresStorage) GetClaim(ctx context.Context, depositCount, originNetw
 			QueryRow(ctx, getClaimSQLOriginRollup, depositCount, originNetworkID, networkID)
 	}
 
-	err := row.Scan(&claim.Index, &claim.OriginalNetwork, &claim.OriginalAddress, &amount, &claim.DestinationAddress, &claim.BlockID, &claim.NetworkID, &claim.TxHash, &claim.RollupIndex)
+	err := row.Scan(&claim.Index, &claim.OriginalNetwork, &claim.OriginalAddress, &amount, &claim.DestinationAddress, &claim.BlockID, &claim.NetworkID, &claim.TxHash, &claim.RollupIndex, &claim.GlobalIndex)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, gerror.ErrStorageNotFound
 	}
@@ -264,7 +264,7 @@ func (p *PostgresStorage) GetDeposit(ctx context.Context, depositCounterUser, ne
 
 // GetLatestExitRoot gets the latest global exit root.
 func (p *PostgresStorage) GetLatestExitRoot(ctx context.Context, networkID, destNetwork uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error) {
-	if networkID == 0 {
+	if destNetwork != 0 {
 		return p.GetLatestTrustedExitRoot(ctx, destNetwork, dbTx)
 	}
 
@@ -574,7 +574,7 @@ func (p *PostgresStorage) GetClaimCount(ctx context.Context, destAddr string, db
 
 // GetClaims gets the claim list which be smaller than index.
 func (p *PostgresStorage) GetClaims(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Claim, error) {
-	const getClaimsSQL = "SELECT index, orig_net, orig_addr, amount, dest_addr, block_id, network_id, tx_hash, rollup_index, mainnet_flag FROM sync.claim WHERE dest_addr = $1 ORDER BY block_id DESC LIMIT $2 OFFSET $3"
+	const getClaimsSQL = "SELECT index, orig_net, orig_addr, amount, dest_addr, block_id, network_id, tx_hash, rollup_index, mainnet_flag, global_index FROM sync.claim WHERE dest_addr = $1 ORDER BY block_id DESC LIMIT $2 OFFSET $3"
 	rows, err := p.getExecQuerier(dbTx).Query(ctx, getClaimsSQL, common.FromHex(destAddr), limit, offset)
 	if err != nil {
 		return nil, err
@@ -586,7 +586,7 @@ func (p *PostgresStorage) GetClaims(ctx context.Context, destAddr string, limit,
 			claim  etherman.Claim
 			amount string
 		)
-		err = rows.Scan(&claim.Index, &claim.OriginalNetwork, &claim.OriginalAddress, &amount, &claim.DestinationAddress, &claim.BlockID, &claim.NetworkID, &claim.TxHash, &claim.RollupIndex, &claim.MainnetFlag)
+		err = rows.Scan(&claim.Index, &claim.OriginalNetwork, &claim.OriginalAddress, &amount, &claim.DestinationAddress, &claim.BlockID, &claim.NetworkID, &claim.TxHash, &claim.RollupIndex, &claim.MainnetFlag, &claim.GlobalIndex)
 		if err != nil {
 			return nil, err
 		}
