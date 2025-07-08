@@ -10,6 +10,7 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/metrics"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer"
 	"github.com/mitchellh/mapstructure"
@@ -25,6 +26,8 @@ type Config struct {
 	Synchronizer     synchronizer.Config
 	BridgeController bridgectrl.Config
 	BridgeServer     server.Config
+	// Configuration of the metrics service where metrics will be published
+	Metrics metrics.Config
 	NetworkConfig
 }
 
@@ -77,6 +80,11 @@ func Load(configFilePath string, network string) (*Config, error) {
 	}
 	if !viper.IsSet("NetworkConfig") && network != "" {
 		cfg.loadNetworkConfig(network)
+	}
+	if len(cfg.L2PolygonZkEVMGlobalExitRootAddresses) != len(cfg.RequireSovereignChainSmcs) ||
+		len(cfg.RequireSovereignChainSmcs) != len(cfg.L2PolygonBridgeAddresses) ||
+		len(cfg.L2PolygonBridgeAddresses) != len(cfg.Etherman.L2URLs) {
+		return nil, errors.New("the length of RequireSovereignChainSmcs, L2PolygonZkEVMGlobalExitRootAddresses, L2PolygonBridgeAddresses and L2URLs must be the same")
 	}
 
 	return cfg, nil

@@ -32,6 +32,12 @@ service BridgeService {
         };
     }
 
+    /// Get the merkle proof for the specific deposit and GER
+    rpc GetProofByGER(GetProofByGERRequest) returns (GetProofResponse) {
+        option (google.api.http) = {
+            get: "/merkle-proof-by-ger"
+        };
+    }
     /// Get the specific deposit
     rpc GetBridge(GetBridgeRequest) returns (GetBridgeResponse) {
         option (google.api.http) = {
@@ -50,6 +56,20 @@ service BridgeService {
     rpc GetTokenWrapped(GetTokenWrappedRequest) returns (GetTokenWrappedResponse) {
         option (google.api.http) = {
             get: "/tokenwrapped"
+        };
+    }
+
+    /// Get pending bridges to claim by the destination address, destination network and leaf type in L1 and L2's
+    rpc GetPendingBridgesToClaim(GetPendingBridgesRequest) returns (GetBridgesResponse) {
+        option (google.api.http) = {
+            get: "/pending-bridges"
+        };
+    }
+
+    /// Get the merkle proof for the specific deposit. It is compatible with Apps Team bridge
+    rpc GetProofV2(GetProofV2Request) returns (GetProofResponse) {
+        option (google.api.http) = {
+            get: "/v2/merkle-proof"
         };
     }
 }
@@ -74,7 +94,7 @@ message Deposit {
     uint32 dest_net = 5;
     string dest_addr = 6;
     uint64 block_num = 7;
-    uint64 deposit_cnt = 8;
+    uint32 deposit_cnt = 8;
     uint32 network_id = 9;
     string tx_hash = 10;
     string claim_tx_hash = 11;
@@ -85,7 +105,7 @@ message Deposit {
 
 // Claim message
 message Claim {
-    uint64 index = 1;
+    uint32 index = 1;
     uint32 orig_net = 2;
     string orig_addr = 3;
     string amount = 4;
@@ -93,8 +113,9 @@ message Claim {
     string dest_addr = 6;
     uint64 block_num = 7;
     string tx_hash = 8;
-    uint64 rollup_index = 9;
+    uint32 rollup_index = 9;
     bool   mainnet_flag = 10;
+    string global_index = 11;
 }
 
 // Merkle Proof message
@@ -111,13 +132,32 @@ message CheckAPIRequest {}
 
 message GetBridgesRequest {
     string dest_addr = 1;
-    uint64 offset = 2;
+    uint32 offset = 2;
     uint32 limit = 3;
+}
+
+message GetPendingBridgesRequest {
+    string dest_addr = 1;
+    uint32 dest_net = 2;
+    uint32 leaf_type = 3;
+    uint32 offset = 4;
+    uint32 limit = 5;
 }
 
 message GetProofRequest {
     uint32 net_id = 1;
-    uint64 deposit_cnt = 2;
+    uint32 deposit_cnt = 2;
+}
+
+message GetProofV2Request {
+    uint32 network_id = 1;
+    uint32 deposit_count = 2;
+}
+
+message GetProofByGERRequest {
+    uint32 net_id = 1;
+    uint32 deposit_cnt = 2;
+    string ger = 3;
 }
 
 message GetTokenWrappedRequest {
@@ -127,12 +167,12 @@ message GetTokenWrappedRequest {
 
 message GetBridgeRequest {
     uint32 net_id = 1;
-    uint64 deposit_cnt = 2;
+    uint32 deposit_cnt = 2;
 }
 
 message GetClaimsRequest {
     string dest_addr = 1;
-    uint64 offset = 2;
+    uint32 offset = 2;
     uint32 limit = 3;
 }
 

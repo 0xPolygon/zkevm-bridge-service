@@ -11,12 +11,10 @@ import (
 	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
-	"github.com/0xPolygonHermez/zkevm-node/state/runtime"
-	"github.com/ethereum/go-ethereum"
+	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/jackc/pgx/v4"
 )
 
 type MonitorTxs struct {
@@ -25,7 +23,7 @@ type MonitorTxs struct {
 	// client is the ethereum client
 	l2Node     *utils.Client
 	cfg        Config
-	rollupID   uint
+	rollupID   uint32
 	nonceCache *NonceCache
 	auth       *bind.TransactOpts
 }
@@ -35,7 +33,7 @@ func NewMonitorTxs(ctx context.Context,
 	l2Node *utils.Client,
 	cfg Config,
 	nonceCache *NonceCache,
-	rollupID uint,
+	rollupID uint32,
 	auth *bind.TransactOpts) *MonitorTxs {
 	return &MonitorTxs{
 		rollupID:   rollupID,
@@ -81,7 +79,7 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 		// update monitored tx changes into storage
 		// if the tx was mined but failed, we continue to consider it was not mined
 		// and store the failed receipt to be used to check if nonce needs to be reviewed
-		hasFailedReceipts, allHistoryTxMined, receiptSuccessful := tm.checkTxHistory(ctx, mTx, mTxLog, dbTx)
+		hasFailedReceipts, allHistoryTxMined, receiptSuccessful := tm.checkTxHistory(ctx, mTx, mTxLog)
 
 		if receiptSuccessful {
 			//mTxLog.Infof("tx %s was mined successfully", txHash.String())
@@ -133,7 +131,7 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 				continue
 			}
 			//Multiply gasPrice by 10 to increase the efficiency of the tx in the sequence
-			mTx.GasPrice = big.NewInt(0).Mul(gasPrice, big.NewInt(10)) //nolint:gomnd
+			mTx.GasPrice = big.NewInt(0).Mul(gasPrice, big.NewInt(10)) //nolint:mnd
 			mTxLog.Infof("Using gasPrice: %s. The gasPrice suggested by the network is %s", mTx.GasPrice.String(), gasPrice.String())
 
 			// rebuild transaction
@@ -211,7 +209,7 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 }
 
 // returns hasFailedReceipts, allHistoryTxMined, receiptSuccessful
-func (tm *MonitorTxs) checkTxHistory(ctx context.Context, mTx ctmtypes.MonitoredTx, mTxLog *log.Logger, dbTx pgx.Tx) (bool, bool, bool) {
+func (tm *MonitorTxs) checkTxHistory(ctx context.Context, mTx ctmtypes.MonitoredTx, mTxLog *log.Logger) (bool, bool, bool) {
 	var receipt *types.Receipt
 	hasFailedReceipts := false
 	allHistoryTxMined := true
@@ -276,7 +274,7 @@ func (tm *MonitorTxs) ReviewMonitoredTx(ctx context.Context, mTx *ctmtypes.Monit
 		Data:  mTx.Data,
 	}
 	gas, err := tm.l2Node.EstimateGas(ctx, tx)
-	for i := 1; err != nil && err.Error() != runtime.ErrExecutionReverted.Error() && i < tm.cfg.RetryNumber; i++ {
+	for i := 1; err != nil && err.Error() != ErrExecutionReverted.Error() && i < tm.cfg.RetryNumber; i++ {
 		mTxLog.Warnf("error during gas estimation. Retrying... Error: %v, Data: %s", err, common.Bytes2Hex(tx.Data))
 		time.Sleep(tm.cfg.RetryInterval.Duration)
 		gas, err = tm.l2Node.EstimateGas(tm.ctx, tx)

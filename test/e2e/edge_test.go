@@ -6,12 +6,14 @@ package e2e
 import (
 	"context"
 	"math/big"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/operations"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
@@ -47,7 +49,7 @@ func depositFromL2(ctx context.Context, opsman *operations.Manager, t *testing.T
 	require.NoError(t, err)
 	// Check globalExitRoot
 	// Get the claim data
-	smtProof, smtRollupProof, globalExitRoot, err := opsman.GetClaimData(ctx, uint(deposits[0].NetworkId), uint(deposits[0].DepositCnt))
+	smtProof, smtRollupProof, globalExitRoot, err := opsman.GetClaimData(ctx, deposits[0].NetworkId, deposits[0].DepositCnt)
 	require.NoError(t, err)
 	// Claim funds in L1
 	err = opsman.SendL1Claim(ctx, deposits[0], smtProof, smtRollupProof, globalExitRoot)
@@ -58,23 +60,30 @@ func TestEdgeCase(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
+	require.NoError(t, err)
 
 	ctx := context.Background()
+	databaseType, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	if !exists {
+		panic("ZKEVM_BRIDGE_SYNCDB_DATABASE env var not set")
+	}
 	opsCfg := &operations.Config{
 		L1NetworkURL: "http://localhost:8545",
 		L2NetworkURL: "http://localhost:8123",
 		L2NetworkID:  1,
 		Storage: db.Config{
-			Database: "postgres",
-			Name:     "test_db",
-			User:     "test_user",
-			Password: "test_password",
-			Host:     "localhost",
-			Port:     "5435",
-			MaxConns: 10,
+			Database: databaseType,
+			PgStorage: pgstorage.Config{
+				Name:     "test_db",
+				User:     "test_user",
+				Password: "test_password",
+				Host:     "localhost",
+				Port:     "5435",
+				MaxConns: 10,
+			},
 		},
 		BT: bridgectrl.Config{
-			Store:  "postgres",
 			Height: uint8(32),
 		},
 		BS: server.Config{
@@ -86,12 +95,14 @@ func TestEdgeCase(t *testing.T) {
 			BridgeVersion:    "v1",
 			DB: db.Config{
 				Database: "postgres",
-				Name:     "test_db",
-				User:     "test_user",
-				Password: "test_password",
-				Host:     "localhost",
-				Port:     "5435",
-				MaxConns: 10,
+				PgStorage: pgstorage.Config{
+					Name:     "test_db",
+					User:     "test_user",
+					Password: "test_password",
+					Host:     "localhost",
+					Port:     "5435",
+					MaxConns: 10,
+				},
 			},
 		},
 	}

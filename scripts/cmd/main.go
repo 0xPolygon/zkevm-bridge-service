@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 )
 
 func main() {

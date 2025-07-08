@@ -10,13 +10,15 @@ gen() {
     abigen --bin bin/${package}.bin --abi abi/${package}.abi --pkg=${package} --out=${package}/${package}.go
 }
 
+
 compilegen() {
     local package=$1
 
-    docker run --rm  --user $(id -u) -v "${dir}:/contracts" ethereum/solc:0.8.20-alpine - "/contracts/${package}.sol" -o "/contracts/${package}" --abi --bin --overwrite --optimize --evm-version shangai
+    docker run --rm  --user $(id -u) -v "${dir}:/contracts" ethereum/solc:0.8.20-alpine - "/contracts/${package}.sol" -o "/contracts/${package}" --abi --bin --overwrite --optimize --evm-version paris
     abigen --bin ${package}/${package}.bin --abi ${package}/${package}.abi --pkg=${package} --out=${package}/${package}.go
 }
 
+gen  PingReceiver
 gen polygonzkevmbridge
 gen erc20permitmock
 compilegen BridgeMessageReceiver

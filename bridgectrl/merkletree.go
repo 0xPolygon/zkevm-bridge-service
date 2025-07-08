@@ -8,7 +8,6 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/jackc/pgx/v4"
 )
 
 // zeroHashes is the pre-calculated zero hash array
@@ -17,12 +16,12 @@ var zeroHashes [][KeyLen]byte
 // MerkleTree struct
 type MerkleTree struct {
 	// store is the database storage to store all node data
-	store   merkleTreeStore
-	network uint
+	store     merkleTreeStore
+	networkID uint32
 	// height is the depth of the merkle tree
 	height uint8
 	// count is the number of deposit
-	count uint
+	count uint32
 	// siblings is the array of sibling of the last leaf added
 	siblings [][KeyLen]byte
 }
@@ -38,8 +37,8 @@ func init() {
 }
 
 // NewMerkleTree creates new MerkleTree.
-func NewMerkleTree(ctx context.Context, store merkleTreeStore, height uint8, network uint) (*MerkleTree, error) {
-	depositCnt, err := store.GetLastDepositCount(ctx, network, nil)
+func NewMerkleTree(ctx context.Context, store merkleTreeStore, height uint8, networkID uint32) (*MerkleTree, error) {
+	depositCnt, err := store.GetLastDepositCount(ctx, networkID, nil)
 	if err != nil {
 		if err != gerror.ErrStorageNotFound {
 			return nil, err
@@ -50,10 +49,10 @@ func NewMerkleTree(ctx context.Context, store merkleTreeStore, height uint8, net
 	}
 
 	mt := &MerkleTree{
-		store:   store,
-		network: network,
-		height:  height,
-		count:   depositCnt,
+		store:     store,
+		networkID: networkID,
+		height:    height,
+		count:     depositCnt,
 	}
 	mt.siblings, err = mt.initSiblings(ctx, nil)
 
@@ -62,7 +61,7 @@ func NewMerkleTree(ctx context.Context, store merkleTreeStore, height uint8, net
 
 // initSiblings returns the siblings of the node at the given index.
 // it is used to initialize the siblings array in the beginning.
-func (mt *MerkleTree) initSiblings(ctx context.Context, dbTx pgx.Tx) ([][KeyLen]byte, error) {
+func (mt *MerkleTree) initSiblings(ctx context.Context, dbTx interface{}) ([][KeyLen]byte, error) {
 	var (
 		left     [KeyLen]byte
 		siblings [][KeyLen]byte
@@ -110,7 +109,7 @@ func (mt *MerkleTree) initSiblings(ctx context.Context, dbTx pgx.Tx) ([][KeyLen]
 	return siblings, nil
 }
 
-func (mt *MerkleTree) addLeaf(ctx context.Context, depositID uint64, leaf [KeyLen]byte, index uint, dbTx pgx.Tx) error {
+func (mt *MerkleTree) addLeaf(ctx context.Context, depositID uint64, leaf [KeyLen]byte, index uint32, dbTx interface{}) error {
 	if index != mt.count {
 		return fmt.Errorf("mismatched deposit count: %d, expected: %d", index, mt.count)
 	}
@@ -141,7 +140,7 @@ func (mt *MerkleTree) addLeaf(ctx context.Context, depositID uint64, leaf [KeyLe
 		}
 	}
 
-	err := mt.store.SetRoot(ctx, cur[:], depositID, mt.network, dbTx)
+	err := mt.store.SetRoot(ctx, cur[:], depositID, mt.networkID, dbTx)
 	if err != nil {
 		return err
 	}
@@ -157,19 +156,34 @@ func (mt *MerkleTree) addLeaf(ctx context.Context, depositID uint64, leaf [KeyLe
 	return nil
 }
 
-func (mt *MerkleTree) resetLeaf(ctx context.Context, depositCount uint, dbTx pgx.Tx) error {
+func (mt *MerkleTree) resetLeaf(ctx context.Context, depositCount uint32, dbTx interface{}) error {
 	var err error
 	mt.count = depositCount
 	mt.siblings, err = mt.initSiblings(ctx, dbTx)
 	return err
 }
 
+func (mt *MerkleTree) rollbackMT(ctx context.Context, networkID uint32, dbTx interface{}) error {
+	depositCnt, err := mt.store.GetLastDepositCount(ctx, networkID, nil)
+	if err != nil {
+		if err != gerror.ErrStorageNotFound {
+			return err
+		}
+		depositCnt = 0
+	} else {
+		depositCnt++
+	}
+	mt.count = depositCnt
+	mt.siblings, err = mt.initSiblings(ctx, dbTx)
+	return err
+}
+
 // this function is used to get the current root of the merkle tree
-func (mt *MerkleTree) getRoot(ctx context.Context, dbTx pgx.Tx) ([]byte, error) {
+func (mt *MerkleTree) getRoot(ctx context.Context, dbTx interface{}) ([]byte, error) {
 	if mt.count == 0 {
 		return zeroHashes[mt.height][:], nil
 	}
-	return mt.store.GetRoot(ctx, mt.count-1, mt.network, dbTx)
+	return mt.store.GetRoot(ctx, mt.count-1, mt.networkID, dbTx)
 }
 
 func buildIntermediate(leaves [][KeyLen]byte) ([][][]byte, [][32]byte) {
@@ -178,7 +192,7 @@ func buildIntermediate(leaves [][KeyLen]byte) ([][][]byte, [][32]byte) {
 		hashes [][KeyLen]byte
 	)
 	for i := 0; i < len(leaves); i += 2 {
-		var left, right int = i, i + 1
+		left, right := i, i + 1
 		hash := Hash(leaves[left], leaves[right])
 		nodes = append(nodes, [][]byte{hash[:], leaves[left][:], leaves[right][:]})
 		hashes = append(hashes, hash)
@@ -186,12 +200,12 @@ func buildIntermediate(leaves [][KeyLen]byte) ([][][]byte, [][32]byte) {
 	return nodes, hashes
 }
 
-func (mt *MerkleTree) updateLeaf(ctx context.Context, depositID uint64, leaves [][KeyLen]byte, dbTx pgx.Tx) error {
+func (mt *MerkleTree) updateLeaf(ctx context.Context, depositID uint64, leaves [][KeyLen]byte, dbTx interface{}) error {
 	var (
 		nodes [][][][]byte
 		ns    [][][]byte
 	)
-	initLeavesCount := uint(len(leaves))
+	initLeavesCount := uint32(len(leaves)) // nolint:gosec
 	if len(leaves) == 0 {
 		leaves = append(leaves, zeroHashes[0])
 	}
@@ -207,7 +221,7 @@ func (mt *MerkleTree) updateLeaf(ctx context.Context, depositID uint64, leaves [
 		return fmt.Errorf("error: more than one root detected: %+v", nodes)
 	}
 	log.Debug("Root calculated: ", common.Bytes2Hex(ns[0][0]))
-	err := mt.store.SetRoot(ctx, ns[0][0], depositID, mt.network, dbTx)
+	err := mt.store.SetRoot(ctx, ns[0][0], depositID, mt.networkID, dbTx)
 	if err != nil {
 		return err
 	}
@@ -224,7 +238,7 @@ func (mt *MerkleTree) updateLeaf(ctx context.Context, depositID uint64, leaves [
 	return nil
 }
 
-func (mt *MerkleTree) getLeaves(ctx context.Context, dbTx pgx.Tx) ([][KeyLen]byte, error) {
+func (mt *MerkleTree) getLeaves(ctx context.Context, dbTx interface{}) ([][KeyLen]byte, error) {
 	root, err := mt.getRoot(ctx, dbTx)
 	if err != nil {
 		return nil, err
@@ -284,7 +298,7 @@ func (mt *MerkleTree) buildMTRoot(leaves [][KeyLen]byte) (common.Hash, error) {
 	return common.BytesToHash(ns[0][0]), nil
 }
 
-func (mt MerkleTree) storeLeaves(ctx context.Context, leaves [][KeyLen]byte, blockID uint64, dbTx pgx.Tx) error {
+func (mt MerkleTree) storeLeaves(ctx context.Context, leaves [][KeyLen]byte, blockID uint64, dbTx interface{}) error {
 	root, err := mt.buildMTRoot(leaves)
 	if err != nil {
 		return err
@@ -306,11 +320,11 @@ func (mt MerkleTree) storeLeaves(ctx context.Context, leaves [][KeyLen]byte, blo
 	return nil
 }
 
-// func (mt MerkleTree) getLatestRollupExitLeaves(ctx context.Context, dbTx pgx.Tx) ([]etherman.RollupExitLeaf, error) {
+// func (mt MerkleTree) getLatestRollupExitLeaves(ctx context.Context, dbTx interface{}) ([]etherman.RollupExitLeaf, error) {
 // 	return mt.store.GetLatestRollupExitLeaves(ctx, dbTx)
 // }
 
-func (mt MerkleTree) addRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx pgx.Tx) error {
+func (mt MerkleTree) addRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx interface{}) error {
 	storedRollupLeaves, err := mt.store.GetLatestRollupExitLeaves(ctx, dbTx)
 	if err != nil {
 		log.Error("error getting latest rollup exit leaves. Error: ", err)
@@ -329,7 +343,7 @@ func (mt MerkleTree) addRollupExitLeaf(ctx context.Context, rollupLeaf etherman.
 	for i := len(storedRollupLeaves); i < int(rollupLeaf.RollupId); i++ {
 		storedRollupLeaves = append(storedRollupLeaves, etherman.RollupExitLeaf{
 			BlockID:  rollupLeaf.BlockID,
-			RollupId: uint(i + 1),
+			RollupId: uint32(i + 1), // nolint:gosec
 		})
 	}
 	if storedRollupLeaves[rollupLeaf.RollupId-1].RollupId == rollupLeaf.RollupId {
@@ -352,7 +366,7 @@ func (mt MerkleTree) addRollupExitLeaf(ctx context.Context, rollupLeaf etherman.
 	return nil
 }
 
-func ComputeSiblings(rollupIndex uint, leaves [][KeyLen]byte, height uint8) ([][KeyLen]byte, common.Hash, error) {
+func ComputeSiblings(rollupIndex uint32, leaves [][KeyLen]byte, height uint8) ([][KeyLen]byte, common.Hash, error) {
 	var ns [][][]byte
 	if len(leaves) == 0 {
 		leaves = append(leaves, zeroHashes[0])
@@ -375,14 +389,14 @@ func ComputeSiblings(rollupIndex uint, leaves [][KeyLen]byte, height uint8) ([][
 			hashes [][KeyLen]byte
 		)
 		for i := 0; i < len(leaves); i += 2 {
-			var left, right int = i, i + 1
+			left, right := i, i + 1
 			hash := Hash(leaves[left], leaves[right])
 			nsi = append(nsi, [][]byte{hash[:], leaves[left][:], leaves[right][:]})
 			hashes = append(hashes, hash)
 		}
 		// Find the index of the leave in the next level of the tree.
 		// Divide the index by 2 to find the position in the upper level
-		index = uint(float64(index) / 2) //nolint:gomnd
+		index = uint32(float64(index) / 2) //nolint:mnd
 		ns = nsi
 		leaves = hashes
 	}

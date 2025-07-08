@@ -6,11 +6,12 @@ package e2e
 import (
 	"context"
 	"math/big"
+	"os"
 	"testing"
 	"time"
 
+	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/test/operations"
-	"github.com/0xPolygonHermez/zkevm-node/log"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/require"
 )
@@ -20,14 +21,21 @@ func TestMultipleRollups(t *testing.T) {
 		t.Skip()
 	}
 	const (
-		mainnetID uint = 0
-		rollup1ID uint = 1
-		rollup2ID uint = 2
+		mainnetID uint32 = 0
+		rollup1ID uint32 = 1
+		rollup2ID uint32 = 2
 	)
-	ctx := context.Background()
-	opsman1, err := operations.GetOpsman(ctx, "http://localhost:8123", "test_db", "8080", "9090", "5435", 1)
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
 	require.NoError(t, err)
-	opsman2, err := operations.GetOpsman(ctx, "http://localhost:8124", "test_db", "8080", "9090", "5435", 2)
+
+	ctx := context.Background()
+	databaseType, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	if !exists {
+		panic("ZKEVM_BRIDGE_SYNCDB_DATABASE env var not set")
+	}
+	opsman1, err := operations.GetOpsman(ctx, databaseType, "http://localhost:8123", "test_db", "8080", "9090", "5435", 1)
+	require.NoError(t, err)
+	opsman2, err := operations.GetOpsman(ctx, databaseType, "http://localhost:8124", "test_db", "8080", "9090", "5435", 2)
 	require.NoError(t, err)
 
 	// Fund L2 sequencer for rollup 2. This is super dirty, but have no better way to do this at the moment
@@ -163,9 +171,9 @@ func TestMultipleRollups(t *testing.T) {
 }
 
 type bridgeData struct {
-	originNet       uint
-	destNet         uint
-	originTokenNet  uint
+	originNet       uint32
+	destNet         uint32
+	originTokenNet  uint32
 	originTokenAddr common.Address
 	amount          *big.Int
 }
@@ -218,7 +226,7 @@ func bridge(
 		log.Debug("deposit claimed on L2")
 	} else {
 		log.Debug("getting proof to perform claim from bridge service...")
-		smtProof, smtRollupProof, globaExitRoot, err := opsman.GetClaimData(ctx, uint(deposit.NetworkId), uint(deposit.DepositCnt))
+		smtProof, smtRollupProof, globaExitRoot, err := opsman.GetClaimData(ctx, deposit.NetworkId, deposit.DepositCnt)
 		require.NoError(t, err)
 		log.Debug("sending claim tx to L1")
 		err = opsman.SendL1Claim(ctx, deposit, smtProof, smtRollupProof, globaExitRoot)

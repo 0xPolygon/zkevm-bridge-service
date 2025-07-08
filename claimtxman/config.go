@@ -1,7 +1,7 @@
 package claimtxman
 
 import (
-	"github.com/0xPolygonHermez/zkevm-node/config/types"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/config/types"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -20,6 +20,8 @@ type Config struct {
 	RetryNumber int `mapstructure:"RetryNumber"`
 	// AuthorizedClaimMessageAddresses are the allowed address to bridge message with autoClaim
 	AuthorizedClaimMessageAddresses []common.Address `mapstructure:"AuthorizedClaimMessageAddresses"`
+	// Enables the ability to Claim bridges between L2s automatically
+	AreClaimsBetweenL2sEnabled bool `mapstructure:"AreClaimsBetweenL2sEnabled"`
 
 	// GroupingClaims is the configuration for grouping claims
 	GroupingClaims ConfigGroupingClaims `mapstructure:"GroupingClaims"`
@@ -37,7 +39,7 @@ type ConfigGroupingClaims struct {
 	// TriggerRetainedClaimPeriod is maximum time that a claim can be retainer before creating a group
 	TriggerRetainedClaimPeriod types.Duration `mapstructure:"TriggerRetainedClaimPeriod"`
 	// MaxRetries is the maximum number of retries to send a compressed claim tx
-	MaxRetries int `mapstructure:"MaxRetries"`
+	MaxRetries int32 `mapstructure:"MaxRetries"`
 	// RetryInterval is time between each retry
 	RetryInterval types.Duration `mapstructure:"RetryInterval"`
 	// RetryTimeout is the maximum time to wait for a claim tx to be mined

@@ -22,13 +22,21 @@ import (
 )
 
 func init() {
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Change dir to project root
 	// This is important because we have relative paths to files containing test vectors
 	_, filename, _, _ := runtime.Caller(0)
 	dir := path.Join(path.Dir(filename), "../")
-	err := os.Chdir(dir)
+	err = os.Chdir(dir)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
+	}
+	_, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	if !exists {
+		log.Fatal("ZKEVM_BRIDGE_SYNCDB_DATABASE env var not set")
 	}
 }
 
@@ -66,7 +74,7 @@ func TestLeafHash(t *testing.T) {
 				DestinationNetwork: testVector.DestinationNetwork,
 				DestinationAddress: common.HexToAddress(testVector.DestinationAddress),
 				BlockNumber:        0,
-				DepositCount:       uint(ti + 1),
+				DepositCount:       uint32(ti + 1), // nolint:gosec
 				Metadata:           common.FromHex(testVector.Metadata),
 			}
 			leafHash := hashDeposit(deposit)
@@ -83,15 +91,11 @@ func TestMTAddLeaf(t *testing.T) {
 	err = json.Unmarshal(data, &mtTestVectors)
 	require.NoError(t, err)
 
-	dbCfg := pgstorage.NewConfigFromEnv()
 	ctx := context.Background()
 
 	for ti, testVector := range mtTestVectors {
 		t.Run(fmt.Sprintf("Test vector %d", ti), func(t *testing.T) {
-			err = pgstorage.InitOrReset(dbCfg)
-			require.NoError(t, err)
-
-			store, err := pgstorage.NewPostgresStorage(dbCfg)
+			store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 			require.NoError(t, err)
 
 			mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -111,10 +115,10 @@ func TestMTAddLeaf(t *testing.T) {
 					DestinationNetwork: testVector.NewLeaf.DestinationNetwork,
 					DestinationAddress: common.HexToAddress(testVector.NewLeaf.DestinationAddress),
 					BlockNumber:        0,
-					DepositCount:       uint(i),
+					DepositCount:       uint32(i), // nolint:gosec
 					Metadata:           common.FromHex(testVector.NewLeaf.Metadata),
 				}
-				depositID, err := store.AddDeposit(ctx, deposit, nil)
+				depositID, err := testStore.AddDeposit(ctx, deposit, nil)
 				require.NoError(t, err)
 				depositIDs = append(depositIDs, depositID)
 			}
@@ -123,7 +127,7 @@ func TestMTAddLeaf(t *testing.T) {
 				leafValue, err := formatBytes32String(leaf[2:])
 				require.NoError(t, err)
 
-				err = mt.addLeaf(ctx, depositIDs[i], leafValue, uint(i), nil)
+				err = mt.addLeaf(ctx, depositIDs[i], leafValue, uint32(i), nil) // nolint:gosec
 				require.NoError(t, err)
 			}
 			curRoot, err := mt.getRoot(ctx, nil)
@@ -131,7 +135,7 @@ func TestMTAddLeaf(t *testing.T) {
 			assert.Equal(t, hex.EncodeToString(curRoot), testVector.CurrentRoot[2:])
 
 			leafHash := hashDeposit(deposit)
-			err = mt.addLeaf(ctx, depositIDs[len(depositIDs)-1], leafHash, uint(len(testVector.ExistingLeaves)), nil)
+			err = mt.addLeaf(ctx, depositIDs[len(depositIDs)-1], leafHash, uint32(len(testVector.ExistingLeaves)), nil) // nolint:gosec
 			require.NoError(t, err)
 			newRoot, err := mt.getRoot(ctx, nil)
 			require.NoError(t, err)
@@ -148,15 +152,11 @@ func TestMTGetProof(t *testing.T) {
 	err = json.Unmarshal(data, &mtTestVectors)
 	require.NoError(t, err)
 
-	dbCfg := pgstorage.NewConfigFromEnv()
 	ctx := context.Background()
 
 	for ti, testVector := range mtTestVectors {
 		t.Run(fmt.Sprintf("Test vector %d", ti), func(t *testing.T) {
-			err = pgstorage.InitOrReset(dbCfg)
-			require.NoError(t, err)
-
-			store, err := pgstorage.NewPostgresStorage(dbCfg)
+			store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 			require.NoError(t, err)
 
 			mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -166,11 +166,10 @@ func TestMTGetProof(t *testing.T) {
 				amount, result := new(big.Int).SetString(leaf.Amount, 0)
 				require.True(t, result)
 				block := &etherman.Block{
-					BlockNumber: uint64(li + 1),
+					BlockNumber: uint64(li + 1), // nolint:gosec
 					BlockHash:   common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9fc"),
-					ParentHash:  common.Hash{},
 				}
-				blockID, err := store.AddBlock(context.TODO(), block, nil)
+				blockID, err := testStore.AddBlock(context.TODO(), block, nil)
 				require.NoError(t, err)
 				deposit := &etherman.Deposit{
 					OriginalNetwork:    leaf.OriginalNetwork,
@@ -179,16 +178,16 @@ func TestMTGetProof(t *testing.T) {
 					DestinationNetwork: leaf.DestinationNetwork,
 					DestinationAddress: common.HexToAddress(leaf.DestinationAddress),
 					BlockID:            blockID,
-					DepositCount:       uint(li),
+					DepositCount:       uint32(li), // nolint:gosec
 					Metadata:           common.FromHex(leaf.Metadata),
 				}
-				depositID, err := store.AddDeposit(ctx, deposit, nil)
+				depositID, err := testStore.AddDeposit(ctx, deposit, nil)
 				require.NoError(t, err)
 				leafHash := hashDeposit(deposit)
 				if li == int(testVector.Index) {
 					cur = leafHash
 				}
-				err = mt.addLeaf(ctx, depositID, leafHash, uint(li), nil)
+				err = mt.addLeaf(ctx, depositID, leafHash, uint32(li), nil) // nolint:gosec
 				require.NoError(t, err)
 			}
 			root, err := mt.getRoot(ctx, nil)
@@ -218,12 +217,8 @@ func TestUpdateMT(t *testing.T) {
 	for ti, testVector := range mtTestVectors {
 		input := testVector.ExistingLeaves
 		log.Debug("input: ", input)
-		dbCfg := pgstorage.NewConfigFromEnv()
 		ctx := context.Background()
-		err := pgstorage.InitOrReset(dbCfg)
-		require.NoError(t, err)
-
-		store, err := pgstorage.NewPostgresStorage(dbCfg)
+		store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 		require.NoError(t, err)
 
 		mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -239,10 +234,10 @@ func TestUpdateMT(t *testing.T) {
 				DestinationNetwork: testVector.NewLeaf.DestinationNetwork,
 				DestinationAddress: common.HexToAddress(testVector.NewLeaf.DestinationAddress),
 				BlockNumber:        0,
-				DepositCount:       uint(i),
+				DepositCount:       uint32(i), // nolint:gosec
 				Metadata:           common.FromHex(testVector.NewLeaf.Metadata),
 			}
-			_, err := store.AddDeposit(ctx, deposit, nil)
+			_, err := testStore.AddDeposit(ctx, deposit, nil)
 			require.NoError(t, err)
 		}
 
@@ -277,16 +272,21 @@ func TestUpdateMT(t *testing.T) {
 }
 
 func TestGetLeaves(t *testing.T) {
-	data, err := os.ReadFile("test/vectors/src/mt-bridge/fullmt-vector.sql")
+	databaseType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	var (
+		data []byte
+		err  error
+	)
+	if databaseType == "postgres" {
+		data, err = os.ReadFile("test/vectors/src/mt-bridge/postgres-fullmt-vector.sql")
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
+	}
 	require.NoError(t, err)
-	dbCfg := pgstorage.NewConfigFromEnv()
 	ctx := context.Background()
-	err = pgstorage.InitOrReset(dbCfg)
+	store, testStore, err := newStorageSettings(databaseType)
 	require.NoError(t, err)
-
-	store, err := pgstorage.NewPostgresStorage(dbCfg)
-	require.NoError(t, err)
-	_, err = store.Exec(ctx, string(data))
+	err = testStore.ExecTesting(ctx, string(data))
 	require.NoError(t, err)
 
 	mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -307,12 +307,8 @@ func TestBuildMTRootAndStore(t *testing.T) {
 	for _, testVector := range mtTestVectors {
 		input := testVector.ExistingLeaves
 		log.Debug("input: ", input)
-		dbCfg := pgstorage.NewConfigFromEnv()
 		ctx := context.Background()
-		err := pgstorage.InitOrReset(dbCfg)
-		require.NoError(t, err)
-
-		store, err := pgstorage.NewPostgresStorage(dbCfg)
+		store, _, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 		require.NoError(t, err)
 
 		mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -348,22 +344,27 @@ func TestBuildMTRootAndStore(t *testing.T) {
 			require.Equal(t, len(leaves), len(result))
 			require.Equal(t, leaves[i][:], result[i].Leaf.Bytes())
 			require.Equal(t, newRoot, result[i].Root)
-			require.Equal(t, uint(i+1), result[i].RollupId)
+			require.Equal(t, uint32(i+1), result[i].RollupId) // nolint:gosec
 		}
 	}
 }
 
 func TestComputeSiblings(t *testing.T) {
-	data, err := os.ReadFile("test/vectors/src/mt-bridge/fullmt-vector.sql")
+	databaseType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	var (
+		data []byte
+		err  error
+	)
+	if databaseType == "postgres" {
+		data, err = os.ReadFile("test/vectors/src/mt-bridge/postgres-fullmt-vector.sql")
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
+	}
 	require.NoError(t, err)
-	dbCfg := pgstorage.NewConfigFromEnv()
 	ctx := context.Background()
-	err = pgstorage.InitOrReset(dbCfg)
+	store, testStore, err := newStorageSettings(databaseType)
 	require.NoError(t, err)
-
-	store, err := pgstorage.NewPostgresStorage(dbCfg)
-	require.NoError(t, err)
-	_, err = store.Exec(ctx, string(data))
+	err = testStore.ExecTesting(ctx, string(data))
 	require.NoError(t, err)
 
 	mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -536,10 +537,7 @@ func TestCheckMerkleProof2(t *testing.T) {
 
 func TestPerformanceComputeRoot(t *testing.T) {
 	ctx := context.Background()
-	dbCfg := pgstorage.NewConfigFromEnv()
-	err := pgstorage.InitOrReset(dbCfg)
-	require.NoError(t, err)
-	store, err := pgstorage.NewPostgresStorage(dbCfg)
+	store, _, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
 	require.NoError(t, err)
@@ -555,4 +553,26 @@ func TestPerformanceComputeRoot(t *testing.T) {
 	_, err = mt.buildMTRoot(leaves)
 	require.NoError(t, err)
 	log.Debug("End creating leaves: ", time.Now().Unix()-initTime)
+}
+
+type testStore interface {
+	AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx interface{}) (uint64, error)
+	AddBlock(ctx context.Context, block *etherman.Block, dbTx interface{}) (uint64, error)
+	ExecTesting(ctx context.Context, data string) error
+	Reset(ctx context.Context, blockNumber uint64, networkID uint32, dbTx interface{}) error
+	AddGlobalExitRoot(ctx context.Context, exitRoot *etherman.GlobalExitRoot, dbTx interface{}) error
+	AddTrustedGlobalExitRoot(_ context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx interface{}) (bool, error)
+}
+
+func newStorageSettings(storageType string) (merkleTreeStore, testStore, error) {
+	if storageType == "postgres" {
+		dbCfg := pgstorage.NewConfigFromEnv()
+		err := pgstorage.InitOrReset(dbCfg)
+		if err != nil {
+			return nil, nil, err
+		}
+		mt, err := pgstorage.NewPostgresStorage(dbCfg)
+		return mt, mt, err
+	}
+	return nil, nil, fmt.Errorf("unknown storage type: %s", storageType)
 }

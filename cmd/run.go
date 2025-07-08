@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
+	"time"
 
 	zkevmbridgeservice "github.com/0xPolygonHermez/zkevm-bridge-service"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl"
@@ -13,13 +16,14 @@ import (
 	"github.com/0xPolygonHermez/zkevm-bridge-service/config"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	client "github.com/0xPolygonHermez/zkevm-bridge-service/jsonrpcclient"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/metrics"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
-	"github.com/0xPolygonHermez/zkevm-node/jsonrpc/client"
-	"github.com/urfave/cli/v2"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	cli "github.com/urfave/cli/v2"
 )
 
 func logVersion() {
@@ -42,10 +46,15 @@ func start(ctx *cli.Context) error {
 		return err
 	}
 	setupLog(c.Log)
+	logVersion()
 	err = db.RunMigrations(c.SyncDB)
 	if err != nil {
 		log.Error(err)
 		return err
+	}
+	if c.Metrics.Enabled {
+		metrics.Init()
+		go startMetricsHttpServer(c.Metrics)
 	}
 
 	l1Etherman, l2Ethermans, err := newEthermans(c)
@@ -57,7 +66,7 @@ func start(ctx *cli.Context) error {
 	networkID := l1Etherman.GetNetworkID()
 	log.Infof("main network id: %d", networkID)
 
-	var networkIDs = []uint{networkID}
+	var networkIDs = []uint32{networkID}
 	for _, client := range l2Ethermans {
 		networkID := client.GetNetworkID()
 		log.Infof("l2 network id: %d", networkID)
@@ -72,15 +81,10 @@ func start(ctx *cli.Context) error {
 
 	var bridgeController *bridgectrl.BridgeController
 
-	if c.BridgeController.Store == "postgres" {
-		bridgeController, err = bridgectrl.NewBridgeController(ctx.Context, c.BridgeController, networkIDs, storage)
-		if err != nil {
-			log.Error(err)
-			return err
-		}
-	} else {
-		log.Error(gerror.ErrStorageNotRegister)
-		return gerror.ErrStorageNotRegister
+	bridgeController, err = bridgectrl.NewBridgeController(ctx.Context, c.BridgeController, networkIDs, storage)
+	if err != nil {
+		log.Error(err)
+		return err
 	}
 
 	apiStorage, err := db.NewStorage(c.BridgeServer.DB)
@@ -88,6 +92,7 @@ func start(ctx *cli.Context) error {
 		log.Error(err)
 		return err
 	}
+	c.BridgeServer.BridgeVersion = zkevmbridgeservice.Version
 	bridgeService := server.NewBridgeService(c.BridgeServer, c.BridgeController.Height, networkIDs, apiStorage)
 	err = server.RunServer(c.BridgeServer, bridgeService)
 	if err != nil {
@@ -96,24 +101,26 @@ func start(ctx *cli.Context) error {
 	}
 
 	var chsExitRootEvent []chan *etherman.GlobalExitRoot
-	var chsSyncedL2 []chan uint
-	logVersion()
+	var chsSyncedL2 []chan uint32
 	for i, l2EthermanClient := range l2Ethermans {
 		log.Debug("trusted sequencer URL ", c.Etherman.L2URLs[i])
 		zkEVMClient := client.NewClient(c.Etherman.L2URLs[i])
 		chExitRootEventL2 := make(chan *etherman.GlobalExitRoot)
-		chSyncedL2 := make(chan uint)
+		chSyncedL2 := make(chan uint32)
 		chsExitRootEvent = append(chsExitRootEvent, chExitRootEventL2)
 		chsSyncedL2 = append(chsSyncedL2, chSyncedL2)
-		go runSynchronizer(ctx.Context, 0, bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint{})
+		go runSynchronizer(ctx.Context, 0, bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint32{}, c.RequireSovereignChainSmcs[i])
 	}
-	chSynced := make(chan uint)
-	go runSynchronizer(ctx.Context, c.NetworkConfig.GenBlockNumber, bridgeController, l1Etherman, c.Synchronizer, storage, nil, nil, chsExitRootEvent, chSynced, networkIDs)
+	chSynced := make(chan uint32)
+	go runSynchronizer(ctx.Context, c.GenBlockNumber, bridgeController, l1Etherman, c.Synchronizer, storage, nil, nil, chsExitRootEvent, chSynced, networkIDs, false)
 	go func() {
 		for {
 			select {
 			case netID := <-chSynced:
-				log.Debug("NetworkID synced: ", netID)
+				log.Debug("L1 Network synced. NetowrkID: ", netID)
+				for _, ch := range chsSyncedL2 {
+					ch <- netID
+				}
 			case <-ctx.Done():
 				log.Debug("Stopping goroutine that listen new GER updates")
 				return
@@ -125,7 +132,7 @@ func start(ctx *cli.Context) error {
 			// we should match the orders of L2URLs between etherman and claimtxman
 			// since we are using the networkIDs in the same order
 			ctx := context.Background()
-			client, err := utils.NewClient(ctx, c.Etherman.L2URLs[i], c.NetworkConfig.L2PolygonBridgeAddresses[i])
+			client, err := utils.NewClient(ctx, c.Etherman.L2URLs[i], c.L2PolygonBridgeAddresses[i])
 			if err != nil {
 				log.Fatalf("error creating client for L2 %s. Error: %v", c.Etherman.L2URLs[i], err)
 			}
@@ -139,7 +146,7 @@ func start(ctx *cli.Context) error {
 			}
 			rollupID := l2Ethermans[i].GetNetworkID() // RollupID == networkID
 			claimTxManager, err := claimtxman.NewClaimTxManager(ctx, c.ClaimTxManager, chsExitRootEvent[i], chsSyncedL2[i],
-				c.Etherman.L2URLs[i], networkIDs[i+1], c.NetworkConfig.L2PolygonBridgeAddresses[i], bridgeService, storage, rollupID, l2Ethermans[i], nonceCache, auth)
+				c.Etherman.L2URLs[i], networkIDs[i+1], c.L2PolygonBridgeAddresses[i], bridgeService, storage, rollupID, l2Ethermans[i], nonceCache, auth)
 			if err != nil {
 				log.Fatalf("error creating claim tx manager for L2 %s. Error: %v", c.Etherman.L2URLs[i], err)
 			}
@@ -148,7 +155,7 @@ func start(ctx *cli.Context) error {
 	} else {
 		log.Warn("ClaimTxManager not configured")
 		for i := range chsExitRootEvent {
-			monitorChannel(ctx.Context, chsExitRootEvent[i], chsSyncedL2[i])
+			monitorChannel(ctx.Context, chsExitRootEvent[i], chsSyncedL2[i], networkIDs[i+1], storage)
 		}
 	}
 
@@ -164,12 +171,54 @@ func setupLog(c log.Config) {
 	log.Init(c)
 }
 
-func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalExitRoot, chSynced chan uint) {
+func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalExitRoot, chSynced chan uint32, networkID uint32, storage db.Storage) {
 	go func() {
 		for {
 			select {
-			case <-chExitRootEvent:
+			case ger := <-chExitRootEvent:
 				log.Debug("New GER received")
+				st := storage.(claimtxman.StorageInterface)
+				dbTx, err := st.BeginDBTransaction(ctx)
+				if err != nil {
+					log.Error("networkId: %d, error creating dbTx. Error: %v", networkID, err)
+					continue
+				}
+				if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
+					if len(ger.ExitRoots) == 0 {
+						log.Debug("Skipping the ready for claim update until the synchronization is completed")
+						continue
+					}
+					if err := st.UpdateL2DepositsStatus(ctx, ger.ExitRoots[1][:], networkID, networkID, dbTx); err != nil {
+						log.Errorf("networkId: %d, error updating L2DepositsStatus. Error: %v", networkID, err)
+						rollbackErr := st.Rollback(ctx, dbTx)
+						if rollbackErr != nil {
+							log.Errorf("networkId: %d, error rolling back state. RollbackErr: %s, err: %s", networkID, rollbackErr.Error(), err.Error())
+						}
+						continue
+					}
+				} else { // L1 exit root is updated in the trusted state
+					if len(ger.ExitRoots) == 0 {
+						log.Debug("Skipping the ready for claim update until the synchronization is completed")
+						continue
+					}
+					_, err := st.UpdateL1DepositsStatus(ctx, ger.ExitRoots[0][:], networkID, dbTx)
+					if err != nil {
+						log.Errorf("networkId: %d, error getting and updating L1DepositsStatus. Error: %v", networkID, err)
+						rollbackErr := st.Rollback(ctx, dbTx)
+						if rollbackErr != nil {
+							log.Errorf("networkId: %d, error rolling back state. RollbackErr: %s, err: %s", networkID, rollbackErr.Error(), err.Error())
+						}
+						continue
+					}
+				}
+				err = st.Commit(ctx, dbTx)
+				if err != nil {
+					log.Errorf("networkId: %d, error committing dbTx. Err: %v", networkID, err)
+					rollbackErr := st.Rollback(ctx, dbTx)
+					if rollbackErr != nil {
+						log.Errorf("networkId: %d, error rolling back state. RollbackErr: %s, err: %s", networkID, rollbackErr.Error(), err.Error())
+					}
+				}
 			case netID := <-chSynced:
 				log.Debug("NetworkID synced: ", netID)
 			case <-ctx.Done():
@@ -181,9 +230,9 @@ func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalEx
 }
 func newEthermans(c *config.Config) (*etherman.Client, []*etherman.Client, error) {
 	l1Etherman, err := etherman.NewClient(c.Etherman,
-		c.NetworkConfig.PolygonBridgeAddress,
-		c.NetworkConfig.PolygonZkEVMGlobalExitRootAddress,
-		c.NetworkConfig.PolygonRollupManagerAddress)
+		c.PolygonBridgeAddress,
+		c.PolygonZkEVMGlobalExitRootAddress,
+		c.PolygonRollupManagerAddress)
 	if err != nil {
 		log.Error("L1 etherman error: ", err)
 		return nil, nil, err
@@ -193,9 +242,9 @@ func newEthermans(c *config.Config) (*etherman.Client, []*etherman.Client, error
 	}
 	var l2Ethermans []*etherman.Client
 	for i, addr := range c.L2PolygonBridgeAddresses {
-		l2Etherman, err := etherman.NewL2Client(c.Etherman.L2URLs[i], addr, c.NetworkConfig.L2ClaimCompressorAddress)
+		l2Etherman, err := etherman.NewL2Client(c.Etherman.L2URLs[i], addr, c.L2ClaimCompressorAddress, c.L2PolygonZkEVMGlobalExitRootAddresses[i], c.RequireSovereignChainSmcs[i])
 		if err != nil {
-			log.Error("L2 etherman ", i, c.Etherman.L2URLs[i], ", error: ", err)
+			log.Error("L2 etherman array position: ", i, ". ", c.Etherman.L2URLs[i], ", error: ", err)
 			return l1Etherman, nil, err
 		}
 		l2Ethermans = append(l2Ethermans, l2Etherman)
@@ -203,12 +252,39 @@ func newEthermans(c *config.Config) (*etherman.Client, []*etherman.Client, error
 	return l1Etherman, l2Ethermans, nil
 }
 
-func runSynchronizer(ctx context.Context, genBlockNumber uint64, brdigeCtrl *bridgectrl.BridgeController, etherman *etherman.Client, cfg synchronizer.Config, storage db.Storage, zkEVMClient *client.Client, chExitRootEventL2 chan *etherman.GlobalExitRoot, chsExitRootEvent []chan *etherman.GlobalExitRoot, chSynced chan uint, allNetworkIDs []uint) {
-	sy, err := synchronizer.NewSynchronizer(ctx, storage, brdigeCtrl, etherman, zkEVMClient, genBlockNumber, chExitRootEventL2, chsExitRootEvent, chSynced, cfg, allNetworkIDs)
+func runSynchronizer(ctx context.Context, genBlockNumber uint64, bridgeCtrl *bridgectrl.BridgeController, etherman *etherman.Client, cfg synchronizer.Config, storage db.Storage, zkEVMClient *client.Client, chExitRootEventL2 chan *etherman.GlobalExitRoot, chsExitRootEvent []chan *etherman.GlobalExitRoot, chSynced chan uint32, allNetworkIDs []uint32, sovereignChain bool) {
+	sy, err := synchronizer.NewSynchronizer(ctx, storage, bridgeCtrl, etherman, zkEVMClient, genBlockNumber, chExitRootEventL2, chsExitRootEvent, chSynced, cfg, allNetworkIDs, sovereignChain)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if err := sy.Sync(); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func startMetricsHttpServer(c metrics.Config) {
+	const ten = 10
+	mux := http.NewServeMux()
+	address := fmt.Sprintf("%s:%d", c.Host, c.Port)
+	lis, err := net.Listen("tcp", address)
+	if err != nil {
+		log.Errorf("failed to create tcp listener for metrics: %v", err)
+		return
+	}
+	mux.Handle(metrics.Endpoint, promhttp.Handler())
+
+	metricsServer := &http.Server{
+		Handler:           mux,
+		ReadHeaderTimeout: ten * time.Second,
+		ReadTimeout:       ten * time.Second,
+	}
+	log.Infof("metrics server listening on port %d", c.Port)
+	if err := metricsServer.Serve(lis); err != nil {
+		if err == http.ErrServerClosed {
+			log.Warnf("http server for metrics stopped")
+			return
+		}
+		log.Errorf("closed http connection for metrics server: %v", err)
+		return
 	}
 }

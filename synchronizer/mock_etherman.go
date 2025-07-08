@@ -28,78 +28,19 @@ func (_m *ethermanMock) EXPECT() *ethermanMock_Expecter {
 	return &ethermanMock_Expecter{mock: &_m.Mock}
 }
 
-// EthBlockByNumber provides a mock function with given fields: ctx, blockNumber
-func (_m *ethermanMock) EthBlockByNumber(ctx context.Context, blockNumber uint64) (*types.Block, error) {
-	ret := _m.Called(ctx, blockNumber)
-
-	if len(ret) == 0 {
-		panic("no return value specified for EthBlockByNumber")
-	}
-
-	var r0 *types.Block
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint64) (*types.Block, error)); ok {
-		return rf(ctx, blockNumber)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, uint64) *types.Block); ok {
-		r0 = rf(ctx, blockNumber)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*types.Block)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, uint64) error); ok {
-		r1 = rf(ctx, blockNumber)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ethermanMock_EthBlockByNumber_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EthBlockByNumber'
-type ethermanMock_EthBlockByNumber_Call struct {
-	*mock.Call
-}
-
-// EthBlockByNumber is a helper method to define mock.On call
-//   - ctx context.Context
-//   - blockNumber uint64
-func (_e *ethermanMock_Expecter) EthBlockByNumber(ctx interface{}, blockNumber interface{}) *ethermanMock_EthBlockByNumber_Call {
-	return &ethermanMock_EthBlockByNumber_Call{Call: _e.mock.On("EthBlockByNumber", ctx, blockNumber)}
-}
-
-func (_c *ethermanMock_EthBlockByNumber_Call) Run(run func(ctx context.Context, blockNumber uint64)) *ethermanMock_EthBlockByNumber_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uint64))
-	})
-	return _c
-}
-
-func (_c *ethermanMock_EthBlockByNumber_Call) Return(_a0 *types.Block, _a1 error) *ethermanMock_EthBlockByNumber_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *ethermanMock_EthBlockByNumber_Call) RunAndReturn(run func(context.Context, uint64) (*types.Block, error)) *ethermanMock_EthBlockByNumber_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetNetworkID provides a mock function with given fields:
-func (_m *ethermanMock) GetNetworkID() uint {
+// GetNetworkID provides a mock function with no fields
+func (_m *ethermanMock) GetNetworkID() uint32 {
 	ret := _m.Called()
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetNetworkID")
 	}
 
-	var r0 uint
-	if rf, ok := ret.Get(0).(func() uint); ok {
+	var r0 uint32
+	if rf, ok := ret.Get(0).(func() uint32); ok {
 		r0 = rf()
 	} else {
-		r0 = ret.Get(0).(uint)
+		r0 = ret.Get(0).(uint32)
 	}
 
 	return r0
@@ -122,12 +63,12 @@ func (_c *ethermanMock_GetNetworkID_Call) Run(run func()) *ethermanMock_GetNetwo
 	return _c
 }
 
-func (_c *ethermanMock_GetNetworkID_Call) Return(_a0 uint) *ethermanMock_GetNetworkID_Call {
+func (_c *ethermanMock_GetNetworkID_Call) Return(_a0 uint32) *ethermanMock_GetNetworkID_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *ethermanMock_GetNetworkID_Call) RunAndReturn(run func() uint) *ethermanMock_GetNetworkID_Call {
+func (_c *ethermanMock_GetNetworkID_Call) RunAndReturn(run func() uint32) *ethermanMock_GetNetworkID_Call {
 	_c.Call.Return(run)
 	return _c
 }

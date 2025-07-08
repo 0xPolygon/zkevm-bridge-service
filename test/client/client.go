@@ -152,7 +152,7 @@ func (c RestClient) GetClaims(destAddr string, offset, limit uint) ([]*pb.Claim,
 }
 
 // GetMerkleProof returns the merkle proof for the specific bridge transaction.
-func (c RestClient) GetMerkleProof(networkID uint32, depositCnt uint64) (*pb.Proof, error) {
+func (c RestClient) GetMerkleProof(networkID uint32, depositCnt uint32) (*pb.Proof, error) {
 	resp, err := http.Get(fmt.Sprintf("%s%s?net_id=%d&deposit_cnt=%d", c.bridgeURL, "/merkle-proof", networkID, depositCnt))
 	if err != nil {
 		return nil, err
