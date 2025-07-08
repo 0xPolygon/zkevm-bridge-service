@@ -24,9 +24,6 @@ func NewNonceCache(ctx context.Context, l2Node *utils.Client) (*NonceCache, erro
 	if err != nil {
 		return nil, err
 	}
-	if err != nil {
-		return nil, err
-	}
 	return &NonceCache{
 		ctx:        ctx,
 		l2Node:     l2Node,

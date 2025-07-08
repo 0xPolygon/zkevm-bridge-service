@@ -1,0 +1,275 @@
+[
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_bridgeAddress",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "nonpayable",
+        "type": "constructor"
+    },
+    {
+        "inputs": [],
+        "name": "GlobalExitRootAlreadySet",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NotEnoughGlobalExitRootsInserted",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "NotLastInsertedGlobalExitRoot",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OnlyAllowedContracts",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OnlyGlobalExitRootRemover",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OnlyGlobalExitRootUpdater",
+        "type": "error"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint8",
+                "name": "version",
+                "type": "uint8"
+            }
+        ],
+        "name": "Initialized",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "bytes32",
+                "name": "newGlobalExitRoot",
+                "type": "bytes32"
+            }
+        ],
+        "name": "InsertGlobalExitRoot",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "bytes32",
+                "name": "removedGlobalExitRoot",
+                "type": "bytes32"
+            }
+        ],
+        "name": "RemoveLastGlobalExitRoot",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newGlobalExitRootRemover",
+                "type": "address"
+            }
+        ],
+        "name": "SetGlobalExitRootRemover",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "newGlobalExitRootUpdater",
+                "type": "address"
+            }
+        ],
+        "name": "SetGlobalExitRootUpdater",
+        "type": "event"
+    },
+    {
+        "inputs": [],
+        "name": "bridgeAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "name": "globalExitRootMap",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "globalExitRootRemover",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "globalExitRootUpdater",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_globalExitRootUpdater",
+                "type": "address"
+            },
+            {
+                "internalType": "address",
+                "name": "_globalExitRootRemover",
+                "type": "address"
+            }
+        ],
+        "name": "initialize",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "_newRoot",
+                "type": "bytes32"
+            }
+        ],
+        "name": "insertGlobalExitRoot",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "insertedGERCount",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "lastRollupExitRoot",
+        "outputs": [
+            {
+                "internalType": "bytes32",
+                "name": "",
+                "type": "bytes32"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32[]",
+                "name": "gersToRemove",
+                "type": "bytes32[]"
+            }
+        ],
+        "name": "removeLastGlobalExitRoots",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_globalExitRootRemover",
+                "type": "address"
+            }
+        ],
+        "name": "setGlobalExitRootRemover",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "_globalExitRootUpdater",
+                "type": "address"
+            }
+        ],
+        "name": "setGlobalExitRootUpdater",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "bytes32",
+                "name": "newRoot",
+                "type": "bytes32"
+            }
+        ],
+        "name": "updateExitRoot",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]

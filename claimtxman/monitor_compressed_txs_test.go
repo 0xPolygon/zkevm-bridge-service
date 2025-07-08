@@ -5,7 +5,7 @@ import (
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman"
 	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
-	"github.com/barkimedes/go-deepcopy"
+	deepcopy "github.com/barkimedes/go-deepcopy"
 	"github.com/stretchr/testify/require"
 )
 

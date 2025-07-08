@@ -16,6 +16,6 @@ func generateRandomString(length int) string {
 
 // GenerateRandomHash generates a random hash.
 func GenerateRandomHash() [sha256.Size]byte {
-	rs := generateRandomString(10) //nolint:gomnd
+	rs := generateRandomString(10) //nolint:mnd
 	return sha256.Sum256([]byte(rs))
 }

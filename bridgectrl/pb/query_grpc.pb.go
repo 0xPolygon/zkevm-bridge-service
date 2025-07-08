@@ -22,12 +22,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	BridgeService_CheckAPI_FullMethodName        = "/bridge.v1.BridgeService/CheckAPI"
-	BridgeService_GetBridges_FullMethodName      = "/bridge.v1.BridgeService/GetBridges"
-	BridgeService_GetProof_FullMethodName        = "/bridge.v1.BridgeService/GetProof"
-	BridgeService_GetBridge_FullMethodName       = "/bridge.v1.BridgeService/GetBridge"
-	BridgeService_GetClaims_FullMethodName       = "/bridge.v1.BridgeService/GetClaims"
-	BridgeService_GetTokenWrapped_FullMethodName = "/bridge.v1.BridgeService/GetTokenWrapped"
+	BridgeService_CheckAPI_FullMethodName                 = "/bridge.v1.BridgeService/CheckAPI"
+	BridgeService_GetBridges_FullMethodName               = "/bridge.v1.BridgeService/GetBridges"
+	BridgeService_GetProof_FullMethodName                 = "/bridge.v1.BridgeService/GetProof"
+	BridgeService_GetProofByGER_FullMethodName            = "/bridge.v1.BridgeService/GetProofByGER"
+	BridgeService_GetBridge_FullMethodName                = "/bridge.v1.BridgeService/GetBridge"
+	BridgeService_GetClaims_FullMethodName                = "/bridge.v1.BridgeService/GetClaims"
+	BridgeService_GetTokenWrapped_FullMethodName          = "/bridge.v1.BridgeService/GetTokenWrapped"
+	BridgeService_GetPendingBridgesToClaim_FullMethodName = "/bridge.v1.BridgeService/GetPendingBridgesToClaim"
+	BridgeService_GetProofV2_FullMethodName               = "/bridge.v1.BridgeService/GetProofV2"
 )
 
 // BridgeServiceClient is the client API for BridgeService service.
@@ -41,12 +44,18 @@ type BridgeServiceClient interface {
 	GetBridges(ctx context.Context, in *GetBridgesRequest, opts ...grpc.CallOption) (*GetBridgesResponse, error)
 	// / Get the merkle proof for the specific deposit
 	GetProof(ctx context.Context, in *GetProofRequest, opts ...grpc.CallOption) (*GetProofResponse, error)
+	// / Get the merkle proof for the specific deposit and GER
+	GetProofByGER(ctx context.Context, in *GetProofByGERRequest, opts ...grpc.CallOption) (*GetProofResponse, error)
 	// / Get the specific deposit
 	GetBridge(ctx context.Context, in *GetBridgeRequest, opts ...grpc.CallOption) (*GetBridgeResponse, error)
 	// / Get claims for the specific smart contract address both in L1 and L2
 	GetClaims(ctx context.Context, in *GetClaimsRequest, opts ...grpc.CallOption) (*GetClaimsResponse, error)
 	// / Get token wrapped for the specific smart contract address both in L1 and L2
 	GetTokenWrapped(ctx context.Context, in *GetTokenWrappedRequest, opts ...grpc.CallOption) (*GetTokenWrappedResponse, error)
+	// / Get pending bridges to claim by the destination address, destination network and leaf type in L1 and L2's
+	GetPendingBridgesToClaim(ctx context.Context, in *GetPendingBridgesRequest, opts ...grpc.CallOption) (*GetBridgesResponse, error)
+	// / Get the merkle proof for the specific deposit. It is compatible with Apps Team bridge
+	GetProofV2(ctx context.Context, in *GetProofV2Request, opts ...grpc.CallOption) (*GetProofResponse, error)
 }
 
 type bridgeServiceClient struct {
@@ -84,6 +93,15 @@ func (c *bridgeServiceClient) GetProof(ctx context.Context, in *GetProofRequest,
 	return out, nil
 }
 
+func (c *bridgeServiceClient) GetProofByGER(ctx context.Context, in *GetProofByGERRequest, opts ...grpc.CallOption) (*GetProofResponse, error) {
+	out := new(GetProofResponse)
+	err := c.cc.Invoke(ctx, BridgeService_GetProofByGER_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *bridgeServiceClient) GetBridge(ctx context.Context, in *GetBridgeRequest, opts ...grpc.CallOption) (*GetBridgeResponse, error) {
 	out := new(GetBridgeResponse)
 	err := c.cc.Invoke(ctx, BridgeService_GetBridge_FullMethodName, in, out, opts...)
@@ -111,6 +129,24 @@ func (c *bridgeServiceClient) GetTokenWrapped(ctx context.Context, in *GetTokenW
 	return out, nil
 }
 
+func (c *bridgeServiceClient) GetPendingBridgesToClaim(ctx context.Context, in *GetPendingBridgesRequest, opts ...grpc.CallOption) (*GetBridgesResponse, error) {
+	out := new(GetBridgesResponse)
+	err := c.cc.Invoke(ctx, BridgeService_GetPendingBridgesToClaim_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bridgeServiceClient) GetProofV2(ctx context.Context, in *GetProofV2Request, opts ...grpc.CallOption) (*GetProofResponse, error) {
+	out := new(GetProofResponse)
+	err := c.cc.Invoke(ctx, BridgeService_GetProofV2_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // BridgeServiceServer is the server API for BridgeService service.
 // All implementations must embed UnimplementedBridgeServiceServer
 // for forward compatibility
@@ -122,12 +158,18 @@ type BridgeServiceServer interface {
 	GetBridges(context.Context, *GetBridgesRequest) (*GetBridgesResponse, error)
 	// / Get the merkle proof for the specific deposit
 	GetProof(context.Context, *GetProofRequest) (*GetProofResponse, error)
+	// / Get the merkle proof for the specific deposit and GER
+	GetProofByGER(context.Context, *GetProofByGERRequest) (*GetProofResponse, error)
 	// / Get the specific deposit
 	GetBridge(context.Context, *GetBridgeRequest) (*GetBridgeResponse, error)
 	// / Get claims for the specific smart contract address both in L1 and L2
 	GetClaims(context.Context, *GetClaimsRequest) (*GetClaimsResponse, error)
 	// / Get token wrapped for the specific smart contract address both in L1 and L2
 	GetTokenWrapped(context.Context, *GetTokenWrappedRequest) (*GetTokenWrappedResponse, error)
+	// / Get pending bridges to claim by the destination address, destination network and leaf type in L1 and L2's
+	GetPendingBridgesToClaim(context.Context, *GetPendingBridgesRequest) (*GetBridgesResponse, error)
+	// / Get the merkle proof for the specific deposit. It is compatible with Apps Team bridge
+	GetProofV2(context.Context, *GetProofV2Request) (*GetProofResponse, error)
 	mustEmbedUnimplementedBridgeServiceServer()
 }
 
@@ -144,6 +186,9 @@ func (UnimplementedBridgeServiceServer) GetBridges(context.Context, *GetBridgesR
 func (UnimplementedBridgeServiceServer) GetProof(context.Context, *GetProofRequest) (*GetProofResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProof not implemented")
 }
+func (UnimplementedBridgeServiceServer) GetProofByGER(context.Context, *GetProofByGERRequest) (*GetProofResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProofByGER not implemented")
+}
 func (UnimplementedBridgeServiceServer) GetBridge(context.Context, *GetBridgeRequest) (*GetBridgeResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBridge not implemented")
 }
@@ -152,6 +197,12 @@ func (UnimplementedBridgeServiceServer) GetClaims(context.Context, *GetClaimsReq
 }
 func (UnimplementedBridgeServiceServer) GetTokenWrapped(context.Context, *GetTokenWrappedRequest) (*GetTokenWrappedResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTokenWrapped not implemented")
+}
+func (UnimplementedBridgeServiceServer) GetPendingBridgesToClaim(context.Context, *GetPendingBridgesRequest) (*GetBridgesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPendingBridgesToClaim not implemented")
+}
+func (UnimplementedBridgeServiceServer) GetProofV2(context.Context, *GetProofV2Request) (*GetProofResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetProofV2 not implemented")
 }
 func (UnimplementedBridgeServiceServer) mustEmbedUnimplementedBridgeServiceServer() {}
 
@@ -220,6 +271,24 @@ func _BridgeService_GetProof_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BridgeService_GetProofByGER_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProofByGERRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BridgeServiceServer).GetProofByGER(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BridgeService_GetProofByGER_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BridgeServiceServer).GetProofByGER(ctx, req.(*GetProofByGERRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _BridgeService_GetBridge_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetBridgeRequest)
 	if err := dec(in); err != nil {
@@ -274,6 +343,42 @@ func _BridgeService_GetTokenWrapped_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BridgeService_GetPendingBridgesToClaim_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetPendingBridgesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BridgeServiceServer).GetPendingBridgesToClaim(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BridgeService_GetPendingBridgesToClaim_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BridgeServiceServer).GetPendingBridgesToClaim(ctx, req.(*GetPendingBridgesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BridgeService_GetProofV2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetProofV2Request)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BridgeServiceServer).GetProofV2(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BridgeService_GetProofV2_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BridgeServiceServer).GetProofV2(ctx, req.(*GetProofV2Request))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // BridgeService_ServiceDesc is the grpc.ServiceDesc for BridgeService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -294,6 +399,10 @@ var BridgeService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _BridgeService_GetProof_Handler,
 		},
 		{
+			MethodName: "GetProofByGER",
+			Handler:    _BridgeService_GetProofByGER_Handler,
+		},
+		{
 			MethodName: "GetBridge",
 			Handler:    _BridgeService_GetBridge_Handler,
 		},
@@ -304,6 +413,14 @@ var BridgeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTokenWrapped",
 			Handler:    _BridgeService_GetTokenWrapped_Handler,
+		},
+		{
+			MethodName: "GetPendingBridgesToClaim",
+			Handler:    _BridgeService_GetPendingBridgesToClaim_Handler,
+		},
+		{
+			MethodName: "GetProofV2",
+			Handler:    _BridgeService_GetProofV2_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

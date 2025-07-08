@@ -6,12 +6,12 @@ import (
 	"fmt"
 
 	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
-	"github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/lib/pq"
 )
 
 // GetLatestGroupID
-func (p *PostgresStorage) GetLatestMonitoredTxGroupID(ctx context.Context, dbTx pgx.Tx) (uint64, error) {
+func (p *PostgresStorage) GetLatestMonitoredTxGroupID(ctx context.Context, dbTx interface{}) (uint64, error) {
 	const sql = `SELECT group_id FROM sync.monitored_txs_group ORDER BY group_id DESC LIMIT 1`
 	var groupID uint64
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, sql).Scan(&groupID)
@@ -25,7 +25,7 @@ func (p *PostgresStorage) GetLatestMonitoredTxGroupID(ctx context.Context, dbTx 
 }
 
 // AddMonitoredTxsGroup
-func (p *PostgresStorage) AddMonitoredTxsGroup(ctx context.Context, mTxGroup *ctmtypes.MonitoredTxGroupDBEntry, dbTx pgx.Tx) error {
+func (p *PostgresStorage) AddMonitoredTxsGroup(ctx context.Context, mTxGroup *ctmtypes.MonitoredTxGroupDBEntry, dbTx interface{}) error {
 	const sql = `INSERT INTO sync.monitored_txs_group 
 		(group_id,status, deposit_ids, num_retries, compressed_tx_data,claim_tx_history, created_at, updated_at) 
 		VALUES($1, $2, $3, $4,$5, $6, $7, $8)
@@ -55,7 +55,7 @@ func (p *PostgresStorage) AddMonitoredTxsGroup(ctx context.Context, mTxGroup *ct
 	return err
 }
 
-func (p *PostgresStorage) UpdateMonitoredTxsGroup(ctx context.Context, mTxGroup *ctmtypes.MonitoredTxGroupDBEntry, dbTx pgx.Tx) error {
+func (p *PostgresStorage) UpdateMonitoredTxsGroup(ctx context.Context, mTxGroup *ctmtypes.MonitoredTxGroupDBEntry, dbTx interface{}) error {
 	const sql = `UPDATE sync.monitored_txs_group 
 		SET num_retries = $2, compressed_tx_data = $3, claim_tx_history = $4, updated_at = $5, status = $6, last_log = $7
 		WHERE group_id = $1
@@ -84,7 +84,7 @@ func (p *PostgresStorage) UpdateMonitoredTxsGroup(ctx context.Context, mTxGroup 
 	return err
 }
 
-func (p *PostgresStorage) GetMonitoredTxsGroups(ctx context.Context, groupIds []uint64, dbTx pgx.Tx) (map[uint64]ctmtypes.MonitoredTxGroupDBEntry, error) {
+func (p *PostgresStorage) GetMonitoredTxsGroups(ctx context.Context, groupIds []uint64, dbTx interface{}) (map[uint64]ctmtypes.MonitoredTxGroupDBEntry, error) {
 	const sql = "SELECT group_id, status, num_retries, compressed_tx_data,claim_tx_history, created_at, updated_at FROM sync.monitored_txs_group WHERE group_id = ANY($1) ORDER BY created_at ASC"
 	groups := make(map[uint64]ctmtypes.MonitoredTxGroupDBEntry)
 	rows, err := p.getExecQuerier(dbTx).Query(ctx, sql, pq.Array(groupIds))

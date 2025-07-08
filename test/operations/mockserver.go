@@ -10,7 +10,7 @@ import (
 )
 
 // RunMockServer runs mock server
-func RunMockServer(dbType string, height uint8, networks []uint) (*bridgectrl.BridgeController, StorageInterface, error) {
+func RunMockServer(dbType string, height uint8, networks []uint32) (*bridgectrl.BridgeController, StorageInterface, error) {
 	if dbType != "postgres" {
 		return nil, nil, fmt.Errorf("not registered database")
 	}
@@ -28,7 +28,6 @@ func RunMockServer(dbType string, height uint8, networks []uint) (*bridgectrl.Br
 
 	btCfg := bridgectrl.Config{
 		Height: height,
-		Store:  "postgres",
 	}
 	ctx := context.Background()
 	bt, err := bridgectrl.NewBridgeController(ctx, btCfg, networks, store)
@@ -39,9 +38,9 @@ func RunMockServer(dbType string, height uint8, networks []uint) (*bridgectrl.Br
 	cfg := server.Config{
 		GRPCPort:         "9090",
 		HTTPPort:         "8080",
-		CacheSize:        100000, //nolint:gomnd
-		DefaultPageLimit: 25,     //nolint:gomnd
-		MaxPageLimit:     100,    //nolint:gomnd
+		CacheSize:        100000, //nolint:mnd
+		DefaultPageLimit: 25,     //nolint:mnd
+		MaxPageLimit:     100,    //nolint:mnd
 		BridgeVersion:    "v1",
 	}
 	bridgeService := server.NewBridgeService(cfg, btCfg.Height, networks, store)

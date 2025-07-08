@@ -24,6 +24,9 @@ DOCKER_COMPOSE_BRIDGE_V1TOV2 := zkevm-bridge-service-v1tov2
 DOCKER_COMPOSE_BRIDGE_1 := zkevm-bridge-service-1
 DOCKER_COMPOSE_BRIDGE_2 := zkevm-bridge-service-2
 DOCKER_COMPOSE_BRIDGE_3 := zkevm-bridge-service-3
+DOCKER_COMPOSE_BRIDGE_POSTGRES := zkevm-bridge-service-postgres
+DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN := zkevm-bridge-service-sovereign-chain
+DOCKER_COMPOSE_AGGORACLE := aggoracle
 
 RUN_STATE_DB := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_STATE_DB)
 RUN_POOL_DB := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_POOL_DB)
@@ -49,7 +52,10 @@ RUN_BRIDGE := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE)
 RUN_BRIDGE_1 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_1)
 RUN_BRIDGE_2 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_2)
 RUN_BRIDGE_3 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_3)
+RUN_BRIDGE_POSTGRES := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_POSTGRES)
 RUN_BRIDGE_V1TOV2 := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_V1TOV2)
+RUN_BRIDGE_SOVEREIGN_CHAIN := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN)
+RUN_AGGORACLE := $(DOCKER_COMPOSE) up -d $(DOCKER_COMPOSE_AGGORACLE)
 
 STOP_NODE_DB := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_NODE_DB) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_NODE_DB)
 STOP_BRIDGE_DB := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_DB) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_DB)
@@ -70,7 +76,10 @@ STOP_BRIDGE := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE) && $(DOCKER_COMPO
 STOP_BRIDGE_1 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_1) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_1)
 STOP_BRIDGE_2 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_2) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_2)
 STOP_BRIDGE_3 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_3) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_3)
+STOP_BRIDGE_POSTGRES := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_POSTGRES) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_POSTGRES)
 STOP_BRIDGE_V1TOV2 := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_V1TOV2) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_V1TOV2)
+STOP_BRIDGE_SOVEREIGN_CHAIN := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_BRIDGE_SOVEREIGN_CHAIN)
+STOP_AGGORACLE := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_AGGORACLE) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_AGGORACLE)
 STOP := $(DOCKER_COMPOSE) down --remove-orphans
 
 LDFLAGS += -X 'github.com/0xPolygonHermez/zkevm-bridge-service.Version=$(VERSION)'
@@ -83,17 +92,21 @@ GO_BIN := $(GO_BASE)/dist
 GO_ENV_VARS := GO_BIN=$(GO_BIN)
 GO_BINARY := zkevm-bridge
 GO_CMD := $(GO_BASE)/cmd
-GO_DEPLOY_SCRIPT := $(GO_BASE)/test/scripts/deployclaimcompressor
-GO_DEPLOY_SCRIPT_BINARY := test-deploy-claimcompressor
+GO_DEPLOY_SCRIPT := $(GO_BASE)/test/scripts/deploytool
+GO_DEPLOY_SCRIPT_BINARY := test-deploy-tool
+GO_DEPLOY_AUTOCLAIMER := $(GO_BASE)/autoclaimservice
+GO_DEPLOY_AUTOCLAIMER_BINARY := zkevm-autoclaimer
 
-LINT := $$(go env GOPATH)/bin/golangci-lint run --timeout=5m -E whitespace -E gosec -E gci -E misspell -E gomnd -E gofmt -E goimports --exclude-use-default=false --max-same-issues 0
+LINT := $$(go env GOPATH)/bin/golangci-lint run --timeout=5m -E whitespace -E gosec -E misspell -E mnd --max-same-issues 0
 BUILD := $(GO_ENV_VARS) go build -ldflags "all=$(LDFLAGS)" -o $(GO_BIN)/$(GO_BINARY) $(GO_CMD)
 BUILDSCRIPTEPLOY := $(GO_ENV_VARS) go build -o $(GO_BIN)/$(GO_DEPLOY_SCRIPT_BINARY) $(GO_DEPLOY_SCRIPT)
+BUILDAUTOCLAIMER := $(GO_ENV_VARS) go build -o $(GO_BIN)/$(GO_DEPLOY_AUTOCLAIMER_BINARY) $(GO_DEPLOY_AUTOCLAIMER)
 
 .PHONY: build
 build: ## Build the binary locally into ./dist
 	$(BUILD)
 	$(BUILDSCRIPTEPLOY)
+	$(BUILDAUTOCLAIMER)
 
 .PHONY: lint
 lint: ## runs linter
@@ -111,11 +124,23 @@ test: ## Runs only short tests without checking race conditions
 
 .PHONY: install-linter
 install-linter: ## Installs the linter
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.54.2
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v2.1.2
 
 .PHONY: build-docker
 build-docker: ## Builds a docker image with the zkevm bridge binary
 	docker build -t zkevm-bridge-service -f ./Dockerfile .
+
+.PHONY: build-docker-e2e-real_network
+build-docker-e2e-real_network:  build-docker-e2e-real_network-erc20 build-docker-e2e-real_network-msg ## Builds a docker image with the zkevm bridge binary for e2e tests with real network
+	
+
+.PHONY: build-docker-e2e-real_network-erc20
+build-docker-e2e-real_network-erc20: ## Builds a docker image with the zkevm bridge binary for e2e ERC20 tests with real network
+	docker build  -f DockerfileE2ETest .  -t bridge-e2e-realnetwork-erc20 --target ERC20
+
+.PHONY: build-docker-e2e-real_network-msg
+build-docker-e2e-real_network-msg: ## Builds a docker image with the zkevm bridge binary for e2e BridgeMessage tests with real network
+	docker build  -f DockerfileE2ETest .  -t bridge-e2e-realnetwork-msg --target MSG
 
 .PHONY: run-db-node
 run-db-node: ## Runs the node database
@@ -271,6 +296,14 @@ run-bridge-3: ## Runs the bridge service
 stop-bridge-3: ## Stops the bridge service
 	$(STOP_BRIDGE_3)
 
+.PHONY: run-bridge-postgres
+run-bridge-postgres: ## Runs the bridge service
+	$(RUN_BRIDGE_POSTGRES)
+
+.PHONY: stop-bridge-postgres
+stop-bridge-postgres: ## Stops the bridge service
+	$(STOP_BRIDGE_POSTGRES)
+
 .PHONY: run-bridge-v1tov2
 run-bridge-v1tov2: ## Runs the bridge service
 	$(RUN_BRIDGE_V1TOV2)
@@ -278,6 +311,22 @@ run-bridge-v1tov2: ## Runs the bridge service
 .PHONY: stop-bridge-v1tov2
 stop-bridge-v1tov2: ## Stops the bridge service
 	$(STOP_BRIDGE_V1TOV2)
+
+.PHONY: run-bridge-sovereign-chain
+run-bridge-sovereign-chain: ## Runs the bridge service
+	$(RUN_BRIDGE_SOVEREIGN_CHAIN)
+
+.PHONY: stop-bridge-sovereign-chain
+stop-bridge-sovereign-chain: ## Stops the bridge service
+	$(STOP_BRIDGE_SOVEREIGN_CHAIN)
+
+.PHONY: run-aggoracle
+run-aggoracle: ## Runs the bridge service
+	$(RUN_AGGORACLE)
+
+.PHONY: stop-aggoracle
+stop-aggoracle: ## Stops the bridge service
+	$(STOP_AGGORACLE)
 
 .PHONY: stop
 stop: ## Stops all services
@@ -370,6 +419,19 @@ run-v1tov2: stop ## runs all services
 	$(RUN_AGGREGATOR_V1TOV2)
 	$(RUN_BRIDGE_V1TOV2)
 
+.PHONY: run-sovereign-chain
+run-sovereign-chain: ## runs all services
+	$(RUN_DBS)
+	$(RUN_L1_NETWORK)
+	sleep 5
+	$(RUN_ZKPROVER)
+	sleep 3
+	$(RUN_NODE)
+	sleep 5
+	$(RUN_BRIDGE_SOVEREIGN_CHAIN)
+	sleep 30
+	$(RUN_AGGORACLE)
+
 .PHONY: update-external-dependencies
 update-external-dependencies: ## Updates external dependencies like images, test vectors or proto files
 	go run ./scripts/cmd/... updatedeps
@@ -390,7 +452,7 @@ bench: ## benchmark test
 	trap '$(STOP_BRIDGE_DB)' EXIT; go test -run=NOTEST -timeout=30m -bench=Small ./test/benchmark/...
 
 .PHONY: bench-full
-bench-full: export ZKEVM_BRIDGE_DATABASE_PORT = 5432
+bench-full: export ZKEVM_BRIDGE_SYNCDB_PGSTORAGE_PORT = 5432
 bench-full: ## benchmark full test
 	cd test/benchmark && \
 	go test -run=NOTEST -bench=Small . && \
@@ -417,10 +479,27 @@ test-l2l2: build-docker stop run-multi-single-bridge ## Runs all tests checking 
 	sleep 3
 	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -v -failfast -race -p 1 -timeout 2400s ./test/e2e/... -count 1 -tags='l2l2'
 
+.PHONY: test-autoclaiml2l2
+test-autoclaiml2l2: build-docker stop run-multi-single-bridge ## Runs all tests checking race conditions
+	sleep 3
+	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -v -failfast -race -p 1 -timeout 2400s ./test/e2e/... -count 1 -tags='autoclaiml2l2'
+
 .PHONY: test-e2ecompress
 test-e2ecompress: build-docker stop run-multi-single-bridge ## Runs all tests checking race conditions
 	sleep 3
 	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -v -failfast -race -p 1 -timeout 2400s ./test/e2e/... -count 1 -tags='e2ecompress'
+
+.PHONY: test-sovereignchain
+test-sovereignchain: build-docker stop run-sovereign-chain ## Runs all tests checking race conditions
+	sleep 3
+	trap '$(STOP)' EXIT; MallocNanoZone=0 go test -v -failfast -race -p 1 -timeout 2400s ./test/e2e/... -count 1 -tags='sovereignchain'
+
+.PHONY: build-test-e2e-real_network
+build-test-e2e-real_network: ## Build binary for e2e tests with real network
+	go test -c ./test/e2e/ -o dist/zkevm-bridge-e2e-real_network-erc20 -tags='e2e_real_network_erc20'
+	go test -c ./test/e2e/ -o dist/zkevm-bridge-e2e-real_network-bridgemsg -tags='e2e_real_network_msg'
+	./dist/zkevm-bridge-e2e-real_network-erc20 -test.failfast -test.list Test
+	./dist/zkevm-bridge-e2e-real_network-bridgemsg -test.failfast -test.list Test
 
 .PHONY: validate
 validate: lint build test-full ## Validates the whole integrity of the code base
@@ -443,14 +522,13 @@ generate-mocks: ## Generates mocks for the tests, using mockery tool
 	mockery --name=storageInterface --dir=synchronizer --output=synchronizer --outpkg=synchronizer --structname=storageMock --filename=mock_storage.go ${COMMON_MOCKERY_PARAMS}
 	mockery --name=bridgectrlInterface --dir=synchronizer --output=synchronizer --outpkg=synchronizer --structname=bridgectrlMock --filename=mock_bridgectrl.go ${COMMON_MOCKERY_PARAMS}
 	mockery --name=Tx --srcpkg=github.com/jackc/pgx/v4 --output=synchronizer --outpkg=synchronizer --structname=dbTxMock --filename=mock_dbtx.go ${COMMON_MOCKERY_PARAMS}
-	mockery --name=zkEVMClientInterface --dir=synchronizer --output=synchronizer --outpkg=synchronizer --structname=zkEVMClientMock --filename=mock_zkevmclient.go ${COMMON_MOCKERY_PARAMS}
+	mockery --name=bridgeServiceStorage --dir=server --output=server --outpkg=server --structname=bridgeServiceStorageMock --filename=mock_bridgeServiceStorage.go ${COMMON_MOCKERY_PARAMS}
+	
 	rm -Rf claimtxman/mocks
 	export "GOROOT=$$(go env GOROOT)" && $$(go env GOPATH)/bin/mockery --all --case snake --dir claimtxman/ --output claimtxman/mocks --outpkg mock_txcompressor ${COMMON_MOCKERY_PARAMS}
 	
 
-.PHONY: generate-smart-contracts-bindings
+.PHONY: generate-smartcontracts-bindings
 generate-smartcontracts-bindings:	## Generates the smart contracts bindings
-	@for contract in `ls -1 etherman/smartcontracts/json/*.json | xargs -l basename`; do \
-		 ./scripts/generate-smartcontracts-bindings.sh $${contract%.*}; \
-	done
+	cd scripts && ./generate-smartcontracts-bindings.sh
 	

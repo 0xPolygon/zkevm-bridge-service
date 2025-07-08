@@ -6,6 +6,7 @@ package e2e
 import (
 	"context"
 	"math/big"
+	"os"
 	"testing"
 	"time"
 
@@ -19,11 +20,17 @@ func TestL2L2(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	err := os.Setenv("ZKEVM_BRIDGE_SYNCDB_DATABASE", "postgres")
+	require.NoError(t, err)
 
 	ctx := context.Background()
-	opsman1, err := operations.GetOpsman(ctx, "http://localhost:8123", "test_db", "8080", "9090", "5435", 1)
+	databaseType, exists := os.LookupEnv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
+	if !exists {
+		panic("ZKEVM_BRIDGE_SYNCDB_DATABASE env var not set")
+	}
+	opsman1, err := operations.GetOpsman(ctx, databaseType, "http://localhost:8123", "test_db", "8080", "9090", "5435", 1)
 	require.NoError(t, err)
-	opsman2, err := operations.GetOpsman(ctx, "http://localhost:8124", "test_db", "8080", "9090", "5435", 2)
+	opsman2, err := operations.GetOpsman(ctx, databaseType, "http://localhost:8124", "test_db", "8080", "9090", "5435", 2)
 	require.NoError(t, err)
 
 	t.Run("L2-L2 eth bridge", func(t *testing.T) {
@@ -46,7 +53,6 @@ func TestL2L2(t *testing.T) {
 		require.NoError(t, err)
 		t.Logf("Final L2 Bridge Balance in origin network 1: %v", l2Balance)
 
-
 		// Get Bridge Info By DestAddr
 		deposits, err := opsman1.GetBridgeInfoByDestAddr(ctx, &address)
 		require.NoError(t, err)
@@ -60,11 +66,11 @@ func TestL2L2(t *testing.T) {
 		// Check L2 destination funds
 		balance, err := opsman2.CheckAccountBalance(ctx, operations.L2, &address)
 		require.NoError(t, err)
-		v, _ := big.NewInt(0).SetString("99999999209233000000000", 10)
+		v, _ := big.NewInt(0).SetString("99999999216985000000000", 10)
 		t.Log("balance: ", balance)
-		require.Equal(t, 0,  v.Cmp(balance))
+		require.Equal(t, 0, v.Cmp(balance))
 		// Get the claim data
-		smtProof, smtRollupProof, globaExitRoot, err := opsman1.GetClaimData(ctx, uint(deposits[0].NetworkId), uint(deposits[0].DepositCnt))
+		smtProof, smtRollupProof, globaExitRoot, err := opsman1.GetClaimData(ctx, deposits[0].NetworkId, deposits[0].DepositCnt)
 		require.NoError(t, err)
 		time.Sleep(5 * time.Second)
 		// Claim funds in destination L2

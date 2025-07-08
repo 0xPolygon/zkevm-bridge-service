@@ -61,7 +61,7 @@ func (m migrationTest0007) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 	)
 	getClaimSQL := "SELECT index, orig_net, orig_addr, amount, dest_addr, block_id, network_id, tx_hash, rollup_index, mainnet_flag FROM sync.claim WHERE index = $1 AND network_id = $2"
 	_ = db.QueryRow(getClaimSQL, 3, 1).Scan(&claim.Index, &claim.OriginalNetwork, &claim.OriginalAddress, &amount, &claim.DestinationAddress, &claim.BlockID, &claim.NetworkID, &claim.TxHash, &claim.RollupIndex, &claim.MainnetFlag)
-	assert.Equal(t, uint64(0), claim.RollupIndex)
+	assert.Equal(t, uint32(0), claim.RollupIndex)
 	assert.Equal(t, false, claim.MainnetFlag)
 
 	insertClaim := "INSERT INTO sync.Claim (network_id, index, orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag) VALUES(1, 4, 0, decode('0000000000000000000000000000000000000000','hex'), '300000000000000000', decode('14567C0DCF79C20FE1A21E36EC975D1775A1905C','hex'), 2, decode('A9505DB7D7EDD08947F12F2B1F7898148FFB43D80BCB977B78161EF14173D575','hex'), 37, true);"
@@ -71,7 +71,7 @@ func (m migrationTest0007) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 	getClaimSQL = "SELECT index, orig_net, orig_addr, amount, dest_addr, block_id, network_id, tx_hash, rollup_index, mainnet_flag FROM sync.claim WHERE index = $1 AND network_id = $2"
 	_ = db.QueryRow(getClaimSQL, 4, 1).Scan(&claim.Index, &claim.OriginalNetwork, &claim.OriginalAddress, &amount, &claim.DestinationAddress, &claim.BlockID, &claim.NetworkID, &claim.TxHash, &claim.RollupIndex, &claim.MainnetFlag)
 	assert.NoError(t, err)
-	assert.Equal(t, uint64(37), claim.RollupIndex)
+	assert.Equal(t, uint32(37), claim.RollupIndex)
 	assert.Equal(t, true, claim.MainnetFlag)
 }
 

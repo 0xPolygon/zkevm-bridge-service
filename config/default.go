@@ -15,12 +15,13 @@ Outputs = ["stdout"]
 
 [SyncDB]
 Database = "postgres"
-User = "test_user"
-Password = "test_password"
-Name = "test_db"
-Host = "zkevm-bridge-db"
-Port = "5432"
-MaxConns = 20
+    [SyncDB.PgStorage]
+    User = "test_user"
+    Password = "test_password"
+    Name = "test_db"
+    Host = "zkevm-bridge-db"
+    Port = "5432"
+    MaxConns = 20
 
 [ClaimTxManager]
 Enabled = false
@@ -29,7 +30,8 @@ PrivateKey = {Path = "./test/test.keystore", Password = "testonly"}
 RetryInterval = "1s"
 RetryNumber = 10
 AuthorizedClaimMessageAddresses = []
-[ClaimTxManager.GroupingClaims]
+AreClaimsBetweenL2sEnabled = false
+    [ClaimTxManager.GroupingClaims]
     Enabled = false
     FrequencyToProcessCompressedClaims = "10m"
     TriggerNumberOfClaims = 10
@@ -48,9 +50,9 @@ L2URLs = [""]
 [Synchronizer]
 SyncInterval = "2s"
 SyncChunkSize = 100
+ForceL2SyncChunk = false
 
 [BridgeController]
-Store = "postgres"
 Height = 32
 
 [BridgeServer]
@@ -59,15 +61,21 @@ HTTPPort = "8080"
 DefaultPageLimit = 25
 CacheSize = 100000
 MaxPageLimit = 100
-BridgeVersion = "v1"
+FinalizedGEREnabled = false
     [BridgeServer.DB]
-    Database = "postgres"
-    User = "test_user"
-    Password = "test_password"
-    Name = "test_db"
-    Host = "zkevm-bridge-db"
-    Port = "5432"
-    MaxConns = 20
+        Database = "postgres"
+        [BridgeServer.DB.PgStorage]
+        User = "test_user"
+        Password = "test_password"
+        Name = "test_db"
+        Host = "zkevm-bridge-db"
+        Port = "5432"
+        MaxConns = 20
+
+[Metrics]
+Enabled = false
+Host = "0.0.0.0"
+Port = 8090
 `
 
 // Default parses the default configuration values.

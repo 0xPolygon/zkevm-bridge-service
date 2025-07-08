@@ -7,7 +7,6 @@ import (
 
 	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/jackc/pgx/v4"
 )
 
 type StoreChanges struct {
@@ -29,7 +28,7 @@ func (sc *StoreChanges) UpdateTx(tx ctmtypes.MonitoredTx) {
 	sc.UpdateTxs = append(sc.UpdateTxs, tx)
 }
 
-func (sc *StoreChanges) Execute(ctx context.Context, storage StorageCompressedInterface, dbTx pgx.Tx) error {
+func (sc *StoreChanges) Execute(ctx context.Context, storage StorageCompressedInterface, dbTx interface{}) error {
 	for i := range sc.AddGroups {
 		log.Debugf("Adding group %d ", sc.AddGroups[i].GroupID)
 		err := storage.AddMonitoredTxsGroup(ctx, &sc.AddGroups[i], dbTx)

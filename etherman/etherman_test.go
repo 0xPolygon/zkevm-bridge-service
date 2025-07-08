@@ -2,16 +2,17 @@ package etherman
 
 import (
 	"context"
+	"math"
 	"math/big"
 	"testing"
 
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevm"
+	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
 	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevm"
-	"github.com/0xPolygonHermez/zkevm-node/etherman/smartcontracts/polygonzkevmbridge"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
-	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/ethclient/simulated"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,7 +25,7 @@ func init() {
 }
 
 // This function prepare the blockchain, the wallet with funds and deploy the smc
-func newTestingEnv() (*Client, *backends.SimulatedBackend, *bind.TransactOpts, common.Address, *polygonzkevmbridge.Polygonzkevmbridge, *polygonzkevm.Polygonzkevm) {
+func newTestingEnv() (*Client, *simulated.Backend, *bind.TransactOpts, common.Address, *polygonzkevmbridgev2.Polygonzkevmbridgev2, *polygonzkevm.Polygonzkevm) {
 	privateKey, err := crypto.GenerateKey()
 	if err != nil {
 		log.Fatal(err)
@@ -51,7 +52,7 @@ func TestGEREvent(t *testing.T) {
 
 	amount := big.NewInt(1000000000000000)
 	auth.Value = amount
-	_, err = etherman.PolygonBridge.BridgeAsset(auth, 1, auth.From, amount, common.Address{}, true, []byte{})
+	_, err = etherman.PolygonBridgeV2.BridgeAsset(auth, 1, auth.From, amount, common.Address{}, true, []byte{})
 	require.NoError(t, err)
 
 	// Mine the tx in a block
@@ -91,9 +92,9 @@ func TestBridgeEvents(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, DepositsOrder, order[block[0].BlockHash][0].Name)
 	assert.Equal(t, GlobalExitRootsOrder, order[block[0].BlockHash][1].Name)
-	assert.Equal(t, uint64(4), block[0].BlockNumber)
+	assert.Equal(t, uint64(8), block[0].BlockNumber)
 	assert.Equal(t, big.NewInt(9000000000000000000), block[0].Deposits[0].Amount)
-	assert.Equal(t, uint(destNetwork), block[0].Deposits[0].DestinationNetwork)
+	assert.Equal(t, destNetwork, block[0].Deposits[0].DestinationNetwork)
 	assert.Equal(t, destinationAddr, block[0].Deposits[0].DestinationAddress)
 	assert.Equal(t, 1, len(block[0].GlobalExitRoots))
 
@@ -122,14 +123,14 @@ func TestBridgeEvents(t *testing.T) {
 	assert.Equal(t, TokensOrder, order[block[0].BlockHash][0].Name)
 	assert.Equal(t, ClaimsOrder, order[block[0].BlockHash][1].Name)
 	assert.Equal(t, big.NewInt(1000000000000000000), block[0].Claims[0].Amount)
-	assert.Equal(t, uint64(5), block[0].BlockNumber)
+	assert.Equal(t, uint64(9), block[0].BlockNumber)
 	assert.NotEqual(t, common.Address{}, block[0].Claims[0].OriginalAddress)
 	assert.Equal(t, auth.From, block[0].Claims[0].DestinationAddress)
-	assert.Equal(t, uint(34), block[0].Claims[0].Index)
-	assert.Equal(t, uint64(0), block[0].Claims[0].RollupIndex)
+	assert.Equal(t, uint32(34), block[0].Claims[0].Index)
+	assert.Equal(t, uint32(0), block[0].Claims[0].RollupIndex)
 	assert.Equal(t, true, block[0].Claims[0].MainnetFlag)
-	assert.Equal(t, uint(0), block[0].Claims[0].OriginalNetwork)
-	assert.Equal(t, uint64(5), block[0].Claims[0].BlockNumber)
+	assert.Equal(t, uint32(0), block[0].Claims[0].OriginalNetwork)
+	assert.Equal(t, uint64(9), block[0].Claims[0].BlockNumber)
 }
 
 func TestDecodeGlobalIndex(t *testing.T) {
@@ -143,8 +144,8 @@ func TestDecodeGlobalIndex(t *testing.T) {
 	mainnetFlag, rollupIndex, localExitRootIndex, err := DecodeGlobalIndex(globalIndex)
 	require.NoError(t, err)
 	assert.Equal(t, false, mainnetFlag)
-	assert.Equal(t, uint64(1), rollupIndex)
-	assert.Equal(t, uint64(11), localExitRootIndex)
+	assert.Equal(t, uint32(1), rollupIndex)
+	assert.Equal(t, uint32(11), localExitRootIndex)
 
 	globalIndex, _ = big.NewInt(0).SetString("8589934604", 0)
 
@@ -155,8 +156,8 @@ func TestDecodeGlobalIndex(t *testing.T) {
 	mainnetFlag, rollupIndex, localExitRootIndex, err = DecodeGlobalIndex(globalIndex)
 	require.NoError(t, err)
 	assert.Equal(t, false, mainnetFlag)
-	assert.Equal(t, uint64(2), rollupIndex)
-	assert.Equal(t, uint64(12), localExitRootIndex)
+	assert.Equal(t, uint32(2), rollupIndex)
+	assert.Equal(t, uint32(12), localExitRootIndex)
 
 	globalIndex, _ = big.NewInt(0).SetString("18446744073709551627", 0)
 
@@ -167,8 +168,8 @@ func TestDecodeGlobalIndex(t *testing.T) {
 	mainnetFlag, rollupIndex, localExitRootIndex, err = DecodeGlobalIndex(globalIndex)
 	require.NoError(t, err)
 	assert.Equal(t, true, mainnetFlag)
-	assert.Equal(t, uint64(0), rollupIndex)
-	assert.Equal(t, uint64(11), localExitRootIndex)
+	assert.Equal(t, uint32(0), rollupIndex)
+	assert.Equal(t, uint32(11), localExitRootIndex)
 
 	globalIndex, _ = big.NewInt(0).SetString("18446744073709551616", 0)
 
@@ -179,8 +180,20 @@ func TestDecodeGlobalIndex(t *testing.T) {
 	mainnetFlag, rollupIndex, localExitRootIndex, err = DecodeGlobalIndex(globalIndex)
 	require.NoError(t, err)
 	assert.Equal(t, true, mainnetFlag)
-	assert.Equal(t, uint64(0), rollupIndex)
-	assert.Equal(t, uint64(0), localExitRootIndex)
+	assert.Equal(t, uint32(0), rollupIndex)
+	assert.Equal(t, uint32(0), localExitRootIndex)
+
+	globalIndex, _ = big.NewInt(0).SetString("18446744073709551615", 0)
+
+	gi = globalIndex.FillBytes(buf[:])
+	for _, n := range gi {
+		t.Logf("%08b ", n)
+	}
+	mainnetFlag, rollupIndex, localExitRootIndex, err = DecodeGlobalIndex(globalIndex)
+	require.NoError(t, err)
+	assert.Equal(t, false, mainnetFlag)
+	assert.Equal(t, uint32(math.MaxUint32), rollupIndex)
+	assert.Equal(t, uint32(math.MaxUint32), localExitRootIndex)
 }
 
 func TestVerifyBatchEvent(t *testing.T) {
@@ -200,7 +213,11 @@ func TestVerifyBatchEvent(t *testing.T) {
 		ForcedTimestamp:      0,
 		Transactions:         common.Hex2Bytes(rawTxs),
 	}
-	_, err = zkevm.SequenceBatches(auth, []polygonzkevm.PolygonRollupBaseEtrogBatchData{tx}, auth.From)
+	var (
+		maxSequenceTimestamp uint64 = 1
+		initSequencedBatch   uint64 = 1
+	)
+	_, err = zkevm.SequenceBatches(auth, []polygonzkevm.PolygonRollupBaseEtrogBatchData{tx}, maxSequenceTimestamp, initSequencedBatch, auth.From)
 	require.NoError(t, err)
 
 	// Mine the tx in a block
@@ -219,7 +236,7 @@ func TestVerifyBatchEvent(t *testing.T) {
 	blocks, order, err := etherman.GetRollupInfoByBlockRange(ctx, initBlock.NumberU64(), &finalBlockNumber)
 	require.NoError(t, err)
 	t.Logf("Blocks: %+v, \nOrder: %+v", blocks, order)
-	assert.Equal(t, uint64(5), blocks[0].BlockNumber)
+	assert.Equal(t, uint64(9), blocks[0].BlockNumber)
 	assert.Equal(t, uint64(1), blocks[0].VerifiedBatches[0].BatchNumber)
 	assert.NotEqual(t, common.Address{}, blocks[0].VerifiedBatches[0].Aggregator)
 	assert.NotEqual(t, common.Hash{}, blocks[0].VerifiedBatches[0].TxHash)
@@ -231,28 +248,59 @@ func TestVerifyBatchEvent(t *testing.T) {
 
 func TestGenerateGlobalIndex(t *testing.T) {
 	globalIndex, _ := big.NewInt(0).SetString("4294967307", 0)
-	mainnetFlag, rollupIndex, localExitRootIndex := false, uint(1), uint(11)
+	mainnetFlag, rollupIndex, localExitRootIndex := false, uint32(1), uint32(11)
 	globalIndexGenerated := GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
 	t.Log("First test number:")
-	for _, n := range globalIndexGenerated.Bytes() {
+	var buf [32]byte
+	gIBytes := globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
 		t.Logf("%08b ", n)
 	}
 	assert.Equal(t, globalIndex, globalIndexGenerated)
 
 	globalIndex, _ = big.NewInt(0).SetString("8589934604", 0)
-	mainnetFlag, rollupIndex, localExitRootIndex = false, uint(2), uint(12)
+	mainnetFlag, rollupIndex, localExitRootIndex = false, uint32(2), uint32(12)
 	globalIndexGenerated = GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
 	t.Log("Second test number:")
-	for _, n := range globalIndexGenerated.Bytes() {
+	gIBytes = globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
 		t.Logf("%08b ", n)
 	}
 	assert.Equal(t, globalIndex, globalIndexGenerated)
 
 	globalIndex, _ = big.NewInt(0).SetString("18446744073709551627", 0)
-	mainnetFlag, rollupIndex, localExitRootIndex = true, uint(0), uint(11)
+	mainnetFlag, rollupIndex, localExitRootIndex = true, uint32(0), uint32(11)
 	globalIndexGenerated = GenerateGlobalIndex(mainnetFlag, rollupIndex, localExitRootIndex)
 	t.Log("Third test number:")
-	for _, n := range globalIndexGenerated.Bytes() {
+	gIBytes = globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
+		t.Logf("%08b ", n)
+	}
+	assert.Equal(t, globalIndex, globalIndexGenerated)
+
+	globalIndex, _ = big.NewInt(0).SetString("18446744073709551615", 0)
+	globalIndexGenerated = GenerateGlobalIndex(false, math.MaxUint32, math.MaxUint32)
+	t.Log("Fourth test number:")
+	gIBytes = globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
+		t.Logf("%08b ", n)
+	}
+	assert.Equal(t, globalIndex, globalIndexGenerated)
+
+	globalIndex = big.NewInt(0)
+	globalIndexGenerated = GenerateGlobalIndex(false, uint32(0), uint32(0))
+	t.Log("Fourth test number:")
+	gIBytes = globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
+		t.Logf("%08b ", n)
+	}
+	assert.Equal(t, globalIndex.String(), globalIndexGenerated.String())
+
+	globalIndex, _ = big.NewInt(0).SetString("18446744073709551616", 0)
+	globalIndexGenerated = GenerateGlobalIndex(true, uint32(0), uint32(0))
+	t.Log("Fourth test number:")
+	gIBytes = globalIndexGenerated.FillBytes(buf[:])
+	for _, n := range gIBytes {
 		t.Logf("%08b ", n)
 	}
 	assert.Equal(t, globalIndex, globalIndexGenerated)
