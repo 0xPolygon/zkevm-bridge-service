@@ -1675,6 +1675,7 @@ func TestMessyEvents(t *testing.T) {
 
 		return sync
 	}
+
 	m := mocks{
 		Etherman:    newEthermanMock(t),
 		BridgeCtrl:  newBridgectrlMock(t),

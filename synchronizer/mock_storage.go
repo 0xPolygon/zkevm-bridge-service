@@ -204,11 +204,7 @@ func (_m *storageMock) AddGlobalExitRoot(ctx context.Context, exitRoot *etherman
 		r0 = ret.Error(0)
 	}
 
-func (_c *storageMock_AddDeposit_Call) Run(run func(ctx context.Context, deposit *etherman.Deposit, dbTx pgx.Tx)) *storageMock_AddDeposit_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*etherman.Deposit), args[2].(pgx.Tx))
-	})
-	return _c
+	return r0
 }
 
 // storageMock_AddGlobalExitRoot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddGlobalExitRoot'
@@ -527,11 +523,7 @@ func (_m *storageMock) Commit(ctx context.Context, dbTx interface{}) error {
 		r0 = ret.Error(0)
 	}
 
-func (_c *storageMock_BeginDBTransaction_Call) Run(run func(ctx context.Context)) *storageMock_BeginDBTransaction_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
+	return r0
 }
 
 // storageMock_Commit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Commit'
@@ -586,12 +578,6 @@ func (_m *storageMock) GetL1ExitRootByGER(ctx context.Context, ger common.Hash, 
 
 	if rf, ok := ret.Get(1).(func(context.Context, common.Hash, interface{}) error); ok {
 		r1 = rf(ctx, ger, dbTx)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, []byte, uint8, pgx.Tx) error); ok {
-		r1 = rf(ctx, root, network, dbTx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -656,7 +642,7 @@ func (_m *storageMock) GetL2ExitRootsByGER(ctx context.Context, ger common.Hash,
 		r1 = ret.Error(1)
 	}
 
-	return r0
+	return r0, r1
 }
 
 // storageMock_GetL2ExitRootsByGER_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetL2ExitRootsByGER'
@@ -835,9 +821,7 @@ func (_m *storageMock) GetLatestTrustedExitRoot(ctx context.Context, networkID u
 		r1 = ret.Error(1)
 	}
 
-func (_c *storageMock_GetLatestL1SyncedExitRoot_Call) Return(_a0 *etherman.GlobalExitRoot, _a1 error) *storageMock_GetLatestL1SyncedExitRoot_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
+	return r0, r1
 }
 
 // storageMock_GetLatestTrustedExitRoot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLatestTrustedExitRoot'
@@ -1052,11 +1036,7 @@ func (_m *storageMock) Rollback(ctx context.Context, dbTx interface{}) error {
 		r0 = ret.Error(0)
 	}
 
-func (_c *storageMock_Reset_Call) Run(run func(ctx context.Context, blockNumber uint64, networkID uint, dbTx pgx.Tx)) *storageMock_Reset_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uint64), args[2].(uint), args[3].(pgx.Tx))
-	})
-	return _c
+	return r0
 }
 
 // storageMock_Rollback_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Rollback'

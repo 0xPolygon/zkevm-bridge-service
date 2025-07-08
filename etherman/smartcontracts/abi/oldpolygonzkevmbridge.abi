@@ -21,14 +21,6 @@
 	},
 	{
 		"inputs": [],
-<<<<<<<< HEAD:test/mocksmartcontracts/abi/polygonzkevmbridge.abi
-		"name": "GasTokenNetworkMustBeZeroOnEther",
-		"type": "error"
-	},
-	{
-		"inputs": [],
-========
->>>>>>>> release/v0.6.1:etherman/smartcontracts/abi/oldpolygonzkevmbridge.abi
 		"name": "GlobalExitRootInvalid",
 		"type": "error"
 	},
@@ -54,19 +46,6 @@
 	},
 	{
 		"inputs": [],
-<<<<<<<< HEAD:test/mocksmartcontracts/abi/polygonzkevmbridge.abi
-		"name": "NativeTokenIsEther",
-		"type": "error"
-	},
-	{
-		"inputs": [],
-		"name": "NoValueInMessagesOnGasTokenNetworks",
-		"type": "error"
-	},
-	{
-		"inputs": [],
-========
->>>>>>>> release/v0.6.1:etherman/smartcontracts/abi/oldpolygonzkevmbridge.abi
 		"name": "NotValidAmount",
 		"type": "error"
 	},
@@ -97,11 +76,7 @@
 	},
 	{
 		"inputs": [],
-<<<<<<<< HEAD:test/mocksmartcontracts/abi/polygonzkevmbridge.abi
-		"name": "OnlyRollupManager",
-========
 		"name": "OnlyPolygonZkEVM",
->>>>>>>> release/v0.6.1:etherman/smartcontracts/abi/oldpolygonzkevmbridge.abi
 		"type": "error"
 	},
 	{
@@ -164,9 +139,9 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"internalType": "uint256",
-				"name": "globalIndex",
-				"type": "uint256"
+				"internalType": "uint32",
+				"name": "index",
+				"type": "uint32"
 			},
 			{
 				"indexed": false,
@@ -253,22 +228,6 @@
 		"type": "event"
 	},
 	{
-<<<<<<<< HEAD:test/mocksmartcontracts/abi/polygonzkevmbridge.abi
-		"inputs": [],
-		"name": "WETHToken",
-		"outputs": [
-			{
-				"internalType": "contract TokenWrapped",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-========
->>>>>>>> release/v0.6.1:etherman/smartcontracts/abi/oldpolygonzkevmbridge.abi
 		"inputs": [],
 		"name": "activateEmergencyState",
 		"outputs": [],
@@ -344,47 +303,6 @@
 	{
 		"inputs": [
 			{
-<<<<<<<< HEAD:test/mocksmartcontracts/abi/polygonzkevmbridge.abi
-				"internalType": "uint32",
-				"name": "destinationNetwork",
-				"type": "uint32"
-			},
-			{
-				"internalType": "address",
-				"name": "destinationAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amountWETH",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bool",
-				"name": "forceUpdateGlobalExitRoot",
-				"type": "bool"
-			},
-			{
-				"internalType": "bytes",
-				"name": "metadata",
-				"type": "bytes"
-			}
-		],
-		"name": "bridgeMessageWETH",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "leafHash",
-				"type": "bytes32"
-			},
-			{
-========
->>>>>>>> release/v0.6.1:etherman/smartcontracts/abi/oldpolygonzkevmbridge.abi
 				"internalType": "bytes32[32]",
 				"name": "smtProof",
 				"type": "bytes32[32]"
@@ -393,64 +311,6 @@
 				"internalType": "uint32",
 				"name": "index",
 				"type": "uint32"
-			}
-		],
-		"name": "calculateRoot",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint32",
-				"name": "originNetwork",
-				"type": "uint32"
-			},
-			{
-				"internalType": "address",
-				"name": "originTokenAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "token",
-				"type": "address"
-			}
-		],
-		"name": "calculateTokenWrapperAddress",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32[32]",
-				"name": "smtProofLocalExitRoot",
-				"type": "bytes32[32]"
-			},
-			{
-				"internalType": "bytes32[32]",
-				"name": "smtProofRollupExitRoot",
-				"type": "bytes32[32]"
-			},
-			{
-				"internalType": "uint256",
-				"name": "globalIndex",
-				"type": "uint256"
 			},
 			{
 				"internalType": "bytes32",
@@ -502,22 +362,13 @@
 		"inputs": [
 			{
 				"internalType": "bytes32[32]",
-<<<<<<<< HEAD:test/mocksmartcontracts/abi/polygonzkevmbridge.abi
-				"name": "smtProofLocalExitRoot",
-========
 				"name": "smtProof",
->>>>>>>> release/v0.6.1:etherman/smartcontracts/abi/oldpolygonzkevmbridge.abi
 				"type": "bytes32[32]"
 			},
 			{
-				"internalType": "bytes32[32]",
-				"name": "smtProofRollupExitRoot",
-				"type": "bytes32[32]"
-			},
-			{
-				"internalType": "uint256",
-				"name": "globalIndex",
-				"type": "uint256"
+				"internalType": "uint32",
+				"name": "index",
+				"type": "uint32"
 			},
 			{
 				"internalType": "bytes32",
@@ -606,38 +457,12 @@
 	},
 	{
 		"inputs": [],
-		"name": "gasTokenAddress",
+		"name": "getDepositRoot",
 		"outputs": [
 			{
-				"internalType": "address",
+				"internalType": "bytes32",
 				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "gasTokenMetadata",
-		"outputs": [
-			{
-				"internalType": "bytes",
-				"name": "",
-				"type": "bytes"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "gasTokenNetwork",
-		"outputs": [
-			{
-				"internalType": "uint32",
-				"name": "",
-				"type": "uint32"
+				"type": "bytes32"
 			}
 		],
 		"stateMutability": "view",
@@ -693,38 +518,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "getRoot",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "token",
-				"type": "address"
-			}
-		],
-		"name": "getTokenMetadata",
-		"outputs": [
-			{
-				"internalType": "bytes",
-				"name": "",
-				"type": "bytes"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "uint32",
@@ -769,37 +562,14 @@
 				"type": "uint32"
 			},
 			{
-<<<<<<<< HEAD:test/mocksmartcontracts/abi/polygonzkevmbridge.abi
-				"internalType": "address",
-				"name": "_gasTokenAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "uint32",
-				"name": "_gasTokenNetwork",
-				"type": "uint32"
-			},
-			{
-========
->>>>>>>> release/v0.6.1:etherman/smartcontracts/abi/oldpolygonzkevmbridge.abi
 				"internalType": "contract IBasePolygonZkEVMGlobalExitRoot",
 				"name": "_globalExitRootManager",
 				"type": "address"
 			},
 			{
 				"internalType": "address",
-<<<<<<<< HEAD:test/mocksmartcontracts/abi/polygonzkevmbridge.abi
-				"name": "_polygonRollupManager",
-				"type": "address"
-			},
-			{
-				"internalType": "bytes",
-				"name": "_gasTokenMetadata",
-				"type": "bytes"
-========
 				"name": "_polygonZkEVMaddress",
 				"type": "address"
->>>>>>>> release/v0.6.1:etherman/smartcontracts/abi/oldpolygonzkevmbridge.abi
 			}
 		],
 		"name": "initialize",
@@ -810,20 +580,9 @@
 	{
 		"inputs": [
 			{
-<<<<<<<< HEAD:test/mocksmartcontracts/abi/polygonzkevmbridge.abi
-				"internalType": "uint32",
-				"name": "leafIndex",
-				"type": "uint32"
-			},
-			{
-				"internalType": "uint32",
-				"name": "sourceBridgeNetwork",
-				"type": "uint32"
-========
 				"internalType": "uint256",
 				"name": "index",
 				"type": "uint256"
->>>>>>>> release/v0.6.1:etherman/smartcontracts/abi/oldpolygonzkevmbridge.abi
 			}
 		],
 		"name": "isClaimed",
@@ -878,11 +637,7 @@
 	},
 	{
 		"inputs": [],
-<<<<<<<< HEAD:test/mocksmartcontracts/abi/polygonzkevmbridge.abi
-		"name": "polygonRollupManager",
-========
 		"name": "polygonZkEVMaddress",
->>>>>>>> release/v0.6.1:etherman/smartcontracts/abi/oldpolygonzkevmbridge.abi
 		"outputs": [
 			{
 				"internalType": "address",

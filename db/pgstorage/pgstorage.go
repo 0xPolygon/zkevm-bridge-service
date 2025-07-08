@@ -754,7 +754,7 @@ func (p *PostgresStorage) AddRemoveL2GER(ctx context.Context, globalExitRoot eth
 		VALUES ($1, $2, $3)`
 	_, err := p.getExecQuerier(dbTx).Exec(ctx, insertRemoveGERSQL, globalExitRoot.BlockID, globalExitRoot.GlobalExitRoot, globalExitRoot.NetworkID)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	// Modify the allowed column in the exit_root table for this globalExitRoot
