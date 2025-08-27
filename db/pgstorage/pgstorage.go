@@ -317,6 +317,7 @@ func (p *PostgresStorage) GetL2ExitRootsByGER(ctx context.Context, ger common.Ha
 		}
 		return nil, err
 	}
+	defer rows.Close()
 
 	gers := make([]etherman.GlobalExitRoot, 0, len(rows.RawValues()))
 
@@ -490,6 +491,7 @@ func (p *PostgresStorage) GetRollupExitLeavesByRoot(ctx context.Context, root co
 	} else if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	leaves := make([]etherman.RollupExitLeaf, 0, len(rows.RawValues()))
 
 	for rows.Next() {
@@ -534,6 +536,7 @@ func (p *PostgresStorage) GetLatestRollupExitLeaves(ctx context.Context, dbTx in
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	leaves := make([]etherman.RollupExitLeaf, 0, len(rows.RawValues()))
 
 	for rows.Next() {
@@ -579,6 +582,7 @@ func (p *PostgresStorage) GetClaims(ctx context.Context, destAddr string, limit,
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	claims := make([]*etherman.Claim, 0, len(rows.RawValues()))
 
 	for rows.Next() {
@@ -603,6 +607,7 @@ func (p *PostgresStorage) GetDeposits(ctx context.Context, destAddr string, limi
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	return parseDeposits(rows, true)
 }
@@ -635,7 +640,7 @@ func (p *PostgresStorage) UpdateL1DepositsStatus(ctx context.Context, exitRoot [
 		WHERE deposit_cnt <=
 			(SELECT sync.deposit.deposit_cnt FROM mt.root INNER JOIN sync.deposit ON sync.deposit.id = mt.root.deposit_id WHERE mt.root.root = $1 AND mt.root.network = 0) 
 			AND network_id = 0 AND ready_for_claim = false AND dest_net = $2;`
-	_, err := p.getExecQuerier(dbTx).Query(ctx, updateDepositsStatusSQL, exitRoot, destinationNetwork)
+	_, err := p.getExecQuerier(dbTx).Exec(ctx, updateDepositsStatusSQL, exitRoot, destinationNetwork)
 	if err != nil {
 		return err
 	}
@@ -660,6 +665,8 @@ func (p *PostgresStorage) GetDepositsFromOtherL2ToClaim(ctx context.Context, des
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
+
 	return parseDeposits(rows, false)
 }
 
@@ -712,6 +719,7 @@ func (p *PostgresStorage) GetClaimTxsByStatus(ctx context.Context, statuses []ct
 	} else if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
 	mTxs := make([]ctmtypes.MonitoredTx, 0, len(rows.RawValues()))
 	for rows.Next() {
@@ -753,6 +761,7 @@ func (p *PostgresStorage) GetPendingDepositsToClaim(ctx context.Context, destAdd
 	if err != nil {
 		return nil, 0, err
 	}
+	defer rows.Close()
 
 	deposits, err := parseDeposits(rows, true)
 	if err != nil {
