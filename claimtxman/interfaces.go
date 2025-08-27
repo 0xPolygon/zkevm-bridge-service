@@ -11,9 +11,10 @@ import (
 
 type StorageInterface interface {
 	AddBlock(ctx context.Context, block *etherman.Block, dbTx interface{}) (uint64, error)
-	UpdateL1DepositsStatus(ctx context.Context, exitRoot []byte, destinationNetwork uint32, dbTx interface{}) ([]*etherman.Deposit, error)
+	UpdateL1DepositsStatus(ctx context.Context, exitRoot []byte, destinationNetwork uint32, dbTx interface{}) error
 	UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID, networkID uint32, dbTx interface{}) error
 	GetDepositsFromOtherL2ToClaim(ctx context.Context, destinationNetwork uint32, dbTx interface{}) ([]*etherman.Deposit, error)
+	GetPendingDepositsToClaim(ctx context.Context, destAddress common.Address, destNetwork, leafType, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, uint64, error)
 	GetLatestTrustedGERByDeposit(ctx context.Context, depositCnt, networkID, destinationNetwork uint32, dbTx interface{}) (common.Hash, error)
 	AddClaimTx(ctx context.Context, mTx types.MonitoredTx, dbTx interface{}) error
 	UpdateClaimTx(ctx context.Context, mTx types.MonitoredTx, dbTx interface{}) error

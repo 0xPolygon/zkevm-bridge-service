@@ -616,18 +616,17 @@ func (p *PostgresStorage) GetDepositCount(ctx context.Context, destAddr string, 
 }
 
 // UpdateL1DepositsStatus updates the ready_for_claim status of L1 deposits.
-func (p *PostgresStorage) UpdateL1DepositsStatus(ctx context.Context, exitRoot []byte, destinationNetwork uint32, dbTx interface{}) ([]*etherman.Deposit, error) {
+func (p *PostgresStorage) UpdateL1DepositsStatus(ctx context.Context, exitRoot []byte, destinationNetwork uint32, dbTx interface{}) error {
 	const updateDepositsStatusSQL = `UPDATE sync.deposit SET ready_for_claim = true 
 		WHERE deposit_cnt <=
 			(SELECT sync.deposit.deposit_cnt FROM mt.root INNER JOIN sync.deposit ON sync.deposit.id = mt.root.deposit_id WHERE mt.root.root = $1 AND mt.root.network = 0) 
-			AND network_id = 0 AND ready_for_claim = false AND dest_net = $2
-			RETURNING id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, network_id, tx_hash, metadata, ready_for_claim;`
-	rows, err := p.getExecQuerier(dbTx).Query(ctx, updateDepositsStatusSQL, exitRoot, destinationNetwork)
+			AND network_id = 0 AND ready_for_claim = false AND dest_net = $2;`
+	_, err := p.getExecQuerier(dbTx).Query(ctx, updateDepositsStatusSQL, exitRoot, destinationNetwork)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return parseDeposits(rows, false)
+	return err
 }
 
 // UpdateL2DepositsStatus updates the ready_for_claim status of L2 deposits.

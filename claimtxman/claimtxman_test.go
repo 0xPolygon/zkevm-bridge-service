@@ -194,8 +194,9 @@ func TestUpdateDepositStatus(t *testing.T) {
 	l2Root1 := common.FromHex("0xda7bce9f4e8618b6bd2f4132ce798cdc7a60e7e1460a7299e3c6342a579626d2")
 	require.NoError(t, testStore.SetRoot(ctx, l2Root1, depositID, deposit.NetworkID, nil))
 
-	deposits, err := store.UpdateL1DepositsStatus(ctx, l1Root, deposit.DestinationNetwork, nil)
+	err = store.UpdateL1DepositsStatus(ctx, l1Root, deposit.DestinationNetwork, nil)
 	require.NoError(t, err)
+	deposits, _, err := store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 10, 0, nil)
 	require.Len(t, deposits, 1)
 	require.True(t, deposits[0].ReadyForClaim)
 	require.Equal(t, uint32(1), deposits[0].DepositCount)
