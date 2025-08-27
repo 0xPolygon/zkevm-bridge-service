@@ -19,6 +19,7 @@ type StorageInterface interface {
 	AddClaimTx(ctx context.Context, mTx types.MonitoredTx, dbTx interface{}) error
 	UpdateClaimTx(ctx context.Context, mTx types.MonitoredTx, dbTx interface{}) error
 	GetClaimTxsByStatus(ctx context.Context, statuses []types.MonitoredTxStatus, rollupID uint32, dbTx interface{}) ([]types.MonitoredTx, error)
+	GetDepositByDepositID(ctx context.Context, depositID uint64, dbTx interface{}) (*etherman.Deposit, error)
 	// atomic
 	Rollback(ctx context.Context, dbTx interface{}) error
 	BeginDBTransaction(ctx context.Context) (interface{}, error)

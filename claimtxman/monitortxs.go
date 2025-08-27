@@ -47,14 +47,14 @@ func NewMonitorTxs(ctx context.Context,
 }
 
 // MonitorTxs process all pending monitored tx
-func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
+func (tm *MonitorTxs) MonitorTxs() error {
 	dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
 	if err != nil {
 		return err
 	}
 
 	statusesFilter := []ctmtypes.MonitoredTxStatus{ctmtypes.MonitoredTxStatusCreated}
-	mTxs, err := tm.storage.GetClaimTxsByStatus(ctx, statusesFilter, tm.rollupID, dbTx)
+	mTxs, err := tm.storage.GetClaimTxsByStatus(tm.ctx, statusesFilter, tm.rollupID, dbTx)
 	if err != nil {
 		log.Errorf("rollupID: %d, failed to get created monitored txs: %v", tm.rollupID, err)
 		rollbackErr := tm.storage.Rollback(tm.ctx, dbTx)
@@ -64,14 +64,23 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 		}
 		return fmt.Errorf("rollupID: %d, failed to get created monitored txs: %v", tm.rollupID, err)
 	}
+	err = tm.commitOrRollback(dbTx)
+	if err != nil {
+		log.Errorf("rollupID: %d, error committing dbTx, err: %v", tm.rollupID, err)
+		return err
+	}
 
-	isResetNonce := false // it will reset the nonce in one cycle
 	log.Infof("rollupID: %d, found %v monitored tx to process", tm.rollupID, len(mTxs))
 	for _, mTx := range mTxs {
+		isResetNonce := false
 		mTx := mTx // force variable shadowing to avoid pointer conflicts
 		mTxLog := log.WithFields("monitoredTx", mTx.DepositID, "rollupID", tm.rollupID)
 		mTxLog.Infof("processing tx with nonce %d", mTx.Nonce)
 
+		dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
+		if err != nil {
+			return err
+		}
 		// if the tx is not mined yet, check that not all the tx were mined and go to the next
 		// check if the tx is in the pending pool
 		// Retry if the tx has not appeared in the pool yet.
@@ -79,16 +88,21 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 		// update monitored tx changes into storage
 		// if the tx was mined but failed, we continue to consider it was not mined
 		// and store the failed receipt to be used to check if nonce needs to be reviewed
-		hasFailedReceipts, allHistoryTxMined, receiptSuccessful := tm.checkTxHistory(ctx, mTx, mTxLog)
+		hasFailedReceipts, allHistoryTxMined, receiptSuccessful := tm.checkTxHistory(mTx, mTxLog)
 
 		if receiptSuccessful {
 			//mTxLog.Infof("tx %s was mined successfully", txHash.String())
 
 			mTx.Status = ctmtypes.MonitoredTxStatusConfirmed
 
-			err = tm.storage.UpdateClaimTx(ctx, mTx, dbTx)
+			err = tm.storage.UpdateClaimTx(tm.ctx, mTx, dbTx)
 			if err != nil {
 				mTxLog.Errorf("failed to update monitored tx when confirmed: %v", err)
+			}
+			err = tm.commitOrRollback(dbTx)
+			if err != nil {
+				log.Errorf("rollupID: %d, error committing dbTx, err: %v", tm.rollupID, err)
+				return err
 			}
 			continue
 		}
@@ -101,9 +115,14 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 			mTx.Status = ctmtypes.MonitoredTxStatusFailed
 			mTxLog.Infof("marked as failed because reached the history size limit (%d)", maxHistorySize)
 			// update monitored tx changes into storage
-			err = tm.storage.UpdateClaimTx(ctx, mTx, dbTx)
+			err = tm.storage.UpdateClaimTx(tm.ctx, mTx, dbTx)
 			if err != nil {
 				mTxLog.Errorf("failed to update monitored tx when max history size limit reached: %v", err)
+			}
+			err = tm.commitOrRollback(dbTx)
+			if err != nil {
+				log.Errorf("rollupID: %d, error committing dbTx, err: %v", tm.rollupID, err)
+				return err
 			}
 			continue
 		}
@@ -117,17 +136,34 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 			// review the tx information
 			if hasFailedReceipts {
 				mTxLog.Infof("monitored tx needs to be updated")
-				err := tm.ReviewMonitoredTx(ctx, &mTx, true)
+				err := tm.ReviewMonitoredTx(&mTx, true)
 				if err != nil {
 					mTxLog.Errorf("failed to review monitored tx: %v", err)
+					// If it's reverted, check if it's already claimed
+					if isExecutionReverted(err) {
+						errClaimed := tm.checkIfClaimed(&mTx, mTxLog, dbTx)
+						if errClaimed != nil {
+							mTxLog.Errorf("error checking if the deposit was already claimed: %v", errClaimed)
+						}
+					}
+					err = tm.commitOrRollback(dbTx)
+					if err != nil {
+						log.Errorf("rollupID: %d, error committing dbTx, err: %v", tm.rollupID, err)
+						return err
+					}
 					continue
 				}
 			}
 
 			// GasPrice is set here to use always the proper and most accurate value right before sending it to L2
-			gasPrice, err := tm.l2Node.SuggestGasPrice(ctx)
+			gasPrice, err := tm.l2Node.SuggestGasPrice(tm.ctx)
 			if err != nil {
 				mTxLog.Errorf("failed to get suggested gasPrice. Error: %v", err)
+				err = tm.commitOrRollback(dbTx)
+				if err != nil {
+					log.Errorf("rollupID: %d, error committing dbTx, err: %v", tm.rollupID, err)
+					return err
+				}
 				continue
 			}
 			//Multiply gasPrice by 10 to increase the efficiency of the tx in the sequence
@@ -143,6 +179,11 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 			signedTx, err = tm.auth.Signer(mTx.From, tx)
 			if err != nil {
 				mTxLog.Errorf("failed to sign tx %v created from monitored tx: %v", tx.Hash().String(), err)
+				err = tm.commitOrRollback(dbTx)
+				if err != nil {
+					log.Errorf("rollupID: %d, error committing dbTx, err: %v", tm.rollupID, err)
+					return err
+				}
 				continue
 			}
 			mTxLog.Debugf("signed tx %v created using gasPrice: %s", signedTx.Hash().String(), signedTx.GasPrice().String())
@@ -153,17 +194,22 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 				mTxLog.Infof("signed tx already existed in the history")
 			} else if err != nil {
 				mTxLog.Errorf("failed to add signed tx to monitored tx history: %v", err)
+				err = tm.commitOrRollback(dbTx)
+				if err != nil {
+					log.Errorf("rollupID: %d, error committing dbTx, err: %v", tm.rollupID, err)
+					return err
+				}
 				continue
 			}
 
 			// check if the tx is already in the network, if not, send it
-			_, _, err = tm.l2Node.TransactionByHash(ctx, signedTx.Hash())
+			_, _, err = tm.l2Node.TransactionByHash(tm.ctx, signedTx.Hash())
 			if errors.Is(err, ethereum.NotFound) {
-				err := tm.l2Node.SendTransaction(ctx, signedTx)
+				err := tm.l2Node.SendTransaction(tm.ctx, signedTx)
 				if err != nil {
 					mTxLog.Errorf("failed to send tx %s to network: %v", signedTx.Hash().String(), err)
 					var reviewNonce bool
-					if strings.Contains(err.Error(), "nonce") {
+					if isNonceError(err) {
 						mTxLog.Infof("nonce error detected, Nonce used: %d", signedTx.Nonce())
 						if !isResetNonce {
 							isResetNonce = true
@@ -174,7 +220,7 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 					}
 					mTx.RemoveHistory(signedTx)
 					// we should rebuild the monitored tx to fix the nonce
-					err := tm.ReviewMonitoredTx(ctx, &mTx, reviewNonce)
+					err := tm.ReviewMonitoredTx(&mTx, reviewNonce)
 					if err != nil {
 						mTxLog.Errorf("failed to review monitored tx: %v", err)
 					}
@@ -186,30 +232,30 @@ func (tm *MonitorTxs) MonitorTxs(ctx context.Context) error {
 			}
 
 			// update monitored tx changes into storage
-			err = tm.storage.UpdateClaimTx(ctx, mTx, dbTx)
+			err = tm.storage.UpdateClaimTx(tm.ctx, mTx, dbTx)
 			if err != nil {
 				mTxLog.Errorf("failed to update monitored tx: %v", err)
+				err = tm.commitOrRollback(dbTx)
+				if err != nil {
+					log.Errorf("rollupID: %d, error committing dbTx, err: %v", tm.rollupID, err)
+					return err
+				}
 				continue
 			}
 			mTxLog.Infof("signed tx %s added to the monitored tx history", signedTx.Hash().String())
 		}
+		err = tm.commitOrRollback(dbTx)
+		if err != nil {
+			log.Errorf("rollupID: %d, error committing dbTx, err: %v", tm.rollupID, err)
+			return err
+		}
 	}
 
-	err = tm.storage.Commit(tm.ctx, dbTx)
-	if err != nil {
-		log.Errorf("rollupID: %d, UpdateClaimTx committing dbTx, err: %v", tm.rollupID, err)
-		rollbackErr := tm.storage.Rollback(tm.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("rollupID: %d, claimtxman error rolling back state. RollbackErr: %s, err: %v", tm.rollupID, rollbackErr.Error(), err)
-			return rollbackErr
-		}
-		return err
-	}
 	return nil
 }
 
 // returns hasFailedReceipts, allHistoryTxMined, receiptSuccessful
-func (tm *MonitorTxs) checkTxHistory(ctx context.Context, mTx ctmtypes.MonitoredTx, mTxLog *log.Logger) (bool, bool, bool) {
+func (tm *MonitorTxs) checkTxHistory(mTx ctmtypes.MonitoredTx, mTxLog *log.Logger) (bool, bool, bool) {
 	var receipt *types.Receipt
 	hasFailedReceipts := false
 	allHistoryTxMined := true
@@ -218,25 +264,26 @@ func (tm *MonitorTxs) checkTxHistory(ctx context.Context, mTx ctmtypes.Monitored
 	var err error
 	for txHash := range mTx.History {
 		mTxLog.Infof("Checking if tx %s is mined", txHash.String())
-		mined, receipt, err = tm.l2Node.CheckTxWasMined(ctx, txHash)
+		mined, receipt, err = tm.l2Node.CheckTxWasMined(tm.ctx, txHash)
 		if err != nil {
 			mTxLog.Errorf("failed to check if tx %s was mined: %v", txHash.String(), err)
 			continue
 		}
 
 		if !mined {
-			_, _, err = tm.l2Node.TransactionByHash(ctx, txHash)
+			_, _, err = tm.l2Node.TransactionByHash(tm.ctx, txHash)
 			if err != nil {
 				mTxLog.Errorf("error getting txByHash %s. Error: %v", txHash.String(), err)
 
 				for i := 0; i < tm.cfg.RetryNumber && err != nil; i++ {
-					mTxLog.Warn("waiting and retrying to find the tx in the pool. TxHash: %s. Error: %v", txHash.String(), err)
+					mTxLog.Warnf("waiting and retrying to find the tx in the pool. TxHash: %s. Error: %v", txHash.String(), err)
 					time.Sleep(tm.cfg.RetryInterval.Duration)
-					_, _, err = tm.l2Node.TransactionByHash(ctx, txHash)
+					_, _, err = tm.l2Node.TransactionByHash(tm.ctx, txHash)
 				}
 				if errors.Is(err, ethereum.NotFound) {
 					mTxLog.Error("maximum retries and the tx is still missing in the pool. TxHash: ", txHash.String())
 					hasFailedReceipts = true
+					allHistoryTxMined = false
 					continue
 				} else if err != nil {
 					mTxLog.Errorf("failed to retry to get tx %s: %v", txHash.String(), err)
@@ -263,7 +310,7 @@ func (tm *MonitorTxs) checkTxHistory(ctx context.Context, mTx ctmtypes.Monitored
 // ReviewMonitoredTx checks if tx needs to be updated
 // accordingly to the current information stored and the current
 // state of the blockchain
-func (tm *MonitorTxs) ReviewMonitoredTx(ctx context.Context, mTx *ctmtypes.MonitoredTx, reviewNonce bool) error {
+func (tm *MonitorTxs) ReviewMonitoredTx(mTx *ctmtypes.MonitoredTx, reviewNonce bool) error {
 	mTxLog := log.WithFields("monitoredTx", mTx.DepositID, "rollupID", tm.rollupID)
 	mTxLog.Debug("reviewing")
 	// get gas
@@ -273,16 +320,15 @@ func (tm *MonitorTxs) ReviewMonitoredTx(ctx context.Context, mTx *ctmtypes.Monit
 		Value: mTx.Value,
 		Data:  mTx.Data,
 	}
-	gas, err := tm.l2Node.EstimateGas(ctx, tx)
-	for i := 1; err != nil && err.Error() != ErrExecutionReverted.Error() && i < tm.cfg.RetryNumber; i++ {
+	gas, err := tm.l2Node.EstimateGas(tm.ctx, tx)
+	for i := 1; err != nil && !isExecutionReverted(err) && i < tm.cfg.RetryNumber; i++ {
 		mTxLog.Warnf("error during gas estimation. Retrying... Error: %v, Data: %s", err, common.Bytes2Hex(tx.Data))
 		time.Sleep(tm.cfg.RetryInterval.Duration)
 		gas, err = tm.l2Node.EstimateGas(tm.ctx, tx)
 	}
 	if err != nil {
-		err := fmt.Errorf("failed to estimate gas. Error: %v, Data: %s", err, common.Bytes2Hex(tx.Data))
-		mTxLog.Errorf("error: %s", err.Error())
-		return err
+		mTxLog.Errorf("failed to estimate gas. Error: %v, Data: %s", err, common.Bytes2Hex(tx.Data))
+		return fmt.Errorf("failed to estimate gas. Error: %w, Data: %s", err, common.Bytes2Hex(tx.Data))
 	}
 
 	// check gas
@@ -295,8 +341,7 @@ func (tm *MonitorTxs) ReviewMonitoredTx(ctx context.Context, mTx *ctmtypes.Monit
 		// check nonce
 		nonce, err := tm.nonceCache.GetNextNonce(mTx.From)
 		if err != nil {
-			err := fmt.Errorf("failed to get nonce: %v", err)
-			mTxLog.Errorf(err.Error())
+			mTxLog.Errorf("failed to get nonce: %s", err.Error())
 			return err
 		}
 		if nonce > mTx.Nonce {
@@ -306,4 +351,64 @@ func (tm *MonitorTxs) ReviewMonitoredTx(ctx context.Context, mTx *ctmtypes.Monit
 	}
 
 	return nil
+}
+
+func (tm *MonitorTxs) checkIfClaimed(mTx *ctmtypes.MonitoredTx, mTxLog *log.Logger, dbTx interface{}) error {
+	mTxLog.Info("Checking if the deposit was already claimed")
+	deposit, err := tm.storage.GetDepositByDepositID(tm.ctx, mTx.DepositID, dbTx)
+	if err != nil {
+		mTxLog.Errorf("failed to Get Deposit By DepositID. It is not possible to check if it is claimed. Error: %v", err)
+		return err
+	}
+	isClaimed, err := tm.l2Node.IsClaimed(deposit.DepositCount, deposit.NetworkID)
+	if err != nil {
+		mTxLog.Errorf("error checking IsClaimed. It is not possible to check if it is claimed. Error: %v", err)
+		return err
+	}
+	if isClaimed {
+		mTx.Status = ctmtypes.MonitoredTxStatusConfirmed
+		err = tm.storage.UpdateClaimTx(tm.ctx, *mTx, dbTx)
+		if err != nil {
+			mTxLog.Errorf("failed to update monitored tx when confirmed: %v", err)
+			return err
+		}
+		mTxLog.Infof("The deposit was already claimed, so the monitored tx is marked as confirmed")
+	} else {
+		mTxLog.Debug("The deposit was not claimed yet but the tx is reverted")
+		if len(mTx.History) >= tm.cfg.RetryNumber {
+			mTxLog.Info("Tx is marked as failed because it reached the maximum number of retries")
+			mTx.Status = ctmtypes.MonitoredTxStatusFailed
+			if err := tm.storage.UpdateClaimTx(tm.ctx, *mTx, dbTx); err != nil {
+				mTxLog.Errorf("failed to mark as failed: %v", err)
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func (tm *MonitorTxs) commitOrRollback(dbTx interface{}) error {
+	err := tm.storage.Commit(tm.ctx, dbTx)
+	if err != nil {
+		log.Errorf("rollupID: %d, UpdateClaimTx committing dbTx, err: %v", tm.rollupID, err)
+		rollbackErr := tm.storage.Rollback(tm.ctx, dbTx)
+		if rollbackErr != nil {
+			log.Errorf("rollupID: %d, claimtxman error rolling back state. RollbackErr: %s, err: %v", tm.rollupID, rollbackErr.Error(), err)
+			return rollbackErr
+		}
+		return err
+	}
+	return nil
+}
+
+func isNonceError(err error) bool {
+	s := strings.ToLower(err.Error())
+	return strings.Contains(s, "nonce too low") || strings.Contains(s, "invalid nonce") || strings.Contains(s, "txnonce")
+}
+
+func isExecutionReverted(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "execution reverted")
 }
