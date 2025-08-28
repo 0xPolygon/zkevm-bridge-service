@@ -605,7 +605,7 @@ func (s *bridgeService) GetPendingBridgesToClaim(ctx context.Context, req *pb.Ge
 		limit = s.maxPageLimit
 	}
 	destAddr := common.HexToAddress(req.DestAddr)
-	deposits, totalDeposits, err := s.storage.GetPendingDepositsToClaim(ctx, destAddr, req.DestNet, req.LeafType, limit, req.Offset, nil)
+	deposits, totalDeposits, err := s.storage.GetPendingDepositsToClaim(ctx, destAddr, req.DestNet, req.LeafType, limit, req.Offset, -1, nil) // -1 means from all networks
 	if err != nil {
 		return nil, err
 	}

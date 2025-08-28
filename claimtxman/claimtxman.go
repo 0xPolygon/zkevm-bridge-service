@@ -184,7 +184,8 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) erro
 					time.Sleep(tm.cfg.RetryInterval.Duration)
 					globalExitRoot, err = tm.storage.GetLatestTrustedGERByDeposit(tm.ctx, deposits[0].DepositCount, deposits[0].NetworkID, deposits[0].DestinationNetwork, dbTx)
 					if errors.Is(err, gerror.ErrStorageNotFound) {
-						log.Infof("RollupID: %d, Still missing. Not fully synced yet. It will retry it later...")
+						log.Infof("RollupID: %d, Still missing. Not fully synced yet. It will retry it later...", tm.rollupID)
+						return nil
 					} else if err != nil {
 						log.Errorf("rollupID: %d, error getting the latest trusted GER by deposit the second time. Error: %v", tm.rollupID, err)
 						return tm.rollbackState(dbTx, err)
@@ -204,14 +205,14 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) erro
 		}
 		const maxNumDeposits = 50
 		// Get all the pending bridge assets to claim
-		deposits, _, err = tm.storage.GetPendingDepositsToClaim(tm.ctx, common.Address{}, tm.l2NetworkID, 0, maxNumDeposits, 0, dbTx)
+		deposits, _, err = tm.storage.GetPendingDepositsToClaim(tm.ctx, common.Address{}, tm.l2NetworkID, 0, maxNumDeposits, 0, 0, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error getting and updating L1DepositsStatus. Error: %v", tm.rollupID, err)
 			return tm.rollbackState(dbTx, err)
 		}
 		// Get all the bridge messages to claim from authorized addresses
 		for _, addr := range tm.cfg.AuthorizedClaimMessageAddresses {
-			msgDeposits, _, err := tm.storage.GetPendingDepositsToClaim(tm.ctx, addr, tm.l2NetworkID, 1, maxNumDeposits, 0, dbTx)
+			msgDeposits, _, err := tm.storage.GetPendingDepositsToClaim(tm.ctx, addr, tm.l2NetworkID, 1, maxNumDeposits, 0, 0, dbTx)
 			if err != nil {
 				log.Errorf("rollupID: %d, error getting and updating L1Deposits. Error: %v", tm.rollupID, err)
 				return tm.rollbackState(dbTx, err)
@@ -225,7 +226,7 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) erro
 		return tm.rollbackState(dbTx, err)
 	}
 	for _, deposit := range deposits {
-		// Sanity check, this should never happen
+		// Sanity check
 		if tm.l2NetworkID != deposit.DestinationNetwork {
 			log.Infof("Ignoring deposit id: %d deposit count:%d dest_net: %d, we are:%d", deposit.Id, deposit.DepositCount, deposit.DestinationNetwork, tm.l2NetworkID)
 			continue

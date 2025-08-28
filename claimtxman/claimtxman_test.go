@@ -196,7 +196,7 @@ func TestUpdateDepositStatus(t *testing.T) {
 
 	err = store.UpdateL1DepositsStatus(ctx, l1Root, deposit.DestinationNetwork, nil)
 	require.NoError(t, err)
-	deposits, _, err := store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 10, 0, nil)
+	deposits, _, err := store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 10, 0, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 1)
 	require.True(t, deposits[0].ReadyForClaim)
