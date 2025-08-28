@@ -685,7 +685,8 @@ func (p *PostgresStorage) GetLatestTrustedGERByDeposit(ctx context.Context, depo
 func (p *PostgresStorage) AddClaimTx(ctx context.Context, mTx ctmtypes.MonitoredTx, dbTx interface{}) error {
 	const addMonitoredTxSQL = `INSERT INTO sync.monitored_txs 
 		(deposit_id, from_addr, to_addr, nonce, value, data, gas, status, history, created_at, updated_at, group_id, global_exit_root)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+		ON CONFLICT (deposit_id) DO NOTHING`
 	_, err := p.getExecQuerier(dbTx).Exec(ctx, addMonitoredTxSQL, mTx.DepositID, mTx.From, mTx.To, mTx.Nonce, mTx.Value.String(),
 		mTx.Data, mTx.Gas, mTx.Status, pq.Array(mTx.HistoryHashSlice()), time.Now().UTC(), time.Now().UTC(), mTx.GroupID, mTx.GlobalExitRoot)
 	return err
