@@ -223,6 +223,19 @@ func (tm *MonitorTxs) MonitorTxs() error {
 					err := tm.ReviewMonitoredTx(&mTx, reviewNonce)
 					if err != nil {
 						mTxLog.Errorf("failed to review monitored tx: %v", err)
+						// If it's reverted, check if it's already claimed
+						if isExecutionReverted(err) {
+							errClaimed := tm.checkIfClaimed(&mTx, mTxLog, dbTx)
+							if errClaimed != nil {
+								mTxLog.Errorf("error checking if the deposit was already claimed: %v", errClaimed)
+							}
+						}
+						err = tm.commitOrRollback(dbTx)
+						if err != nil {
+							log.Errorf("rollupID: %d, error committing dbTx, err: %v", tm.rollupID, err)
+							return err
+						}
+						continue
 					}
 				}
 			} else if err != nil && !errors.Is(err, ethereum.NotFound) {
@@ -267,10 +280,13 @@ func (tm *MonitorTxs) checkTxHistory(mTx ctmtypes.MonitoredTx, mTxLog *log.Logge
 		mined, receipt, err = tm.l2Node.CheckTxWasMined(tm.ctx, txHash)
 		if err != nil {
 			mTxLog.Errorf("failed to check if tx %s was mined: %v", txHash.String(), err)
-			continue
+			// Unknown → not all mined
+            allHistoryTxMined = false
+            continue
 		}
 
-		if !mined {
+		// Treat not mined or nil receipt as "not all mined / unknown"
+        if !mined || receipt == nil {
 			_, _, err = tm.l2Node.TransactionByHash(tm.ctx, txHash)
 			if err != nil {
 				mTxLog.Errorf("error getting txByHash %s. Error: %v", txHash.String(), err)
@@ -287,7 +303,9 @@ func (tm *MonitorTxs) checkTxHistory(mTx ctmtypes.MonitoredTx, mTxLog *log.Logge
 					continue
 				} else if err != nil {
 					mTxLog.Errorf("failed to retry to get tx %s: %v", txHash.String(), err)
-					continue
+					// Still unknown → not all mined
+                    allHistoryTxMined = false
+                    continue
 				}
 			}
 			mTxLog.Infof("tx: %s not mined yet", txHash.String())
@@ -374,14 +392,11 @@ func (tm *MonitorTxs) checkIfClaimed(mTx *ctmtypes.MonitoredTx, mTxLog *log.Logg
 		}
 		mTxLog.Infof("The deposit was already claimed, so the monitored tx is marked as confirmed")
 	} else {
-		mTxLog.Debug("The deposit was not claimed yet but the tx is reverted")
-		if len(mTx.History) >= tm.cfg.RetryNumber {
-			mTxLog.Info("Tx is marked as failed because it reached the maximum number of retries")
-			mTx.Status = ctmtypes.MonitoredTxStatusFailed
-			if err := tm.storage.UpdateClaimTx(tm.ctx, *mTx, dbTx); err != nil {
-				mTxLog.Errorf("failed to mark as failed: %v", err)
-				return err
-			}
+		mTxLog.Debug("The deposit was not claimed yet but the tx is reverted. Tx is marked as failed")
+		mTx.Status = ctmtypes.MonitoredTxStatusFailed
+		if err := tm.storage.UpdateClaimTx(tm.ctx, *mTx, dbTx); err != nil {
+			mTxLog.Errorf("failed to mark as failed: %v", err)
+			return err
 		}
 	}
 	return nil
