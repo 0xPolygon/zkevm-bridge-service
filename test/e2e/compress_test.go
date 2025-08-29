@@ -120,6 +120,6 @@ func TestClaimCompressor(t *testing.T) {
 		require.Equal(t, "7500000000000000435", balance.String())
 		maxGroupID, err := opsman.GetLatestMonitoredTxGroupID(ctx)
 		require.NoError(t, err)
-		require.Equal(t, uint64(4), maxGroupID)
+		require.Equal(t, uint64(5), maxGroupID)
 	})
 }

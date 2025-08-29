@@ -688,9 +688,9 @@ func (_c *bridgeServiceStorageMock_GetLatestTrustedExitRoot_Call) RunAndReturn(r
 	return _c
 }
 
-// GetPendingDepositsToClaim provides a mock function with given fields: ctx, destAddress, destNetwork, leafType, limit, offset, dbTx
-func (_m *bridgeServiceStorageMock) GetPendingDepositsToClaim(ctx context.Context, destAddress common.Address, destNetwork uint32, leafType uint32, limit uint32, offset uint32, dbTx interface{}) ([]*etherman.Deposit, uint64, error) {
-	ret := _m.Called(ctx, destAddress, destNetwork, leafType, limit, offset, dbTx)
+// GetPendingDepositsToClaim provides a mock function with given fields: ctx, destAddress, destNetwork, leafType, limit, offset, fromNetwork, dbTx
+func (_m *bridgeServiceStorageMock) GetPendingDepositsToClaim(ctx context.Context, destAddress common.Address, destNetwork uint32, leafType uint32, limit uint32, offset uint32, fromNetwork int8, dbTx interface{}) ([]*etherman.Deposit, uint64, error) {
+	ret := _m.Called(ctx, destAddress, destNetwork, leafType, limit, offset, fromNetwork, dbTx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetPendingDepositsToClaim")
@@ -699,25 +699,25 @@ func (_m *bridgeServiceStorageMock) GetPendingDepositsToClaim(ctx context.Contex
 	var r0 []*etherman.Deposit
 	var r1 uint64
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, common.Address, uint32, uint32, uint32, uint32, interface{}) ([]*etherman.Deposit, uint64, error)); ok {
-		return rf(ctx, destAddress, destNetwork, leafType, limit, offset, dbTx)
+	if rf, ok := ret.Get(0).(func(context.Context, common.Address, uint32, uint32, uint32, uint32, int8, interface{}) ([]*etherman.Deposit, uint64, error)); ok {
+		return rf(ctx, destAddress, destNetwork, leafType, limit, offset, fromNetwork, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, common.Address, uint32, uint32, uint32, uint32, interface{}) []*etherman.Deposit); ok {
-		r0 = rf(ctx, destAddress, destNetwork, leafType, limit, offset, dbTx)
+	if rf, ok := ret.Get(0).(func(context.Context, common.Address, uint32, uint32, uint32, uint32, int8, interface{}) []*etherman.Deposit); ok {
+		r0 = rf(ctx, destAddress, destNetwork, leafType, limit, offset, fromNetwork, dbTx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*etherman.Deposit)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, common.Address, uint32, uint32, uint32, uint32, interface{}) uint64); ok {
-		r1 = rf(ctx, destAddress, destNetwork, leafType, limit, offset, dbTx)
+	if rf, ok := ret.Get(1).(func(context.Context, common.Address, uint32, uint32, uint32, uint32, int8, interface{}) uint64); ok {
+		r1 = rf(ctx, destAddress, destNetwork, leafType, limit, offset, fromNetwork, dbTx)
 	} else {
 		r1 = ret.Get(1).(uint64)
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, common.Address, uint32, uint32, uint32, uint32, interface{}) error); ok {
-		r2 = rf(ctx, destAddress, destNetwork, leafType, limit, offset, dbTx)
+	if rf, ok := ret.Get(2).(func(context.Context, common.Address, uint32, uint32, uint32, uint32, int8, interface{}) error); ok {
+		r2 = rf(ctx, destAddress, destNetwork, leafType, limit, offset, fromNetwork, dbTx)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -737,14 +737,15 @@ type bridgeServiceStorageMock_GetPendingDepositsToClaim_Call struct {
 //   - leafType uint32
 //   - limit uint32
 //   - offset uint32
+//   - fromNetwork int8
 //   - dbTx interface{}
-func (_e *bridgeServiceStorageMock_Expecter) GetPendingDepositsToClaim(ctx interface{}, destAddress interface{}, destNetwork interface{}, leafType interface{}, limit interface{}, offset interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetPendingDepositsToClaim_Call {
-	return &bridgeServiceStorageMock_GetPendingDepositsToClaim_Call{Call: _e.mock.On("GetPendingDepositsToClaim", ctx, destAddress, destNetwork, leafType, limit, offset, dbTx)}
+func (_e *bridgeServiceStorageMock_Expecter) GetPendingDepositsToClaim(ctx interface{}, destAddress interface{}, destNetwork interface{}, leafType interface{}, limit interface{}, offset interface{}, fromNetwork interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetPendingDepositsToClaim_Call {
+	return &bridgeServiceStorageMock_GetPendingDepositsToClaim_Call{Call: _e.mock.On("GetPendingDepositsToClaim", ctx, destAddress, destNetwork, leafType, limit, offset, fromNetwork, dbTx)}
 }
 
-func (_c *bridgeServiceStorageMock_GetPendingDepositsToClaim_Call) Run(run func(ctx context.Context, destAddress common.Address, destNetwork uint32, leafType uint32, limit uint32, offset uint32, dbTx interface{})) *bridgeServiceStorageMock_GetPendingDepositsToClaim_Call {
+func (_c *bridgeServiceStorageMock_GetPendingDepositsToClaim_Call) Run(run func(ctx context.Context, destAddress common.Address, destNetwork uint32, leafType uint32, limit uint32, offset uint32, fromNetwork int8, dbTx interface{})) *bridgeServiceStorageMock_GetPendingDepositsToClaim_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(common.Address), args[2].(uint32), args[3].(uint32), args[4].(uint32), args[5].(uint32), args[6].(interface{}))
+		run(args[0].(context.Context), args[1].(common.Address), args[2].(uint32), args[3].(uint32), args[4].(uint32), args[5].(uint32), args[6].(int8), args[7].(interface{}))
 	})
 	return _c
 }
@@ -754,7 +755,7 @@ func (_c *bridgeServiceStorageMock_GetPendingDepositsToClaim_Call) Return(_a0 []
 	return _c
 }
 
-func (_c *bridgeServiceStorageMock_GetPendingDepositsToClaim_Call) RunAndReturn(run func(context.Context, common.Address, uint32, uint32, uint32, uint32, interface{}) ([]*etherman.Deposit, uint64, error)) *bridgeServiceStorageMock_GetPendingDepositsToClaim_Call {
+func (_c *bridgeServiceStorageMock_GetPendingDepositsToClaim_Call) RunAndReturn(run func(context.Context, common.Address, uint32, uint32, uint32, uint32, int8, interface{}) ([]*etherman.Deposit, uint64, error)) *bridgeServiceStorageMock_GetPendingDepositsToClaim_Call {
 	_c.Call.Return(run)
 	return _c
 }

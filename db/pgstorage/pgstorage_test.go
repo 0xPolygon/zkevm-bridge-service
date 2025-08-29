@@ -193,7 +193,7 @@ func TestGetPendingDepositsToClaim(t *testing.T) {
 
 	_, err = store.Exec(ctx, data)
 	require.NoError(t, err)
-	deposits, totalCount, err := store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 2, 0, nil)
+	deposits, totalCount, err := store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 2, 0, -1, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(deposits))
 	assert.Equal(t, uint64(2), totalCount)
@@ -224,7 +224,7 @@ func TestGetPendingDepositsToClaim(t *testing.T) {
 	assert.Equal(t, uint64(3), deposits[1].Id)
 	assert.Equal(t, true, deposits[1].ReadyForClaim)
 
-	deposits, totalCount, err = store.GetPendingDepositsToClaim(ctx, common.HexToAddress("0xF39FD6E51AAD88F6F4CE6AB8827279CFFFB92266"), 1, 0, 2, 0, nil)
+	deposits, totalCount, err = store.GetPendingDepositsToClaim(ctx, common.HexToAddress("0xF39FD6E51AAD88F6F4CE6AB8827279CFFFB92266"), 1, 0, 0, 0, 0, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(deposits))
 	assert.Equal(t, uint64(1), totalCount)

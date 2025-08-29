@@ -144,7 +144,7 @@ func (tm *ClaimTxManager) Start() {
 				latestProcessedGer = ger.GlobalExitRoot
 			}
 		case <-ticker.C:
-			err := tm.monitorTxs.MonitorTxs(tm.ctx)
+			err := tm.monitorTxs.MonitorTxs()
 			if err != nil {
 				log.Errorf("rollupID: %d, failed to monitor txs: %v", tm.rollupID, err)
 			}
@@ -153,45 +153,21 @@ func (tm *ClaimTxManager) Start() {
 }
 
 func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) error {
-	dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
-	if err != nil {
-		return err
-	}
-	err = tm.processDepositStatus(ger, dbTx)
-	if err != nil {
-		log.Errorf("rollupID: %d, error processing ger. Error: %v", tm.rollupID, err)
-		rollbackErr := tm.storage.Rollback(tm.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("rollupID: %d, claimtxman error rolling back state. RollbackErr: %v, err: %s", tm.rollupID, rollbackErr, err.Error())
-			return rollbackErr
-		}
-		return err
-	}
-	err = tm.storage.Commit(tm.ctx, dbTx)
-	if err != nil {
-		log.Errorf("rollupID: %d, AddClaimTx committing dbTx. Err: %v", tm.rollupID, err)
-		rollbackErr := tm.storage.Rollback(tm.ctx, dbTx)
-		if rollbackErr != nil {
-			log.Errorf("rollupID: %d, claimtxman error rolling back state. RollbackErr: %s, err: %s", tm.rollupID, rollbackErr.Error(), err.Error())
-			return rollbackErr
-		}
-		return err
-	}
-	return nil
-}
-
-func (tm *ClaimTxManager) processDepositStatus(ger etherman.GlobalExitRoot, dbTx interface{}) error {
 	var (
 		deposits       []*etherman.Deposit
 		globalExitRoot = ger.GlobalExitRoot
 		err            error
 	)
+	dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
+	if err != nil {
+		return err
+	}
 	if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
 		log.Infof("RollupID: %d, Rollup exitroot %v is updated", tm.rollupID, ger.ExitRoots[1])
 		err = tm.storage.UpdateL2DepositsStatus(tm.ctx, ger.ExitRoots[1][:], tm.rollupID, tm.l2NetworkID, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error updating L2DepositsStatus. Error: %v", tm.rollupID, err)
-			return err
+			return tm.rollbackState(dbTx, err)
 		}
 		// If L2 claims processor is enabled
 		if tm.cfg.AreClaimsBetweenL2sEnabled {
@@ -199,7 +175,7 @@ func (tm *ClaimTxManager) processDepositStatus(ger etherman.GlobalExitRoot, dbTx
 			deposits, err = tm.storage.GetDepositsFromOtherL2ToClaim(tm.ctx, tm.l2NetworkID, dbTx)
 			if err != nil {
 				log.Errorf("rollupID: %d, error getting deposits from other L2 to claim. Error: %v", tm.rollupID, err)
-				return err
+				return tm.rollbackState(dbTx, err)
 			}
 			if len(deposits) > 0 {
 				globalExitRoot, err = tm.storage.GetLatestTrustedGERByDeposit(tm.ctx, deposits[0].DepositCount, deposits[0].NetworkID, deposits[0].DestinationNetwork, dbTx)
@@ -208,46 +184,66 @@ func (tm *ClaimTxManager) processDepositStatus(ger etherman.GlobalExitRoot, dbTx
 					time.Sleep(tm.cfg.RetryInterval.Duration)
 					globalExitRoot, err = tm.storage.GetLatestTrustedGERByDeposit(tm.ctx, deposits[0].DepositCount, deposits[0].NetworkID, deposits[0].DestinationNetwork, dbTx)
 					if errors.Is(err, gerror.ErrStorageNotFound) {
-						log.Infof("RollupID: %d, Still missing. Not fully synced yet. It will retry it later...")
+						log.Infof("RollupID: %d, Still missing. Not fully synced yet. It will retry it later...", tm.rollupID)
+						return nil
 					} else if err != nil {
 						log.Errorf("rollupID: %d, error getting the latest trusted GER by deposit the second time. Error: %v", tm.rollupID, err)
-						return err
+						return tm.rollbackState(dbTx, err)
 					}
 				} else if err != nil {
 					log.Errorf("rollupID: %d, error getting the latest trusted GER by deposit. Error: %v", tm.rollupID, err)
-					return err
+					return tm.rollbackState(dbTx, err)
 				}
 			}
 		}
 	} else { // L1 exit root is updated in the trusted state
 		log.Infof("RollupID: %d, Mainnet exitroot %v is updated", tm.rollupID, ger.ExitRoots[0])
-		deposits, err = tm.storage.UpdateL1DepositsStatus(tm.ctx, ger.ExitRoots[0][:], tm.l2NetworkID, dbTx)
+		err = tm.storage.UpdateL1DepositsStatus(tm.ctx, ger.ExitRoots[0][:], tm.l2NetworkID, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error getting and updating L1DepositsStatus. Error: %v", tm.rollupID, err)
-			return err
+			return tm.rollbackState(dbTx, err)
+		}
+		// Get all the pending bridge assets to claim
+		deposits, _, err = tm.storage.GetPendingDepositsToClaim(tm.ctx, common.Address{}, tm.l2NetworkID, 0, 0, 0, 0, dbTx)
+		if err != nil {
+			log.Errorf("rollupID: %d, error getting and updating L1DepositsStatus. Error: %v", tm.rollupID, err)
+			return tm.rollbackState(dbTx, err)
+		}
+		// Get all the bridge messages to claim from authorized addresses
+		for _, addr := range tm.cfg.AuthorizedClaimMessageAddresses {
+			msgDeposits, _, err := tm.storage.GetPendingDepositsToClaim(tm.ctx, addr, tm.l2NetworkID, 1, 0, 0, 0, dbTx)
+			if err != nil {
+				log.Errorf("rollupID: %d, error getting and updating L1Deposits. Error: %v", tm.rollupID, err)
+				return tm.rollbackState(dbTx, err)
+			}
+			deposits = append(deposits, msgDeposits...)
 		}
 	}
+	err = tm.storage.Commit(tm.ctx, dbTx)
+	if err != nil {
+		log.Errorf("rollupID: %d, AddClaimTx committing dbTx. Err: %v", tm.rollupID, err)
+		return tm.rollbackState(dbTx, err)
+	}
 	for _, deposit := range deposits {
+		// Sanity check
 		if tm.l2NetworkID != deposit.DestinationNetwork {
 			log.Infof("Ignoring deposit id: %d deposit count:%d dest_net: %d, we are:%d", deposit.Id, deposit.DepositCount, deposit.DestinationNetwork, tm.l2NetworkID)
 			continue
 		}
-
-		claimHash, err := tm.bridgeService.GetDepositStatus(tm.ctx, deposit.DepositCount, deposit.NetworkID, deposit.DestinationNetwork)
-		if err != nil {
-			log.Errorf("rollupID: %d, error getting deposit status for deposit id %d. Error: %v", tm.rollupID, deposit.Id, err)
-			return err
-		}
-		if len(claimHash) > 0 || deposit.LeafType == LeafTypeMessage && !tm.isDepositMessageAllowed(deposit) {
-			log.Infof("RollupID: %d, Ignoring deposit Id: %d, leafType: %d, claimHash: %s, deposit.OriginalAddress: %s", tm.rollupID, deposit.Id, deposit.LeafType, claimHash, deposit.OriginalAddress.String())
+		if deposit.LeafType == LeafTypeMessage && !tm.isDepositMessageAllowed(deposit) {
+			log.Infof("RollupID: %d, Ignoring deposit Id: %d, leafType: %d, deposit.OriginalAddress: %s", tm.rollupID, deposit.Id, deposit.LeafType, deposit.OriginalAddress.String())
 			continue
 		}
 
+		dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
+		if err != nil {
+			return err
+		}
 		log.Infof("RollupID: %d, create the claim tx for the deposit count %d. Deposit Id: %d", tm.rollupID, deposit.DepositCount, deposit.Id)
 		claimGer, proof, rollupProof, err := tm.bridgeService.GetClaimProofForCompressed(globalExitRoot, deposit.DepositCount, deposit.NetworkID, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error getting Claim Proof for deposit Id %d. Error: %v", tm.rollupID, deposit.Id, err)
-			return err
+			return tm.rollbackState(dbTx, err)
 		}
 		var (
 			mtProof       [mtHeight][keyLen]byte
@@ -266,11 +262,16 @@ func (tm *ClaimTxManager) processDepositStatus(ger etherman.GlobalExitRoot, dbTx
 			tm.auth)
 		if err != nil {
 			log.Errorf("rollupID: %d, error BuildSendClaim tx for deposit Id: %d. Error: %v", tm.rollupID, deposit.Id, err)
-			return err
+			return tm.rollbackState(dbTx, err)
 		}
 		if err = tm.addClaimTx(deposit.Id, tm.auth.From, tx.To(), nil, tx.Data(), claimGer.GlobalExitRoot, dbTx); err != nil {
 			log.Errorf("rollupID: %d, error adding claim tx for deposit Id: %d Error: %v", tm.rollupID, deposit.Id, err)
-			return err
+			return tm.rollbackState(dbTx, err)
+		}
+		err = tm.storage.Commit(tm.ctx, dbTx)
+		if err != nil {
+			log.Errorf("rollupID: %d, AddClaimTx committing dbTx. Err: %v", tm.rollupID, err)
+			return tm.rollbackState(dbTx, err)
 		}
 	}
 	return nil
@@ -347,4 +348,13 @@ func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *
 	}
 
 	return nil
+}
+
+func (tm *ClaimTxManager) rollbackState(dbTx interface{}, err error) error {
+	rollbackErr := tm.storage.Rollback(tm.ctx, dbTx)
+	if rollbackErr != nil {
+		log.Errorf("rollupID: %d, claimtxman error rolling back state. RollbackErr: %v, err: %s", tm.rollupID, rollbackErr, err.Error())
+		return rollbackErr
+	}
+	return err
 }

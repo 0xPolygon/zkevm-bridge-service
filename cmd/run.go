@@ -201,7 +201,7 @@ func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalEx
 						log.Debug("Skipping the ready for claim update until the synchronization is completed")
 						continue
 					}
-					_, err := st.UpdateL1DepositsStatus(ctx, ger.ExitRoots[0][:], networkID, dbTx)
+					err := st.UpdateL1DepositsStatus(ctx, ger.ExitRoots[0][:], networkID, dbTx)
 					if err != nil {
 						log.Errorf("networkId: %d, error getting and updating L1DepositsStatus. Error: %v", networkID, err)
 						rollbackErr := st.Rollback(ctx, dbTx)

@@ -118,17 +118,17 @@ func (tm *MonitorCompressedTxs) getPendingTxs(ctx context.Context, dbTx interfac
 }
 
 // monitorTxs process all pending monitored tx
-func (tm *MonitorCompressedTxs) MonitorTxs(ctx context.Context) error {
-	dbTx, err := tm.storage.BeginDBTransaction(ctx)
+func (tm *MonitorCompressedTxs) MonitorTxs() error {
+	dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
 	if err != nil {
 		return err
 	}
-	err = tm.internalMonitorTxs(ctx, dbTx)
+	err = tm.internalMonitorTxs(tm.ctx, dbTx)
 	if err != nil {
-		_ = tm.storage.Rollback(ctx, dbTx)
+		_ = tm.storage.Rollback(tm.ctx, dbTx)
 		return err
 	}
-	return tm.storage.Commit(ctx, dbTx)
+	return tm.storage.Commit(tm.ctx, dbTx)
 }
 
 // monitorTxs process all pending monitored tx
