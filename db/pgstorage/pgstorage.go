@@ -763,14 +763,20 @@ func (p *PostgresStorage) GetPendingDepositsToClaim(ctx context.Context, address
 	} else if fromNetwork == 1 { // only L2
 		fromNetworkSQL = "AND d.network_id != 0"
 	}
-	getNumberPendingDepositsToClaimSQL := "SELECT count(*) FROM sync.deposit AS d WHERE dest_net = $1 AND ready_for_claim = true " + fromNetworkSQL + " AND leaf_type = $2 " + addrSQL + " AND deposit_cnt NOT IN (SELECT index FROM sync.claim WHERE sync.claim.network_id = $1)"
+	getNumberPendingDepositsToClaimSQL := "SELECT count(*) FROM sync.deposit AS d WHERE dest_net = $1 AND ready_for_claim = true " + fromNetworkSQL + " AND leaf_type = $2 " + addrSQL + " AND deposit_cnt NOT IN (SELECT index FROM sync.claim WHERE sync.claim.network_id = $1) AND id NOT IN (SELECT deposit_id FROM sync.monitored_txs)"
 	var totalCount uint64
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getNumberPendingDepositsToClaimSQL, destNetwork, leafType).Scan(&totalCount)
 	if err != nil {
 		return nil, 0, err
 	}
-	getPendingDepositsToClaimSQL := "SELECT d.id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim FROM sync.deposit AS d INNER JOIN sync.block AS b ON d.block_id = b.id WHERE dest_net = $1 AND ready_for_claim = true " + fromNetworkSQL + " AND leaf_type = $2 " + addrSQL + " AND d.deposit_cnt NOT IN (SELECT index FROM sync.claim WHERE sync.claim.network_id = $1) ORDER BY d.deposit_cnt ASC LIMIT $3 OFFSET $4"
-	rows, err := p.getExecQuerier(dbTx).Query(ctx, getPendingDepositsToClaimSQL, destNetwork, leafType, limit, offset)
+	getPendingDepositsToClaimSQL := "SELECT d.id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim FROM sync.deposit AS d INNER JOIN sync.block AS b ON d.block_id = b.id WHERE dest_net = $1 AND ready_for_claim = true " + fromNetworkSQL + " AND leaf_type = $2 " + addrSQL + " AND d.deposit_cnt NOT IN (SELECT index FROM sync.claim WHERE sync.claim.network_id = $1) AND d.id NOT IN (SELECT deposit_id FROM sync.monitored_txs) ORDER BY d.deposit_cnt ASC "
+	var rows pgx.Rows
+	if limit > 0 {
+		getPendingDepositsToClaimSQL += "LIMIT $3 OFFSET $4"
+		rows, err = p.getExecQuerier(dbTx).Query(ctx, getPendingDepositsToClaimSQL, destNetwork, leafType, limit, offset)
+	} else {
+		rows, err = p.getExecQuerier(dbTx).Query(ctx, getPendingDepositsToClaimSQL, destNetwork, leafType)
+	}
 	if err != nil {
 		return nil, 0, err
 	}

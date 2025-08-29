@@ -203,16 +203,15 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) erro
 			log.Errorf("rollupID: %d, error getting and updating L1DepositsStatus. Error: %v", tm.rollupID, err)
 			return tm.rollbackState(dbTx, err)
 		}
-		const maxNumDeposits = 50
 		// Get all the pending bridge assets to claim
-		deposits, _, err = tm.storage.GetPendingDepositsToClaim(tm.ctx, common.Address{}, tm.l2NetworkID, 0, maxNumDeposits, 0, 0, dbTx)
+		deposits, _, err = tm.storage.GetPendingDepositsToClaim(tm.ctx, common.Address{}, tm.l2NetworkID, 0, 0, 0, 0, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error getting and updating L1DepositsStatus. Error: %v", tm.rollupID, err)
 			return tm.rollbackState(dbTx, err)
 		}
 		// Get all the bridge messages to claim from authorized addresses
 		for _, addr := range tm.cfg.AuthorizedClaimMessageAddresses {
-			msgDeposits, _, err := tm.storage.GetPendingDepositsToClaim(tm.ctx, addr, tm.l2NetworkID, 1, maxNumDeposits, 0, 0, dbTx)
+			msgDeposits, _, err := tm.storage.GetPendingDepositsToClaim(tm.ctx, addr, tm.l2NetworkID, 1, 0, 0, 0, dbTx)
 			if err != nil {
 				log.Errorf("rollupID: %d, error getting and updating L1Deposits. Error: %v", tm.rollupID, err)
 				return tm.rollbackState(dbTx, err)
