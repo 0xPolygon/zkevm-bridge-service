@@ -1,7 +1,7 @@
 on:
   push:
     tags:
-      - 'v*.*.*'  # GitHub uses glob patterns, not regex
+      - 'v[0-9]*.[0-9]*.[0-9]*'  # GitHub uses glob patterns, not regex
   workflow_dispatch: {}
 
 permissions:
