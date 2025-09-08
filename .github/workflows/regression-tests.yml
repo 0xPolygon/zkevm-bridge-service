@@ -14,22 +14,65 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v2
 
-      - name: Build image (with proposed code changes) locally
-        id: build
-        run: |
-          if [ "$GITHUB_EVENT_NAME" == "pull_request" ]; then
-              GITHUB_SHA_SHORT=$(jq -r .pull_request.head.sha "$GITHUB_EVENT_PATH" | cut -c 1-7)
-              echo $GITHUB_SHA_SHORT
-              echo "::set-output name=GITHUB_SHA_SHORT::$GITHUB_SHA_SHORT"
-          fi
-      - name: Run Regression Tests
-        uses: 0xPolygon/kurtosis-cdk@v0.1.9
-        with:
-          zkevm_bridge_service: ${{ steps.build.outputs.GITHUB_SHA_SHORT }}
-          zkevm_agglayer: '0.1.4'
-          zkevm_bridge_ui: '0006445'
-          zkevm_dac: '0.0.7'
-          zkevm_node: '0.6.5-cdk'
-          kurtosis_cdk: 'v0.2.3'
-          kurtosis_cli: '0.89.3'
-          bake_time: 30
+    - name: Build docker image
+      run: make build-docker
+    
+    - name: Save docker image to archive
+      run: docker save --output /tmp/zkevm-bridge-service.tar zkevm-bridge-service
+    
+    - name: Upload archive
+      uses: actions/upload-artifact@v4
+      with:
+        name: zkevm-bridge-service
+        path: /tmp/zkevm-bridge-service.tar
+
+  deploy-cdk-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: build-docker-image
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Checkout kurtosis-cdk repository
+      uses: actions/checkout@v4
+      with:
+        repository: 0xPolygon/kurtosis-cdk
+        path: kurtosis-cdk
+        ref: v0.4.18
+
+    - name: Install Kurtosis CDK tools
+      uses: .github/actions/kurtosis-pre-run
+    
+    - name: Download archive
+      uses: actions/download-artifact@v4
+      with:
+        name: zkevm-bridge-service
+        path: /tmp
+    
+    - name: Load docker image
+      run: |
+        docker load --input /tmp/zkevm-bridge-service.tar
+        docker image ls -a
+
+    - name: Deploy kurtosis enclave
+      working-directory: kurtosis-cdk
+      run: |
+        kurtosis run --enclave ${{ env.ENCLAVE_NAME }} . '{"args": {"zkevm_bridge_service_image": "zkevm-bridge-service:latest"}}'
+
+    - name: Monitor verified batches
+      working-directory: ./kurtosis-cdk/.github/scripts
+      run: |
+        ./monitor-cdk-chain.sh \
+          --enclave ${{ env.ENCLAVE_NAME }} \
+          --rpc-url $(kurtosis port print ${{ env.ENCLAVE_NAME }} cdk-erigon-rpc-001 rpc) 
+
+    - name: Dump enclave
+      if: ${{ !cancelled() }}
+      run: kurtosis enclave dump ${{ env.ENCLAVE_NAME }} ./dump
+    
+    - name: Upload enclave dump
+      if: ${{ !cancelled() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: dump_regression_tests_${{ github.run_id }}
+        path: ./dump
