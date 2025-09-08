@@ -43,10 +43,10 @@ jobs:
       with:
         repository: 0xPolygon/kurtosis-cdk
         path: kurtosis-cdk
-        ref: v0.3.5
+        ref: v0.4.18
 
     - name: Install Kurtosis CDK tools
-      uses: ./kurtosis-cdk/.github/actions/setup-kurtosis-cdk
+      uses: .github/actions/kurtosis-pre-run
     
     - name: Download archive
       uses: actions/download-artifact@v4
