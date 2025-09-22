@@ -25,7 +25,7 @@ func init() {
 }
 
 // This function prepare the blockchain, the wallet with funds and deploy the smc
-func newTestingEnv() (*Client, *simulated.Backend, *bind.TransactOpts, common.Address, *polygonzkevmbridgev2.Polygonzkevmbridgev2, *polygonzkevm.Polygonzkevm) {
+func newTestingEnv(ctx context.Context) (*Client, *simulated.Backend, *bind.TransactOpts, common.Address, *polygonzkevmbridgev2.Polygonzkevmbridgev2, *polygonzkevm.Polygonzkevm) {
 	privateKey, err := crypto.GenerateKey()
 	if err != nil {
 		log.Fatal(err)
@@ -34,7 +34,7 @@ func newTestingEnv() (*Client, *simulated.Backend, *bind.TransactOpts, common.Ad
 	if err != nil {
 		log.Fatal(err)
 	}
-	ethman, ethBackend, polAddr, bridge, zkevm, err := NewSimulatedEtherman(Config{}, auth)
+	ethman, ethBackend, polAddr, bridge, zkevm, err := NewSimulatedEtherman(ctx, Config{}, auth)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -42,11 +42,11 @@ func newTestingEnv() (*Client, *simulated.Backend, *bind.TransactOpts, common.Ad
 }
 
 func TestGEREvent(t *testing.T) {
+	ctx := t.Context()
 	// Set up testing environment
-	etherman, ethBackend, auth, _, _, _ := newTestingEnv()
+	etherman, ethBackend, auth, _, _, _ := newTestingEnv(ctx)
 
 	// Read currentBlock
-	ctx := context.Background()
 	initBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
 	require.NoError(t, err)
 
@@ -70,11 +70,11 @@ func TestGEREvent(t *testing.T) {
 }
 
 func TestBridgeEvents(t *testing.T) {
+	ctx := t.Context()
 	// Set up testing environment
-	etherman, ethBackend, auth, polAddr, bridge, _ := newTestingEnv()
+	etherman, ethBackend, auth, polAddr, bridge, _ := newTestingEnv(ctx)
 
 	// Read currentBlock
-	ctx := context.Background()
 	initBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
 	require.NoError(t, err)
 
@@ -197,12 +197,11 @@ func TestDecodeGlobalIndex(t *testing.T) {
 }
 
 func TestVerifyBatchEvent(t *testing.T) {
+	ctx := t.Context()
 	// Set up testing environment
-	etherman, ethBackend, auth, _, _, zkevm := newTestingEnv()
+	etherman, ethBackend, auth, _, _, zkevm := newTestingEnv(ctx)
 
 	// Read currentBlock
-	ctx := context.Background()
-
 	initBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
 	require.NoError(t, err)
 
