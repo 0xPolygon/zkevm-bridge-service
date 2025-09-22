@@ -306,7 +306,7 @@ func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *
 		var b string
 		block, err2 := tm.l2Node.BlockByNumber(tm.ctx, nil)
 		if err2 != nil {
-			log.Error("error getting blockNumber. Error: ", err2)
+			log.Debug("error getting blockNumber, using latest. Error: ", err2)
 			b = "latest"
 		} else {
 			b = fmt.Sprintf("%x", block.Number())
@@ -320,7 +320,7 @@ func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *
 			"params": [{"from": "%s","to":"%s","data":"0x%s"},"0x%s"],
 			"id": 1
 		}'`, from, to, common.Bytes2Hex(data), b)
-		log.Errorf("rollupID: %d, failed to estimate gas. Ignoring tx... Error: %v, data: %s, GER: %s", tm.rollupID, err, common.Bytes2Hex(data), ger.String())
+		log.Warnf("rollupID: %d, failed to estimate gas. Ignoring tx... DepositID: %d, Error: %v, Data: %s, GER: %s", tm.rollupID, depositID, err, common.Bytes2Hex(data), ger.String())
 		return nil
 	}
 	// get next nonce
