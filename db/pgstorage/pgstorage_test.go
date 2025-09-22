@@ -246,6 +246,7 @@ func TestGetPendingDepositsToClaim(t *testing.T) {
 	deposits, totalCount, err = store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 2, 0, -1, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(deposits))
+	assert.Equal(t, uint64(1), totalCount)
 	assert.Equal(t, uint8(0), deposits[0].LeafType)
 	assert.Equal(t, uint32(0), deposits[0].NetworkID)
 	assert.Equal(t, uint32(0), deposits[0].OriginalNetwork)
@@ -259,5 +260,4 @@ func TestGetPendingDepositsToClaim(t *testing.T) {
 	assert.Equal(t, []byte{}, deposits[0].Metadata)
 	assert.Equal(t, uint64(3), deposits[0].Id)
 	assert.Equal(t, true, deposits[0].ReadyForClaim)
-
 }
