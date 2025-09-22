@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
@@ -11,9 +12,9 @@ import (
 type Storage interface{}
 
 // NewStorage creates a new Storage
-func NewStorage(cfg Config) (Storage, error) {
+func NewStorage(ctx context.Context, cfg Config) (Storage, error) {
 	if cfg.Database == "postgres" {
-		pg, err := pgstorage.NewPostgresStorage(pgstorage.Config{
+		pg, err := pgstorage.NewPostgresStorage(ctx, pgstorage.Config{
 			Name:     cfg.PgStorage.Name,
 			User:     cfg.PgStorage.User,
 			Password: cfg.PgStorage.Password,

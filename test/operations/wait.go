@@ -51,9 +51,9 @@ func restHealthyCondition(address string) (bool, error) {
 
 // WaitGRPCHealthy waits for a gRPC endpoint to be responding according to the
 // health standard in package grpc.health.v1
-func WaitGRPCHealthy(address string) error {
+func WaitGRPCHealthy(ctx context.Context, address string) error {
 	return Poll(DefaultInterval, DefaultDeadline, func() (bool, error) {
-		return grpcHealthyCondition(address)
+		return grpcHealthyCondition(ctx, address)
 	})
 }
 
@@ -126,7 +126,7 @@ func Poll(interval, deadline time.Duration, condition ConditionFunc) error {
 	}
 }
 
-func grpcHealthyCondition(address string) (bool, error) {
+func grpcHealthyCondition(ctx context.Context, address string) (bool, error) {
 	opts := []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
@@ -140,7 +140,7 @@ func grpcHealthyCondition(address string) (bool, error) {
 	}()
 
 	healthClient := grpc_health_v1.NewHealthClient(conn)
-	state, err := healthClient.Check(context.Background(), &grpc_health_v1.HealthCheckRequest{})
+	state, err := healthClient.Check(ctx, &grpc_health_v1.HealthCheckRequest{})
 	if err != nil {
 		// we allow connection errors to wait for the container up
 		return false, nil

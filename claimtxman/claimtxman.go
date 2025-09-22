@@ -240,7 +240,7 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) erro
 			return err
 		}
 		log.Infof("RollupID: %d, create the claim tx for the deposit count %d. Deposit Id: %d", tm.rollupID, deposit.DepositCount, deposit.Id)
-		claimGer, proof, rollupProof, err := tm.bridgeService.GetClaimProofForCompressed(globalExitRoot, deposit.DepositCount, deposit.NetworkID, dbTx)
+		claimGer, proof, rollupProof, err := tm.bridgeService.GetClaimProofForCompressed(tm.ctx, globalExitRoot, deposit.DepositCount, deposit.NetworkID, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error getting Claim Proof for deposit Id %d. Error: %v", tm.rollupID, deposit.Id, err)
 			return tm.rollbackState(dbTx, err)
@@ -306,7 +306,7 @@ func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *
 		var b string
 		block, err2 := tm.l2Node.BlockByNumber(tm.ctx, nil)
 		if err2 != nil {
-			log.Error("error getting blockNumber. Error: ", err2)
+			log.Debug("error getting blockNumber, using latest. Error: ", err2)
 			b = "latest"
 		} else {
 			b = fmt.Sprintf("%x", block.Number())
@@ -320,7 +320,7 @@ func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *
 			"params": [{"from": "%s","to":"%s","data":"0x%s"},"0x%s"],
 			"id": 1
 		}'`, from, to, common.Bytes2Hex(data), b)
-		log.Errorf("rollupID: %d, failed to estimate gas. Ignoring tx... Error: %v, data: %s, GER: %s", tm.rollupID, err, common.Bytes2Hex(data), ger.String())
+		log.Warnf("rollupID: %d, failed to estimate gas. Ignoring tx... DepositID: %d, Error: %v, Data: %s, GER: %s", tm.rollupID, depositID, err, common.Bytes2Hex(data), ger.String())
 		return nil
 	}
 	// get next nonce

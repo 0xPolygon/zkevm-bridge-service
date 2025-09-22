@@ -34,13 +34,13 @@ func (p *PostgresStorage) getExecQuerier(dbTx interface{}) execQuerier {
 }
 
 // NewPostgresStorage creates a new Storage DB
-func NewPostgresStorage(cfg Config) (*PostgresStorage, error) {
+func NewPostgresStorage(ctx context.Context, cfg Config) (*PostgresStorage, error) {
 	config, err := pgxpool.ParseConfig(fmt.Sprintf("postgres://%s:%s@%s:%s/%s?pool_max_conns=%d", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Name, cfg.MaxConns))
 	if err != nil {
 		log.Errorf("Unable to parse DB config: %v\n", err)
 		return nil, err
 	}
-	db, err := pgxpool.ConnectConfig(context.Background(), config)
+	db, err := pgxpool.ConnectConfig(ctx, config)
 	if err != nil {
 		log.Errorf("Unable to connect to database: %v\n", err)
 		return nil, err

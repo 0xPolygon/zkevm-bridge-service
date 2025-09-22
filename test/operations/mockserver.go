@@ -10,18 +10,17 @@ import (
 )
 
 // RunMockServer runs mock server
-func RunMockServer(dbType string, height uint8, networks []uint32) (*bridgectrl.BridgeController, StorageInterface, error) {
+func RunMockServer(ctx context.Context, dbType string, height uint8, networks []uint32) (*bridgectrl.BridgeController, StorageInterface, error) {
 	if dbType != "postgres" {
 		return nil, nil, fmt.Errorf("not registered database")
 	}
 
 	dbCfg := pgstorage.NewConfigFromEnv()
-	err := pgstorage.InitOrReset(dbCfg)
+	err := pgstorage.InitOrReset(ctx, dbCfg)
 	if err != nil {
 		return nil, nil, err
 	}
-
-	store, err := pgstorage.NewPostgresStorage(dbCfg)
+	store, err := pgstorage.NewPostgresStorage(ctx, dbCfg)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -29,7 +28,6 @@ func RunMockServer(dbType string, height uint8, networks []uint32) (*bridgectrl.
 	btCfg := bridgectrl.Config{
 		Height: height,
 	}
-	ctx := context.Background()
 	bt, err := bridgectrl.NewBridgeController(ctx, btCfg, networks, store)
 	if err != nil {
 		return nil, nil, err
@@ -44,5 +42,5 @@ func RunMockServer(dbType string, height uint8, networks []uint32) (*bridgectrl.
 		BridgeVersion:    "v1",
 	}
 	bridgeService := server.NewBridgeService(cfg, btCfg.Height, networks, store)
-	return bt, store, server.RunServer(cfg, bridgeService)
+	return bt, store, server.RunServer(ctx, cfg, bridgeService)
 }
