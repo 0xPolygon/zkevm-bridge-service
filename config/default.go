@@ -31,6 +31,7 @@ RetryInterval = "1s"
 RetryNumber = 10
 AuthorizedClaimMessageAddresses = []
 AreClaimsBetweenL2sEnabled = false
+IgnoreDepositAfterXL1Blocks = 300
     [ClaimTxManager.GroupingClaims]
     Enabled = false
     FrequencyToProcessCompressedClaims = "10m"
