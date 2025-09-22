@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"testing"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
@@ -28,7 +29,7 @@ func TestGetClaimProofbyGER(t *testing.T) {
 	mockStorage.EXPECT().GetL1ExitRootByGER(mock.Anything, GER, mock.Anything).Return(&exitRoot, nil)
 	node := [][]byte{{}, {}}
 	mockStorage.EXPECT().Get(mock.Anything, mock.Anything, mock.Anything).Return(node, nil)
-	smtProof, smtRollupProof, globaExitRoot, err := sut.GetClaimProofbyGER(depositCnt, networkID, GER, nil)
+	smtProof, smtRollupProof, globaExitRoot, err := sut.GetClaimProofbyGER(context.Background(), depositCnt, networkID, GER, nil)
 	require.NoError(t, err)
 	require.NotNil(t, smtProof)
 	require.NotNil(t, smtRollupProof)

@@ -49,10 +49,10 @@ func TestGetLeaves(t *testing.T) {
 	`
 	dbCfg := NewConfigFromEnv()
 	ctx := context.Background()
-	err := InitOrReset(dbCfg)
+	err := InitOrReset(ctx, dbCfg)
 	require.NoError(t, err)
 
-	store, err := NewPostgresStorage(dbCfg)
+	store, err := NewPostgresStorage(ctx, dbCfg)
 	require.NoError(t, err)
 	_, err = store.Exec(ctx, data)
 	require.NoError(t, err)
@@ -100,10 +100,10 @@ func TestIsRollupExitRoot(t *testing.T) {
 	root := common.HexToHash("0x42D3339FE8EB57770953423F20A029E778A707E8D58AAF110B40D5EB4DD25721")
 	dbCfg := NewConfigFromEnv()
 	ctx := context.Background()
-	err := InitOrReset(dbCfg)
+	err := InitOrReset(ctx, dbCfg)
 	require.NoError(t, err)
 
-	store, err := NewPostgresStorage(dbCfg)
+	store, err := NewPostgresStorage(ctx, dbCfg)
 	require.NoError(t, err)
 
 	exist, err := store.IsRollupExitRoot(ctx, root, nil)
@@ -121,11 +121,10 @@ func TestIsRollupExitRoot(t *testing.T) {
 
 func createStore(t *testing.T) *PostgresStorage {
 	dbCfg := NewConfigFromEnv()
-
-	err := InitOrReset(dbCfg)
+	ctx := context.Background()
+	err := InitOrReset(ctx, dbCfg)
 	require.NoError(t, err)
-
-	store, err := NewPostgresStorage(dbCfg)
+	store, err := NewPostgresStorage(ctx, dbCfg)
 	require.NoError(t, err)
 	return store
 }
@@ -185,10 +184,10 @@ func TestGetPendingDepositsToClaim(t *testing.T) {
 	`
 	dbCfg := NewConfigFromEnv()
 	ctx := context.Background()
-	err := InitOrReset(dbCfg)
+	err := InitOrReset(ctx, dbCfg)
 	require.NoError(t, err)
 
-	store, err := NewPostgresStorage(dbCfg)
+	store, err := NewPostgresStorage(ctx, dbCfg)
 	require.NoError(t, err)
 
 	_, err = store.Exec(ctx, data)

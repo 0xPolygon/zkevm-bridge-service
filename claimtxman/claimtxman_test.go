@@ -29,7 +29,7 @@ func init() {
 // Test monitored txs storage apis
 func TestMonitoredTxStorage(t *testing.T) {
 	ctx := context.Background()
-	store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	store, testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 
 	tx, err := store.BeginDBTransaction(ctx)
@@ -117,7 +117,7 @@ func TestMonitoredTxStorage(t *testing.T) {
 func TestUpdateDepositStatus(t *testing.T) {
 	ctx := context.Background()
 	storageType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
-	store, testStore, err := newStorageSettings(storageType)
+	store, testStore, err := newStorageSettings(ctx, storageType)
 	require.NoError(t, err)
 
 	block := &etherman.Block{
@@ -214,7 +214,7 @@ func TestUpdateDepositStatus(t *testing.T) {
 func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 	ctx := context.Background()
 	storageType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
-	store, testStore, err := newStorageSettings(storageType)
+	store, testStore, err := newStorageSettings(ctx, storageType)
 	require.NoError(t, err)
 
 	destAdr := "0x4d5Cf5032B2a844602278b01199ED191A86c93ff"
@@ -319,14 +319,14 @@ type testStore interface {
 	GetDeposits(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error)
 }
 
-func newStorageSettings(storageType string) (StorageInterface, testStore, error) {
+func newStorageSettings(ctx context.Context, storageType string) (StorageInterface, testStore, error) {
 	if storageType == "postgres" {
 		dbCfg := pgstorage.NewConfigFromEnv()
-		err := pgstorage.InitOrReset(dbCfg)
+		err := pgstorage.InitOrReset(ctx, dbCfg)
 		if err != nil {
 			return nil, nil, err
 		}
-		mt, err := pgstorage.NewPostgresStorage(dbCfg)
+		mt, err := pgstorage.NewPostgresStorage(ctx, dbCfg)
 		return mt, mt, err
 	}
 	return nil, nil, fmt.Errorf("unknown storage type: %s", storageType)

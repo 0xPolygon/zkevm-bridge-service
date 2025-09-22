@@ -240,7 +240,7 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) erro
 			return err
 		}
 		log.Infof("RollupID: %d, create the claim tx for the deposit count %d. Deposit Id: %d", tm.rollupID, deposit.DepositCount, deposit.Id)
-		claimGer, proof, rollupProof, err := tm.bridgeService.GetClaimProofForCompressed(globalExitRoot, deposit.DepositCount, deposit.NetworkID, dbTx)
+		claimGer, proof, rollupProof, err := tm.bridgeService.GetClaimProofForCompressed(tm.ctx, globalExitRoot, deposit.DepositCount, deposit.NetworkID, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error getting Claim Proof for deposit Id %d. Error: %v", tm.rollupID, deposit.Id, err)
 			return tm.rollbackState(dbTx, err)

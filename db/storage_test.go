@@ -30,7 +30,7 @@ func init() {
 
 func TestInsertDeposit(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -77,7 +77,7 @@ func TestInsertDeposit(t *testing.T) {
 
 func TestL1GlobalExitRoot(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -119,7 +119,7 @@ func TestL1GlobalExitRoot(t *testing.T) {
 func TestAddTrustedGERDuplicated(t *testing.T) {
 	ctx := context.Background()
 	storageType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
-	testStore, err := newStorageSettings(storageType)
+	testStore, err := newStorageSettings(ctx, storageType)
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -210,7 +210,7 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 
 func TestGetLastBlock(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -277,7 +277,7 @@ func TestGetLastBlock(t *testing.T) {
 // Test MerkleTree storage
 func TestMTStorage(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -319,7 +319,7 @@ func TestMTStorage(t *testing.T) {
 // Test BridgeService storage
 func TestBSStorage(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -427,7 +427,7 @@ func TestBSStorage(t *testing.T) {
 // Test Set Max uint as networkID into setRoot storage
 func TestSetMaxUintNetworkID(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -447,7 +447,7 @@ func TestSetMaxUintNetworkID(t *testing.T) {
 
 func TestIncompleteL2GlobalExitRoot(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -512,14 +512,14 @@ type testStore interface {
 	GetTokenWrapped(ctx context.Context, originalNetwork uint32, originalTokenAddress common.Address, dbTx interface{}) (*etherman.TokenWrapped, error)
 }
 
-func newStorageSettings(storageType string) (testStore, error) {
+func newStorageSettings(ctx context.Context, storageType string) (testStore, error) {
 	if storageType == "postgres" {
 		dbCfg := pgstorage.NewConfigFromEnv()
-		err := pgstorage.InitOrReset(dbCfg)
+		err := pgstorage.InitOrReset(ctx, dbCfg)
 		if err != nil {
 			return nil, err
 		}
-		mt, err := pgstorage.NewPostgresStorage(dbCfg)
+		mt, err := pgstorage.NewPostgresStorage(ctx, dbCfg)
 		return mt, err
 	}
 	return nil, fmt.Errorf("unknown storage type: %s", storageType)
