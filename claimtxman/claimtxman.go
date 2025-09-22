@@ -15,6 +15,7 @@ import (
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
 )
 
 const (
@@ -36,6 +37,7 @@ type ClaimTxManager struct {
 
 	// client is the ethereum client
 	l2Node          *utils.Client
+	l1Node          *ethclient.Client
 	l2NetworkID     uint32
 	bridgeService   bridgeServiceInterface
 	cfg             Config
@@ -51,8 +53,9 @@ type ClaimTxManager struct {
 }
 
 // NewClaimTxManager creates a new claim transaction manager.
-func NewClaimTxManager(ctx context.Context, cfg Config, chExitRootEvent chan *etherman.GlobalExitRoot,
+func NewClaimTxManager(parentCtx context.Context, cfg Config, chExitRootEvent chan *etherman.GlobalExitRoot,
 	chSynced chan uint32,
+	l1NodeURL string,
 	l2NodeURL string,
 	l2NetworkID uint32,
 	l2BridgeAddr common.Address,
@@ -62,11 +65,18 @@ func NewClaimTxManager(ctx context.Context, cfg Config, chExitRootEvent chan *et
 	etherMan EthermanI,
 	nonceCache *NonceCache,
 	auth *bind.TransactOpts) (*ClaimTxManager, error) {
+	ctx, cancel := context.WithCancel(parentCtx)
 	client, err := utils.NewClient(ctx, l2NodeURL, l2BridgeAddr)
 	if err != nil {
+		cancel()
 		return nil, err
 	}
-	ctx, cancel := context.WithCancel(ctx)
+	ethClient, err := ethclient.Dial(l1NodeURL)
+	if err != nil {
+		log.Errorf("error connecting to %s: %+v", l1NodeURL, err)
+		cancel()
+		return nil, err
+	}
 
 	var monitorTx types.TxMonitorer
 	if cfg.GroupingClaims.Enabled {
@@ -80,6 +90,7 @@ func NewClaimTxManager(ctx context.Context, cfg Config, chExitRootEvent chan *et
 		ctx:             ctx,
 		cancel:          cancel,
 		l2Node:          client,
+		l1Node:          ethClient,
 		l2NetworkID:     l2NetworkID,
 		bridgeService:   bridgeService,
 		cfg:             cfg,
@@ -264,7 +275,7 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) erro
 			log.Errorf("rollupID: %d, error BuildSendClaim tx for deposit Id: %d. Error: %v", tm.rollupID, deposit.Id, err)
 			return tm.rollbackState(dbTx, err)
 		}
-		if err = tm.addClaimTx(deposit.Id, tm.auth.From, tx.To(), nil, tx.Data(), claimGer.GlobalExitRoot, dbTx); err != nil {
+		if err = tm.addClaimTx(deposit, tm.auth.From, tx.To(), nil, tx.Data(), claimGer.GlobalExitRoot, dbTx); err != nil {
 			log.Errorf("rollupID: %d, error adding claim tx for deposit Id: %d Error: %v", tm.rollupID, deposit.Id, err)
 			return tm.rollbackState(dbTx, err)
 		}
@@ -288,7 +299,7 @@ func (tm *ClaimTxManager) isDepositMessageAllowed(deposit *etherman.Deposit) boo
 	return false
 }
 
-func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *common.Address, value *big.Int, data []byte, ger common.Hash, dbTx interface{}) error {
+func (tm *ClaimTxManager) addClaimTx(deposit *etherman.Deposit, from common.Address, to *common.Address, value *big.Int, data []byte, ger common.Hash, dbTx interface{}) error {
 	// get gas
 	tx := ethereum.CallMsg{
 		From:  from,
@@ -320,7 +331,26 @@ func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *
 			"params": [{"from": "%s","to":"%s","data":"0x%s"},"0x%s"],
 			"id": 1
 		}'`, from, to, common.Bytes2Hex(data), b)
-		log.Warnf("rollupID: %d, failed to estimate gas. Ignoring tx... DepositID: %d, Error: %v, Data: %s, GER: %s", tm.rollupID, depositID, err, common.Bytes2Hex(data), ger.String())
+		log.Warnf("rollupID: %d, failed to estimate gas. Ignoring tx... DepositID: %d, Error: %v, Data: %s, GER: %s", tm.rollupID, deposit.Id, err, common.Bytes2Hex(data), ger.String())
+		// Ignore deposit after X L1 BLOCKS
+		currentL1BlockNumber, err2 := tm.l1Node.BlockNumber(tm.ctx)
+		if err2 != nil {
+			log.Errorf("rollupID: %d, failed to get current L1 block number to check if we should ignore the deposit. Error: %v", tm.rollupID, err2)
+			return nil // we ignore it, it will retry it later
+		}
+		currentL1Block, err2 := tm.l1Node.BlockByNumber(tm.ctx, big.NewInt(0).SetUint64(currentL1BlockNumber))
+		if err2 != nil {
+			log.Errorf("rollupID: %d, failed to get current L1 block to check if we should ignore the deposit. Error: %v", tm.rollupID, err2)
+			return nil // we ignore it, it will retry it later
+		}
+		if deposit.BlockNumber+tm.cfg.IgnoreDepositAfterXL1Blocks < currentL1Block.NumberU64() {
+			log.Warnf("rollupID: %d, Ignoring depositID: %d, deposit.BlockNumber: %d, currentL1Block: %d", tm.rollupID, deposit.Id, deposit.BlockNumber, currentL1Block.NumberU64())
+			err2 = tm.storage.IgnoreDeposit(tm.ctx, deposit.Id, dbTx)
+			if err2 != nil {
+				log.Errorf("rollupID: %d, failed to ignore depositID: %d. Error: %v", tm.rollupID, deposit.Id, err2)
+				return nil // we ignore it, it will retry it later
+			}
+		}
 		return nil
 	}
 	// get next nonce
@@ -333,7 +363,7 @@ func (tm *ClaimTxManager) addClaimTx(depositID uint64, from common.Address, to *
 
 	// create monitored tx
 	mTx := types.MonitoredTx{
-		DepositID: depositID, From: from, To: to,
+		DepositID: deposit.Id, From: from, To: to,
 		Nonce: nonce, Value: value, Data: data,
 		Gas: gas, Status: types.MonitoredTxStatusCreated,
 		GlobalExitRoot: ger,
