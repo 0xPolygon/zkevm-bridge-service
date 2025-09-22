@@ -188,7 +188,7 @@ func (p *PostgresStorage) GetPreviousBlock(ctx context.Context, networkID uint32
 	return block, err
 }
 
-// GetNumberDeposits gets the number of  deposits.
+// GetNumberDeposits gets the number of deposits.
 func (p *PostgresStorage) GetNumberDeposits(ctx context.Context, networkID uint32, blockNumber uint64, dbTx interface{}) (uint32, error) {
 	var nDeposits int64
 	const getNumDepositsSQL = "SELECT coalesce(MAX(deposit_cnt), -1) FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE d.network_id = $1 AND b.block_num <= $2"
@@ -660,7 +660,7 @@ func (p *PostgresStorage) UpdateL2DepositsStatus(ctx context.Context, exitRoot [
 
 // GetDepositsFromOtherL2ToClaim returns L2 deposits whose destination is an specific L2
 func (p *PostgresStorage) GetDepositsFromOtherL2ToClaim(ctx context.Context, destinationNetwork uint32, dbTx interface{}) ([]*etherman.Deposit, error) {
-	const getL2DepositsToClaimStatusSQL = `select sync.deposit.id, sync.deposit.leaf_type, sync.deposit.orig_net, sync.deposit.orig_addr, sync.deposit.amount, sync.deposit.dest_net, sync.deposit.dest_addr, sync.deposit.deposit_cnt, sync.deposit.block_id, sync.deposit.network_id, sync.deposit.tx_hash, sync.deposit.metadata, sync.deposit.ready_for_claim FROM sync.deposit where sync.deposit.deposit_cnt not in (select index FROM sync.claim where sync.claim.network_id = $1) and sync.deposit.network_id !=0 and sync.deposit.dest_net = $1 and ready_for_claim =true order by sync.deposit.id desc;`
+	const getL2DepositsToClaimStatusSQL = `select sync.deposit.id, sync.deposit.leaf_type, sync.deposit.orig_net, sync.deposit.orig_addr, sync.deposit.amount, sync.deposit.dest_net, sync.deposit.dest_addr, sync.deposit.deposit_cnt, sync.deposit.block_id, sync.deposit.network_id, sync.deposit.tx_hash, sync.deposit.metadata, sync.deposit.ready_for_claim FROM sync.deposit where sync.deposit.deposit_cnt not in (select index FROM sync.claim where sync.claim.network_id = $1) and sync.deposit.network_id !=0 and sync.deposit.ignore = false and sync.deposit.dest_net = $1 and ready_for_claim =true order by sync.deposit.id desc;`
 	rows, err := p.getExecQuerier(dbTx).Query(ctx, getL2DepositsToClaimStatusSQL, destinationNetwork)
 	if err != nil {
 		return nil, err
@@ -763,13 +763,13 @@ func (p *PostgresStorage) GetPendingDepositsToClaim(ctx context.Context, address
 	} else if fromNetwork == 1 { // only L2
 		fromNetworkSQL = "AND d.network_id != 0"
 	}
-	getNumberPendingDepositsToClaimSQL := "SELECT count(*) FROM sync.deposit AS d WHERE dest_net = $1 AND ready_for_claim = true " + fromNetworkSQL + " AND leaf_type = $2 " + addrSQL + " AND deposit_cnt NOT IN (SELECT index FROM sync.claim WHERE sync.claim.network_id = $1) AND id NOT IN (SELECT deposit_id FROM sync.monitored_txs)"
+	getNumberPendingDepositsToClaimSQL := "SELECT count(*) FROM sync.deposit AS d WHERE dest_net = $1 AND ready_for_claim = true " + fromNetworkSQL + " AND leaf_type = $2 " + addrSQL + " AND deposit_cnt NOT IN (SELECT index FROM sync.claim WHERE sync.claim.network_id = $1) AND ignore = false AND id NOT IN (SELECT deposit_id FROM sync.monitored_txs)"
 	var totalCount uint64
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getNumberPendingDepositsToClaimSQL, destNetwork, leafType).Scan(&totalCount)
 	if err != nil {
 		return nil, 0, err
 	}
-	getPendingDepositsToClaimSQL := "SELECT d.id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim FROM sync.deposit AS d INNER JOIN sync.block AS b ON d.block_id = b.id WHERE dest_net = $1 AND ready_for_claim = true " + fromNetworkSQL + " AND leaf_type = $2 " + addrSQL + " AND d.deposit_cnt NOT IN (SELECT index FROM sync.claim WHERE sync.claim.network_id = $1) AND d.id NOT IN (SELECT deposit_id FROM sync.monitored_txs) ORDER BY d.deposit_cnt ASC "
+	getPendingDepositsToClaimSQL := "SELECT d.id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim FROM sync.deposit AS d INNER JOIN sync.block AS b ON d.block_id = b.id WHERE dest_net = $1 AND ready_for_claim = true " + fromNetworkSQL + " AND leaf_type = $2 " + addrSQL + " AND ignore = false AND d.deposit_cnt NOT IN (SELECT index FROM sync.claim WHERE sync.claim.network_id = $1) AND d.id NOT IN (SELECT deposit_id FROM sync.monitored_txs) ORDER BY d.deposit_cnt ASC "
 	var rows pgx.Rows
 	if limit > 0 {
 		getPendingDepositsToClaimSQL += "LIMIT $3 OFFSET $4"
@@ -851,6 +851,13 @@ func (p *PostgresStorage) GetDepositCountByGER(ctx context.Context, ger common.H
 		return 0, 0, gerror.ErrStorageNotFound
 	}
 	return depositID, depositCnt, err
+}
+
+// IgnoreDeposit forces the claimTxManager to ignore a certain deposit.
+func (p *PostgresStorage) IgnoreDeposit(ctx context.Context, depositID uint64, dbTx interface{}) error {
+	const updateDepositsFlagSQL = "UPDATE sync.deposit SET ignore = true WHERE id = $1"
+	_, err := p.getExecQuerier(dbTx).Exec(ctx, updateDepositsFlagSQL, depositID)
+	return err
 }
 
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.

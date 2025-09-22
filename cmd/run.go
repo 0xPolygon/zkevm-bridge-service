@@ -145,7 +145,7 @@ func start(ctx *cli.Context) error {
 			}
 			rollupID := l2Ethermans[i].GetNetworkID() // RollupID == networkID
 			claimTxManager, err := claimtxman.NewClaimTxManager(ctx.Context, c.ClaimTxManager, chsExitRootEvent[i], chsSyncedL2[i],
-				c.Etherman.L2URLs[i], networkIDs[i+1], c.L2PolygonBridgeAddresses[i], bridgeService, storage, rollupID, l2Ethermans[i], nonceCache, auth)
+				c.Etherman.L1URL, c.Etherman.L2URLs[i], networkIDs[i+1], c.L2PolygonBridgeAddresses[i], bridgeService, storage, rollupID, l2Ethermans[i], nonceCache, auth)
 			if err != nil {
 				log.Fatalf("error creating claim tx manager for L2 %s. Error: %v", c.Etherman.L2URLs[i], err)
 			}
