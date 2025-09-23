@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
@@ -50,6 +51,9 @@ type ClaimTxManager struct {
 	l1Synced        bool
 	nonceCache      *NonceCache
 	monitorTxs      types.TxMonitorer
+	
+	// updateMutex prevents multiple updateDepositsStatus executions from running simultaneously
+	updateMutex sync.Mutex
 }
 
 // NewClaimTxManager creates a new claim transaction manager.
@@ -164,6 +168,10 @@ func (tm *ClaimTxManager) Start() {
 }
 
 func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) error {
+	// Prevent multiple simultaneous executions of updateDepositsStatus
+	tm.updateMutex.Lock()
+	defer tm.updateMutex.Unlock()
+	
 	var (
 		deposits       []*etherman.Deposit
 		globalExitRoot = ger.GlobalExitRoot
