@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"sync"
 	"time"
 
 	"github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
@@ -50,6 +51,9 @@ type ClaimTxManager struct {
 	l1Synced        bool
 	nonceCache      *NonceCache
 	monitorTxs      types.TxMonitorer
+	
+	// updateMutex prevents multiple processPendingDeposits executions from running simultaneously
+	updateMutex sync.Mutex
 }
 
 // NewClaimTxManager creates a new claim transaction manager.
@@ -130,14 +134,19 @@ func (tm *ClaimTxManager) Start() {
 			ger = *channelGer
 			if tm.l2Synced && tm.l1Synced {
 				log.Debugf("RollupID: %d UpdateDepositsStatus for ger: %s", tm.rollupID, ger.GlobalExitRoot.String())
+				err := tm.updateDepositsStatus(ger)
+				if err != nil {
+					log.Errorf("rollupID: %d, failed to update deposits status: %v", tm.rollupID, err)
+					continue
+				}
 				if tm.cfg.GroupingClaims.Enabled {
 					log.Debugf("rollupID: %d, Ger value updated and ready to be processed...", tm.rollupID)
 					continue
 				}
 				go func() {
-					err := tm.updateDepositsStatus(ger)
+					err := tm.processPendingDeposits(ger)
 					if err != nil {
-						log.Errorf("rollupID: %d, failed to update deposits status: %v", tm.rollupID, err)
+						log.Errorf("rollupID: %d, failed to process pending deposits: %v", tm.rollupID, err)
 					}
 				}()
 			} else {
@@ -147,9 +156,9 @@ func (tm *ClaimTxManager) Start() {
 			if tm.l2Synced && tm.l1Synced && tm.cfg.GroupingClaims.Enabled && ger.GlobalExitRoot != latestProcessedGer {
 				log.Infof("RollupID: %d,Processing deposits for ger: %s", tm.rollupID, ger.GlobalExitRoot.String())
 				go func() {
-					err := tm.updateDepositsStatus(ger)
+					err := tm.processPendingDeposits(ger)
 					if err != nil {
-						log.Errorf("rollupID: %d, failed to update deposits status: %v", tm.rollupID, err)
+						log.Errorf("rollupID: %d, failed to process pending deposits: %v", tm.rollupID, err)
 					}
 				}()
 				latestProcessedGer = ger.GlobalExitRoot
@@ -163,7 +172,11 @@ func (tm *ClaimTxManager) Start() {
 	}
 }
 
-func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) error {
+func (tm *ClaimTxManager) processPendingDeposits(ger etherman.GlobalExitRoot) error {
+	// Prevent multiple simultaneous executions of processPendingDeposits
+	tm.updateMutex.Lock()
+	defer tm.updateMutex.Unlock()
+	
 	var (
 		deposits       []*etherman.Deposit
 		globalExitRoot = ger.GlobalExitRoot
@@ -174,12 +187,7 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) erro
 		return err
 	}
 	if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
-		log.Infof("RollupID: %d, Rollup exitroot %v is updated", tm.rollupID, ger.ExitRoots[1])
-		err = tm.storage.UpdateL2DepositsStatus(tm.ctx, ger.ExitRoots[1][:], tm.rollupID, tm.l2NetworkID, dbTx)
-		if err != nil {
-			log.Errorf("rollupID: %d, error updating L2DepositsStatus. Error: %v", tm.rollupID, err)
-			return tm.rollbackState(dbTx, err)
-		}
+		log.Infof("RollupID: %d, Rollup exitroot %v is updated. Initializing claim process. Error: %v", tm.rollupID, err)
 		// If L2 claims processor is enabled
 		if tm.cfg.AreClaimsBetweenL2sEnabled {
 			log.Debugf("rollupID: %d, getting L2 deposits to autoClaim", tm.rollupID)
@@ -209,11 +217,6 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) erro
 		}
 	} else { // L1 exit root is updated in the trusted state
 		log.Infof("RollupID: %d, Mainnet exitroot %v is updated", tm.rollupID, ger.ExitRoots[0])
-		err = tm.storage.UpdateL1DepositsStatus(tm.ctx, ger.ExitRoots[0][:], tm.l2NetworkID, dbTx)
-		if err != nil {
-			log.Errorf("rollupID: %d, error getting and updating L1DepositsStatus. Error: %v", tm.rollupID, err)
-			return tm.rollbackState(dbTx, err)
-		}
 		// Get all the pending bridge assets to claim
 		deposits, _, err = tm.storage.GetPendingDepositsToClaim(tm.ctx, common.Address{}, tm.l2NetworkID, 0, 0, 0, 0, dbTx)
 		if err != nil {
@@ -387,4 +390,32 @@ func (tm *ClaimTxManager) rollbackState(dbTx interface{}, err error) error {
 		return rollbackErr
 	}
 	return err
+}
+
+func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) error {
+	dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
+	if err != nil {
+		return err
+	}
+	if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
+		log.Infof("RollupID: %d, Rollup exitroot %v is updated", tm.rollupID, ger.ExitRoots[1])
+		err = tm.storage.UpdateL2DepositsStatus(tm.ctx, ger.ExitRoots[1][:], tm.rollupID, tm.l2NetworkID, dbTx)
+		if err != nil {
+			log.Errorf("rollupID: %d, error updating L2DepositsStatus. Error: %v", tm.rollupID, err)
+			return tm.rollbackState(dbTx, err)
+		}
+	} else { // L1 exit root is updated in the trusted state
+		log.Infof("RollupID: %d, Mainnet exitroot %v is updated", tm.rollupID, ger.ExitRoots[0])
+		err = tm.storage.UpdateL1DepositsStatus(tm.ctx, ger.ExitRoots[0][:], tm.l2NetworkID, dbTx)
+		if err != nil {
+			log.Errorf("rollupID: %d, error getting and updating L1DepositsStatus. Error: %v", tm.rollupID, err)
+			return tm.rollbackState(dbTx, err)
+		}
+	}
+	err = tm.storage.Commit(tm.ctx, dbTx)
+	if err != nil {
+		log.Errorf("rollupID: %d, AddClaimTx committing dbTx. Err: %v", tm.rollupID, err)
+		return tm.rollbackState(dbTx, err)
+	}
+	return nil
 }
