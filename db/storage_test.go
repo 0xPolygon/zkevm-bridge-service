@@ -30,7 +30,7 @@ func init() {
 
 func TestInsertDeposit(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -38,6 +38,7 @@ func TestInsertDeposit(t *testing.T) {
 	blockID, err := testStore.AddBlock(ctx, &etherman.Block{
 		BlockNumber: 1,
 		BlockHash:   common.HexToHash("0x29e885adaf8e4b51e4d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9d1"),
+		NetworkID:   1,
 	}, nil)
 	require.NoError(t, err)
 	deposit := &etherman.Deposit{
@@ -54,12 +55,29 @@ func TestInsertDeposit(t *testing.T) {
 	}
 	_, err = testStore.AddDeposit(ctx, deposit, tx)
 	require.NoError(t, err)
+	deposit2, err := testStore.GetDepositByDepositID(ctx, 1, tx)
+	require.NoError(t, err)
+	assert.Equal(t, uint64(1), deposit2.Id)
+	assert.Equal(t, deposit.Amount, deposit2.Amount)
+	assert.Equal(t, deposit.BlockID, deposit2.BlockID)
+	assert.Equal(t, deposit.BlockNumber, deposit2.BlockNumber)
+	assert.Equal(t, deposit.DepositCount, deposit2.DepositCount)
+	assert.Equal(t, deposit.DestinationAddress, deposit2.DestinationAddress)
+	assert.Equal(t, deposit.DestinationNetwork, deposit2.DestinationNetwork)
+	assert.Equal(t, deposit.LeafType, deposit2.LeafType)
+	assert.Equal(t, deposit.Metadata, deposit2.Metadata)
+	assert.Equal(t, deposit.NetworkID, deposit2.NetworkID)
+	assert.Equal(t, deposit.OriginalAddress, deposit2.OriginalAddress)
+	assert.Equal(t, deposit.OriginalNetwork, deposit2.OriginalNetwork)
+	assert.Equal(t, deposit.ReadyForClaim, deposit2.ReadyForClaim)
+	assert.Equal(t, deposit.TxHash, deposit2.TxHash)
+
 	require.NoError(t, testStore.Rollback(ctx, tx))
 }
 
 func TestL1GlobalExitRoot(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -101,7 +119,7 @@ func TestL1GlobalExitRoot(t *testing.T) {
 func TestAddTrustedGERDuplicated(t *testing.T) {
 	ctx := context.Background()
 	storageType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
-	testStore, err := newStorageSettings(storageType)
+	testStore, err := newStorageSettings(ctx, storageType)
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -192,7 +210,7 @@ func TestAddTrustedGERDuplicated(t *testing.T) {
 
 func TestGetLastBlock(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -259,7 +277,7 @@ func TestGetLastBlock(t *testing.T) {
 // Test MerkleTree storage
 func TestMTStorage(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -301,7 +319,7 @@ func TestMTStorage(t *testing.T) {
 // Test BridgeService storage
 func TestBSStorage(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -409,7 +427,7 @@ func TestBSStorage(t *testing.T) {
 // Test Set Max uint as networkID into setRoot storage
 func TestSetMaxUintNetworkID(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -429,7 +447,7 @@ func TestSetMaxUintNetworkID(t *testing.T) {
 
 func TestIncompleteL2GlobalExitRoot(t *testing.T) {
 	ctx := context.Background()
-	testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	tx, err := testStore.BeginDBTransaction(ctx)
 	require.NoError(t, err)
@@ -460,6 +478,7 @@ func TestIncompleteL2GlobalExitRoot(t *testing.T) {
 }
 
 type testStore interface {
+	GetDepositByDepositID(ctx context.Context, depositID uint64, dbTx interface{}) (*etherman.Deposit, error)
 	AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx interface{}) (uint64, error)
 	Rollback(ctx context.Context, dbTx interface{}) error
 	BeginDBTransaction(ctx context.Context) (interface{}, error)
@@ -485,7 +504,7 @@ type testStore interface {
 	GetClaims(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Claim, error)
 	GetDepositCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error)
 	GetDeposits(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error)
-	GetDeposit(ctx context.Context, depositCounterUser, networkID uint32, dbTx interface{}) (*etherman.Deposit, error)
+	GetDeposit(ctx context.Context, depositCounter, networkID uint32, dbTx interface{}) (*etherman.Deposit, error)
 	GetNumberDeposits(ctx context.Context, networkID uint32, blockNumber uint64, dbTx interface{}) (uint32, error)
 	GetClaimCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error)
 	GetTokenMetadata(ctx context.Context, networkID, destNet uint32, originalTokenAddr common.Address, dbTx interface{}) ([]byte, error)
@@ -493,14 +512,14 @@ type testStore interface {
 	GetTokenWrapped(ctx context.Context, originalNetwork uint32, originalTokenAddress common.Address, dbTx interface{}) (*etherman.TokenWrapped, error)
 }
 
-func newStorageSettings(storageType string) (testStore, error) {
+func newStorageSettings(ctx context.Context, storageType string) (testStore, error) {
 	if storageType == "postgres" {
 		dbCfg := pgstorage.NewConfigFromEnv()
-		err := pgstorage.InitOrReset(dbCfg)
+		err := pgstorage.InitOrReset(ctx, dbCfg)
 		if err != nil {
 			return nil, err
 		}
-		mt, err := pgstorage.NewPostgresStorage(dbCfg)
+		mt, err := pgstorage.NewPostgresStorage(ctx, dbCfg)
 		return mt, err
 	}
 	return nil, fmt.Errorf("unknown storage type: %s", storageType)

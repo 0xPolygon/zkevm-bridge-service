@@ -1,6 +1,7 @@
 package pgstorage
 
 import (
+	"context"
 	"os"
 	"strconv"
 
@@ -66,9 +67,9 @@ func runMigrations(cfg Config, direction migrate.MigrationDirection) error {
 
 // InitOrReset will initializes the db running the migrations or
 // will reset all the known data and rerun the migrations
-func InitOrReset(cfg Config) error {
+func InitOrReset(ctx context.Context, cfg Config) error {
 	// connect to database
-	_, err := NewPostgresStorage(cfg)
+	_, err := NewPostgresStorage(ctx, cfg)
 	if err != nil {
 		return err
 	}

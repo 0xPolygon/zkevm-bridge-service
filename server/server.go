@@ -20,9 +20,7 @@ import (
 )
 
 // RunServer runs gRPC server and HTTP gateway
-func RunServer(cfg Config, bridgeService pb.BridgeServiceServer) error {
-	ctx := context.Background()
-
+func RunServer(ctx context.Context, cfg Config, bridgeService pb.BridgeServiceServer) error {
 	if len(cfg.GRPCPort) == 0 {
 		return fmt.Errorf("invalid TCP port for gRPC server: '%s'", cfg.GRPCPort)
 	}

@@ -29,7 +29,7 @@ func init() {
 // Test monitored txs storage apis
 func TestMonitoredTxStorage(t *testing.T) {
 	ctx := context.Background()
-	store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	store, testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 
 	tx, err := store.BeginDBTransaction(ctx)
@@ -117,7 +117,7 @@ func TestMonitoredTxStorage(t *testing.T) {
 func TestUpdateDepositStatus(t *testing.T) {
 	ctx := context.Background()
 	storageType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
-	store, testStore, err := newStorageSettings(storageType)
+	store, testStore, err := newStorageSettings(ctx, storageType)
 	require.NoError(t, err)
 
 	block := &etherman.Block{
@@ -194,7 +194,9 @@ func TestUpdateDepositStatus(t *testing.T) {
 	l2Root1 := common.FromHex("0xda7bce9f4e8618b6bd2f4132ce798cdc7a60e7e1460a7299e3c6342a579626d2")
 	require.NoError(t, testStore.SetRoot(ctx, l2Root1, depositID, deposit.NetworkID, nil))
 
-	deposits, err := store.UpdateL1DepositsStatus(ctx, l1Root, deposit.DestinationNetwork, nil)
+	err = store.UpdateL1DepositsStatus(ctx, l1Root, deposit.DestinationNetwork, nil)
+	require.NoError(t, err)
+	deposits, _, err := store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 10, 0, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 1)
 	require.True(t, deposits[0].ReadyForClaim)
@@ -212,7 +214,7 @@ func TestUpdateDepositStatus(t *testing.T) {
 func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 	ctx := context.Background()
 	storageType := os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE")
-	store, testStore, err := newStorageSettings(storageType)
+	store, testStore, err := newStorageSettings(ctx, storageType)
 	require.NoError(t, err)
 
 	destAdr := "0x4d5Cf5032B2a844602278b01199ED191A86c93ff"
@@ -317,14 +319,14 @@ type testStore interface {
 	GetDeposits(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error)
 }
 
-func newStorageSettings(storageType string) (StorageInterface, testStore, error) {
+func newStorageSettings(ctx context.Context, storageType string) (StorageInterface, testStore, error) {
 	if storageType == "postgres" {
 		dbCfg := pgstorage.NewConfigFromEnv()
-		err := pgstorage.InitOrReset(dbCfg)
+		err := pgstorage.InitOrReset(ctx, dbCfg)
 		if err != nil {
 			return nil, nil, err
 		}
-		mt, err := pgstorage.NewPostgresStorage(dbCfg)
+		mt, err := pgstorage.NewPostgresStorage(ctx, dbCfg)
 		return mt, mt, err
 	}
 	return nil, nil, fmt.Errorf("unknown storage type: %s", storageType)
