@@ -1,7 +1,12 @@
 on:
   push:
     tags:
-    - 'v[0-9]+.[0-9]+.[0-9]+*' # this action will only run on tags that follow semver
+      - 'v[0-9]*.[0-9]*.[0-9]*'  # GitHub uses glob patterns, not regex
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  packages: write  # needed to push to GHCR with GITHUB_TOKEN
 
 jobs:
   build:
@@ -16,11 +21,18 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Login to DockerHub  
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Normalize GHCR image name (lowercase owner)
+        # e.g., ghcr.io/0xpolygon/zkevm-bridge-service
+        run: |
+          GHCR_OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "GHCR_IMAGE_NAME=ghcr.io/${GHCR_OWNER_LC}/zkevm-bridge-service" >> $GITHUB_ENV
 
       - name: Build and push
         id: docker_build
@@ -30,6 +42,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            hermeznetwork/zkevm-bridge-service:${{ github.ref_name }}
+            ${{ env.GHCR_IMAGE_NAME }}:${{ github.ref_name }}
           build-args: |
-            PRIVATE_TOKEN=${{secrets.GIT_TOKEN}}
+            PRIVATE_TOKEN=${{ secrets.GIT_TOKEN }}

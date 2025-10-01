@@ -73,7 +73,7 @@ func start(ctx *cli.Context) error {
 		networkIDs = append(networkIDs, networkID)
 	}
 
-	storage, err := db.NewStorage(c.SyncDB)
+	storage, err := db.NewStorage(ctx.Context, c.SyncDB)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -87,14 +87,14 @@ func start(ctx *cli.Context) error {
 		return err
 	}
 
-	apiStorage, err := db.NewStorage(c.BridgeServer.DB)
+	apiStorage, err := db.NewStorage(ctx.Context, c.BridgeServer.DB)
 	if err != nil {
 		log.Error(err)
 		return err
 	}
 	c.BridgeServer.BridgeVersion = zkevmbridgeservice.Version
 	bridgeService := server.NewBridgeService(c.BridgeServer, c.BridgeController.Height, networkIDs, apiStorage)
-	err = server.RunServer(c.BridgeServer, bridgeService)
+	err = server.RunServer(ctx.Context, c.BridgeServer, bridgeService)
 	if err != nil {
 		log.Error(err)
 		return err
@@ -131,22 +131,21 @@ func start(ctx *cli.Context) error {
 		for i := 0; i < len(c.Etherman.L2URLs); i++ {
 			// we should match the orders of L2URLs between etherman and claimtxman
 			// since we are using the networkIDs in the same order
-			ctx := context.Background()
-			client, err := utils.NewClient(ctx, c.Etherman.L2URLs[i], c.L2PolygonBridgeAddresses[i])
+			client, err := utils.NewClient(ctx.Context, c.Etherman.L2URLs[i], c.L2PolygonBridgeAddresses[i])
 			if err != nil {
 				log.Fatalf("error creating client for L2 %s. Error: %v", c.Etherman.L2URLs[i], err)
 			}
-			nonceCache, err := claimtxman.NewNonceCache(ctx, client)
+			nonceCache, err := claimtxman.NewNonceCache(ctx.Context, client)
 			if err != nil {
 				log.Fatalf("error creating nonceCache for L2 %s. Error: %v", c.Etherman.L2URLs[i], err)
 			}
-			auth, err := client.GetSignerFromKeystore(ctx, c.ClaimTxManager.PrivateKey)
+			auth, err := client.GetSignerFromKeystore(ctx.Context, c.ClaimTxManager.PrivateKey)
 			if err != nil {
 				log.Fatalf("error creating signer for L2 %s. Error: %v", c.Etherman.L2URLs[i], err)
 			}
 			rollupID := l2Ethermans[i].GetNetworkID() // RollupID == networkID
-			claimTxManager, err := claimtxman.NewClaimTxManager(ctx, c.ClaimTxManager, chsExitRootEvent[i], chsSyncedL2[i],
-				c.Etherman.L2URLs[i], networkIDs[i+1], c.L2PolygonBridgeAddresses[i], bridgeService, storage, rollupID, l2Ethermans[i], nonceCache, auth)
+			claimTxManager, err := claimtxman.NewClaimTxManager(ctx.Context, c.ClaimTxManager, chsExitRootEvent[i], chsSyncedL2[i],
+				c.Etherman.L1URL, c.Etherman.L2URLs[i], networkIDs[i+1], c.L2PolygonBridgeAddresses[i], bridgeService, storage, rollupID, l2Ethermans[i], nonceCache, auth)
 			if err != nil {
 				log.Fatalf("error creating claim tx manager for L2 %s. Error: %v", c.Etherman.L2URLs[i], err)
 			}
@@ -201,7 +200,7 @@ func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalEx
 						log.Debug("Skipping the ready for claim update until the synchronization is completed")
 						continue
 					}
-					_, err := st.UpdateL1DepositsStatus(ctx, ger.ExitRoots[0][:], networkID, dbTx)
+					err := st.UpdateL1DepositsStatus(ctx, ger.ExitRoots[0][:], networkID, dbTx)
 					if err != nil {
 						log.Errorf("networkId: %d, error getting and updating L1DepositsStatus. Error: %v", networkID, err)
 						rollbackErr := st.Rollback(ctx, dbTx)

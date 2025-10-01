@@ -48,9 +48,9 @@ func TestBridgeTree(t *testing.T) {
 	cfg := Config{
 		Height: uint8(32), //nolint:mnd
 	}
-	store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
-	require.NoError(t, err)
 	ctx := context.Background()
+	store, testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	require.NoError(t, err)
 	bt, err := NewBridgeController(ctx, cfg, []uint32{0, 1000}, store)
 	require.NoError(t, err)
 

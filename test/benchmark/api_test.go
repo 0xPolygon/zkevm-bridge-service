@@ -68,11 +68,11 @@ func randDeposit(r *rand.Rand, depositCnt uint32, blockID uint64, networkID uint
 
 func initServer(b *testing.B, bench benchmark) *bridgectrl.BridgeController {
 	b.StopTimer()
+	ctx := context.Background()
 	r := rand.New(rand.NewSource(bench.seed)) //nolint: gosec
-	bt, store, err := operations.RunMockServer(bench.store, bench.mtHeight, networks)
+	bt, store, err := operations.RunMockServer(ctx, bench.store, bench.mtHeight, networks)
 	require.NoError(b, err)
 	b.StartTimer()
-	ctx := context.Background()
 	counts := []uint32{0, 0}
 	for i := 0; i < bench.initSize+bench.postSize; i++ {
 		networkID := uint32(rand.Intn(2)) //nolint: gosec
@@ -138,7 +138,7 @@ func addDeposit(b *testing.B, bench benchmark) {
 	b.StopTimer()
 	ctx := context.Background()
 	r := rand.New(rand.NewSource(bench.seed)) //nolint: gosec
-	bt, store, err := operations.RunMockServer(bench.store, bench.mtHeight, networks)
+	bt, store, err := operations.RunMockServer(ctx, bench.store, bench.mtHeight, networks)
 	require.NoError(b, err)
 	var deposits []*etherman.Deposit
 	for i := 0; i < bench.initSize; i++ {

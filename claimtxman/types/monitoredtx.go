@@ -1,7 +1,6 @@
 package types
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,7 +30,7 @@ const (
 )
 
 type TxMonitorer interface {
-	MonitorTxs(ctx context.Context) error
+	MonitorTxs() error
 }
 
 var (

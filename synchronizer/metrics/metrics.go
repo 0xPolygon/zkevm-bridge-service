@@ -73,107 +73,143 @@ const (
 
 	// LatestBlockSyncedName is the name of the label to get the latest block synced.
 	LatestBlockSyncedName = "latest_block_synced"
+
+	// LatestBlockRollupInfoName is the name of the label to get the latest block rollup info.
+	LatestBlockRollupInfoName = "latest_block_rollup_info"
 )
 
 var (
-	Prefix        string
 	registerMutex sync.Mutex
 )
 
+type MetricsInterface interface {
+	LatestBlockSynced(blockNumber uint64)
+	LatestBlockRollupInfo(blockNumber uint64)
+	IncrementsPendingBridgesToClaim()
+	DecrementsPendingBridgesToClaim()
+	DepositAmount(amount *big.Int)
+	ClaimAmount(amount *big.Int)
+	InitializationTime(lastProcessTime time.Duration)
+	FullTrustedSyncTime(lastProcessTime time.Duration)
+	FullL1SyncTime(lastProcessTime time.Duration)
+	FullSyncIterationTime(lastProcessTime time.Duration)
+	ReadL1DataTime(lastProcessTime time.Duration)
+	ProcessL1DataTime(lastProcessTime time.Duration)
+	GetTrustedGerTime(lastProcessTime time.Duration)
+	GetTrustedExitRootsTime(lastProcessTime time.Duration)
+	DepositCounter()
+	ClaimCounter()
+	VerifyBatchCounter()
+	RemoveL2GERCounter()
+	L2GERCounter()
+	L1GERCounter()
+	ReorgCounter()
+	ReorgedBlocksCounter()
+	WrappedTokensCounter()
+}
+
+type Metrics struct {
+	prefix string
+}
+
 // Register the metrics for the synchronizer package.
-func Register(networkID uint32) {
+func Register(networkID uint32) MetricsInterface {
 	registerMutex.Lock()
 	defer registerMutex.Unlock()
 	// Prefix for the metrics of the synchronizer package.
-	Prefix = "synchronizer_networkID_" + fmt.Sprintf("%d", networkID) + "_"
+	prefix := "synchronizer_networkID_" + fmt.Sprintf("%d_", networkID)
 
 	gauges := []prometheus.GaugeOpts{
 		{
-			Name: Prefix + CurrentPendingBridgesToClaimName,
+			Name: prefix + CurrentPendingBridgesToClaimName,
 			Help: "[SYNCHRONIZER] current pending deposits to claim",
 		},
 		{
-			Name: Prefix + LatestBlockSyncedName,
+			Name: prefix + LatestBlockSyncedName,
 			Help: "[SYNCHRONIZER] latest block synced",
+		},
+		{
+			Name: prefix + LatestBlockRollupInfoName,
+			Help: "[SYNCHRONIZER] latest block rollup info",
 		},
 	}
 	counters := []prometheus.CounterOpts{
 		{
-			Name: Prefix + DepositCounterName,
+			Name: prefix + DepositCounterName,
 			Help: "[SYNCHRONIZER] count processed deposit events",
 		},
 		{
-			Name: Prefix + L1GERCounterName,
+			Name: prefix + L1GERCounterName,
 			Help: "[SYNCHRONIZER] count processed L1 GER events",
 		},
 		{
-			Name: Prefix + L2GERCounterName,
+			Name: prefix + L2GERCounterName,
 			Help: "[SYNCHRONIZER] count processed L2 GER events",
 		},
 		{
-			Name: Prefix + RemoveL2GERCounterName,
+			Name: prefix + RemoveL2GERCounterName,
 			Help: "[SYNCHRONIZER] count processed remove L2 GER events",
 		},
 		{
-			Name: Prefix + VerifyBatchCounterName,
+			Name: prefix + VerifyBatchCounterName,
 			Help: "[SYNCHRONIZER] count processed verify batch events",
 		},
 		{
-			Name: Prefix + ClaimCounterName,
+			Name: prefix + ClaimCounterName,
 			Help: "[SYNCHRONIZER] count processed claim events",
 		},
 		{
-			Name: Prefix + ReorgCounterName,
+			Name: prefix + ReorgCounterName,
 			Help: "[SYNCHRONIZER] count the number of reorgs",
 		},
 		{
-			Name: Prefix + ReorgedBlockCounterName,
+			Name: prefix + ReorgedBlockCounterName,
 			Help: "[SYNCHRONIZER] count the reorged blocks",
 		},
 		{
-			Name: Prefix + WrappedTokensCounterName,
+			Name: prefix + WrappedTokensCounterName,
 			Help: "[SYNCHRONIZER] count the wrapped tokens",
 		},
 	}
 	histograms := []prometheus.HistogramOpts{
 		{
-			Name: Prefix + InitializationTimeName,
+			Name: prefix + InitializationTimeName,
 			Help: "[SYNCHRONIZER] initialization time",
 		},
 		{
-			Name: Prefix + FullTrustedSyncTimeName,
+			Name: prefix + FullTrustedSyncTimeName,
 			Help: "[SYNCHRONIZER] full trusted state synchronization time",
 		},
 		{
-			Name: Prefix + FullL1SyncTimeName,
+			Name: prefix + FullL1SyncTimeName,
 			Help: "[SYNCHRONIZER] full L1 synchronization time",
 		},
 		{
-			Name: Prefix + FullSyncIterationTimeName,
+			Name: prefix + FullSyncIterationTimeName,
 			Help: "[SYNCHRONIZER] full synchronization iteration time",
 		},
 		{
-			Name: Prefix + ReadL1DataTimeName,
+			Name: prefix + ReadL1DataTimeName,
 			Help: "[SYNCHRONIZER] read L1 data time",
 		},
 		{
-			Name: Prefix + ProcessL1DataTimeName,
+			Name: prefix + ProcessL1DataTimeName,
 			Help: "[SYNCHRONIZER] process L1 data time",
 		},
 		{
-			Name: Prefix + GetTrustedGerTimeName,
+			Name: prefix + GetTrustedGerTimeName,
 			Help: "[SYNCHRONIZER] get trusted GER time",
 		},
 		{
-			Name: Prefix + GetTrustedExitRootsTimeName,
+			Name: prefix + GetTrustedExitRootsTimeName,
 			Help: "[SYNCHRONIZER] get trusted ExitRoots time",
 		},
 		{
-			Name: Prefix + DepositAmountName,
+			Name: prefix + DepositAmountName,
 			Help: "[SYNCHRONIZER] deposit amount",
 		},
 		{
-			Name: Prefix + ClaimAmountName,
+			Name: prefix + ClaimAmountName,
 			Help: "[SYNCHRONIZER] claim amount",
 		},
 	}
@@ -181,129 +217,138 @@ func Register(networkID uint32) {
 	metrics.RegisterHistograms(histograms...)
 	metrics.RegisterCounters(counters...)
 	metrics.RegisterGauges(gauges...)
+
+	return &Metrics{
+		prefix: prefix,
+	}
 }
 
 // LatestBlockSynced sets the latest block synced on the gauge.
-func LatestBlockSynced(blockNumber uint64) {
+func (m *Metrics) LatestBlockSynced(blockNumber uint64) {
 	// Be careful, this uint64 to float64 converion can overflow
-	metrics.GaugeSet(Prefix+LatestBlockSyncedName, float64(blockNumber))
+	metrics.GaugeSet(m.prefix+LatestBlockSyncedName, float64(blockNumber))
+}
+
+// LatestBlockRollupInfo sets the latest block rollup info on the gauge.
+func (m *Metrics) LatestBlockRollupInfo(blockNumber uint64) {
+	// Be careful, this uint64 to float64 converion can overflow
+	metrics.GaugeSet(m.prefix+LatestBlockRollupInfoName, float64(blockNumber))
 }
 
 // IncrementsPendingBridgesToClaim increments the current pending bridges to claim on the gauge.
-func IncrementsPendingBridgesToClaim(destNetwork uint32) {
+func (m *Metrics) IncrementsPendingBridgesToClaim() {
 	// This method modify the metric on the destination network.
 	// It won't do nothing if the dest network is not synced and the metrics in the dest network are not registered.
-	prefixKey := "synchronizer_networkID_" + fmt.Sprintf("%d", destNetwork) + "_"
-	metrics.GaugeInc(prefixKey + CurrentPendingBridgesToClaimName)
+	metrics.GaugeInc(m.prefix + CurrentPendingBridgesToClaimName)
 }
 
 // DecrementsPendingBridgesToClaim decrements the current pending bridges to claim on the gauge.
-func DecrementsPendingBridgesToClaim() {
+func (m *Metrics) DecrementsPendingBridgesToClaim() {
 	// Decrements the current pending bridges to claim on the network that received the claim.
-	metrics.GaugeDec(Prefix + CurrentPendingBridgesToClaimName)
+	metrics.GaugeDec(m.prefix + CurrentPendingBridgesToClaimName)
 }
 
 // DepositAmount observes the value of the deposit amount on the histogram.
-func DepositAmount(amount *big.Int) {
+func (m *Metrics) DepositAmount(amount *big.Int) {
 	a, _ := amount.Float64()
-	metrics.HistogramObserve(Prefix+DepositAmountName, a)
+	metrics.HistogramObserve(m.prefix+DepositAmountName, a)
 }
 
 // ClaimAmount observes the value of the Claim amount on the histogram.
-func ClaimAmount(amount *big.Int) {
+func (m *Metrics) ClaimAmount(amount *big.Int) {
 	a, _ := amount.Float64()
-	metrics.HistogramObserve(Prefix+ClaimAmountName, a)
+	metrics.HistogramObserve(m.prefix+ClaimAmountName, a)
 }
 
 // InitializationTime observes the time initializing the synchronizer on the histogram.
-func InitializationTime(lastProcessTime time.Duration) {
+func (m *Metrics) InitializationTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix+InitializationTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(m.prefix+InitializationTimeName, execTimeInSeconds)
 }
 
 // FullTrustedSyncTime observes the time for synchronize the trusted state on the histogram.
-func FullTrustedSyncTime(lastProcessTime time.Duration) {
+func (m *Metrics) FullTrustedSyncTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix+FullTrustedSyncTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(m.prefix+FullTrustedSyncTimeName, execTimeInSeconds)
 }
 
 // FullL1SyncTime observes the time for synchronize the trusted state on the histogram.
-func FullL1SyncTime(lastProcessTime time.Duration) {
+func (m *Metrics) FullL1SyncTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix+FullL1SyncTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(m.prefix+FullL1SyncTimeName, execTimeInSeconds)
 }
 
 // FullSyncIterationTime observes the time for synchronize the trusted state on the histogram.
-func FullSyncIterationTime(lastProcessTime time.Duration) {
+func (m *Metrics) FullSyncIterationTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix+FullSyncIterationTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(m.prefix+FullSyncIterationTimeName, execTimeInSeconds)
 }
 
 // ReadL1DataTime observes the time for synchronize the trusted state on the histogram.
-func ReadL1DataTime(lastProcessTime time.Duration) {
+func (m *Metrics) ReadL1DataTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix+ReadL1DataTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(m.prefix+ReadL1DataTimeName, execTimeInSeconds)
 }
 
 // ProcessL1DataTime observes the time for synchronize the trusted state on the histogram.
-func ProcessL1DataTime(lastProcessTime time.Duration) {
+func (m *Metrics) ProcessL1DataTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix+ProcessL1DataTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(m.prefix+ProcessL1DataTimeName, execTimeInSeconds)
 }
 
 // GetTrustedGerTime observes the time for synchronize the trusted state on the histogram.
-func GetTrustedGerTime(lastProcessTime time.Duration) {
+func (m *Metrics) GetTrustedGerTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix+GetTrustedGerTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(m.prefix+GetTrustedGerTimeName, execTimeInSeconds)
 }
 
 // GetTrustedExitRootsTime observes the time for synchronize the trusted state on the histogram.
-func GetTrustedExitRootsTime(lastProcessTime time.Duration) {
+func (m *Metrics) GetTrustedExitRootsTime(lastProcessTime time.Duration) {
 	execTimeInSeconds := float64(lastProcessTime) / float64(time.Second)
-	metrics.HistogramObserve(Prefix+GetTrustedExitRootsTimeName, execTimeInSeconds)
+	metrics.HistogramObserve(m.prefix+GetTrustedExitRootsTimeName, execTimeInSeconds)
 }
 
 // DepositCounter increases the counter for the processed deposits
-func DepositCounter() {
-	metrics.CounterInc(Prefix + DepositCounterName)
+func (m *Metrics) DepositCounter() {
+	metrics.CounterInc(m.prefix + DepositCounterName)
 }
 
 // ClaimCounter increases the counter for the processed claims
-func ClaimCounter() {
-	metrics.CounterInc(Prefix + ClaimCounterName)
+func (m *Metrics) ClaimCounter() {
+	metrics.CounterInc(m.prefix + ClaimCounterName)
 }
 
 // VerifyBatchCounter increases the counter for the processed verifyBatches
-func VerifyBatchCounter() {
-	metrics.CounterInc(Prefix + VerifyBatchCounterName)
+func (m *Metrics) VerifyBatchCounter() {
+	metrics.CounterInc(m.prefix + VerifyBatchCounterName)
 }
 
 // RemoveL2GERCounter increases the counter for the processed removeL2GERs
-func RemoveL2GERCounter() {
-	metrics.CounterInc(Prefix + RemoveL2GERCounterName)
+func (m *Metrics) RemoveL2GERCounter() {
+	metrics.CounterInc(m.prefix + RemoveL2GERCounterName)
 }
 
 // L2GERCounter increases the counter for the processed L2GER
-func L2GERCounter() {
-	metrics.CounterInc(Prefix + L2GERCounterName)
+func (m *Metrics) L2GERCounter() {
+	metrics.CounterInc(m.prefix + L2GERCounterName)
 }
 
 // L1GERCounter increases the counter for the processed L1GER
-func L1GERCounter() {
-	metrics.CounterInc(Prefix + L1GERCounterName)
+func (m *Metrics) L1GERCounter() {
+	metrics.CounterInc(m.prefix + L1GERCounterName)
 }
 
 // ReorgCounter increases the counter each reorg
-func ReorgCounter() {
-	metrics.CounterInc(Prefix + ReorgCounterName)
+func (m *Metrics) ReorgCounter() {
+	metrics.CounterInc(m.prefix + ReorgCounterName)
 }
 
 // ReorgedBlockCounter increases the counter for the processed Reorged Block
-func ReorgedBlocksCounter() {
-	metrics.CounterInc(Prefix + ReorgedBlockCounterName)
+func (m *Metrics) ReorgedBlocksCounter() {
+	metrics.CounterInc(m.prefix + ReorgedBlockCounterName)
 }
 
 // WrappedTokensCounter increases the counter for the processed wrappedTokens
-func WrappedTokensCounter() {
-	metrics.CounterInc(Prefix + WrappedTokensCounterName)
+func (m *Metrics) WrappedTokensCounter() {
+	metrics.CounterInc(m.prefix + WrappedTokensCounterName)
 }

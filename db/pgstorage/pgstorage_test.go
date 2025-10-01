@@ -49,10 +49,10 @@ func TestGetLeaves(t *testing.T) {
 	`
 	dbCfg := NewConfigFromEnv()
 	ctx := context.Background()
-	err := InitOrReset(dbCfg)
+	err := InitOrReset(ctx, dbCfg)
 	require.NoError(t, err)
 
-	store, err := NewPostgresStorage(dbCfg)
+	store, err := NewPostgresStorage(ctx, dbCfg)
 	require.NoError(t, err)
 	_, err = store.Exec(ctx, data)
 	require.NoError(t, err)
@@ -100,10 +100,10 @@ func TestIsRollupExitRoot(t *testing.T) {
 	root := common.HexToHash("0x42D3339FE8EB57770953423F20A029E778A707E8D58AAF110B40D5EB4DD25721")
 	dbCfg := NewConfigFromEnv()
 	ctx := context.Background()
-	err := InitOrReset(dbCfg)
+	err := InitOrReset(ctx, dbCfg)
 	require.NoError(t, err)
 
-	store, err := NewPostgresStorage(dbCfg)
+	store, err := NewPostgresStorage(ctx, dbCfg)
 	require.NoError(t, err)
 
 	exist, err := store.IsRollupExitRoot(ctx, root, nil)
@@ -121,11 +121,10 @@ func TestIsRollupExitRoot(t *testing.T) {
 
 func createStore(t *testing.T) *PostgresStorage {
 	dbCfg := NewConfigFromEnv()
-
-	err := InitOrReset(dbCfg)
+	ctx := context.Background()
+	err := InitOrReset(ctx, dbCfg)
 	require.NoError(t, err)
-
-	store, err := NewPostgresStorage(dbCfg)
+	store, err := NewPostgresStorage(ctx, dbCfg)
 	require.NoError(t, err)
 	return store
 }
@@ -185,15 +184,15 @@ func TestGetPendingDepositsToClaim(t *testing.T) {
 	`
 	dbCfg := NewConfigFromEnv()
 	ctx := context.Background()
-	err := InitOrReset(dbCfg)
+	err := InitOrReset(ctx, dbCfg)
 	require.NoError(t, err)
 
-	store, err := NewPostgresStorage(dbCfg)
+	store, err := NewPostgresStorage(ctx, dbCfg)
 	require.NoError(t, err)
 
 	_, err = store.Exec(ctx, data)
 	require.NoError(t, err)
-	deposits, totalCount, err := store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 2, 0, nil)
+	deposits, totalCount, err := store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 2, 0, -1, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 2, len(deposits))
 	assert.Equal(t, uint64(2), totalCount)
@@ -224,7 +223,7 @@ func TestGetPendingDepositsToClaim(t *testing.T) {
 	assert.Equal(t, uint64(3), deposits[1].Id)
 	assert.Equal(t, true, deposits[1].ReadyForClaim)
 
-	deposits, totalCount, err = store.GetPendingDepositsToClaim(ctx, common.HexToAddress("0xF39FD6E51AAD88F6F4CE6AB8827279CFFFB92266"), 1, 0, 2, 0, nil)
+	deposits, totalCount, err = store.GetPendingDepositsToClaim(ctx, common.HexToAddress("0xF39FD6E51AAD88F6F4CE6AB8827279CFFFB92266"), 1, 0, 0, 0, 0, nil)
 	require.NoError(t, err)
 	assert.Equal(t, 1, len(deposits))
 	assert.Equal(t, uint64(1), totalCount)
@@ -240,5 +239,25 @@ func TestGetPendingDepositsToClaim(t *testing.T) {
 	assert.Equal(t, common.HexToHash("0x6282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F"), deposits[0].TxHash)
 	assert.Equal(t, []byte{}, deposits[0].Metadata)
 	assert.Equal(t, uint64(2), deposits[0].Id)
+	assert.Equal(t, true, deposits[0].ReadyForClaim)
+
+	err = store.IgnoreDeposit(ctx, 2, nil)
+	assert.NoError(t, err)
+	deposits, totalCount, err = store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 2, 0, -1, nil)
+	require.NoError(t, err)
+	assert.Equal(t, 1, len(deposits))
+	assert.Equal(t, uint64(1), totalCount)
+	assert.Equal(t, uint8(0), deposits[0].LeafType)
+	assert.Equal(t, uint32(0), deposits[0].NetworkID)
+	assert.Equal(t, uint32(0), deposits[0].OriginalNetwork)
+	assert.Equal(t, common.Address{}, deposits[0].OriginalAddress)
+	assert.Equal(t, big.NewInt(90000000000000000), deposits[0].Amount)
+	assert.Equal(t, uint32(1), deposits[0].DestinationNetwork)
+	assert.Equal(t, common.HexToAddress("0xF38FD6E51AAD88F6F4CE6AB8827279CFFFB92266"), deposits[0].DestinationAddress)
+	assert.Equal(t, uint64(1), deposits[0].BlockID)
+	assert.Equal(t, uint32(2), deposits[0].DepositCount)
+	assert.Equal(t, common.HexToHash("0x6282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F"), deposits[0].TxHash)
+	assert.Equal(t, []byte{}, deposits[0].Metadata)
+	assert.Equal(t, uint64(3), deposits[0].Id)
 	assert.Equal(t, true, deposits[0].ReadyForClaim)
 }
