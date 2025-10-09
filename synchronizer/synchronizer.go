@@ -40,6 +40,7 @@ type ClientSynchronizer struct {
 	sovereignChain    bool
 	forceSyncChunk    bool
 	waitDuration      time.Duration
+	metrics           metrics.MetricsInterface
 }
 
 // NewSynchronizer creates and initializes an instance of Synchronizer
@@ -58,7 +59,6 @@ func NewSynchronizer(
 	sovereignChain bool) (Synchronizer, error) {
 	ctx, cancel := context.WithCancel(parentCtx)
 	networkID := ethMan.GetNetworkID()
-	metrics.Register(networkID)
 	ger, err := storage.(storageInterface).GetLatestL1SyncedExitRoot(ctx, nil)
 	if err != nil {
 		if err == gerror.ErrStorageNotFound {
@@ -86,6 +86,7 @@ func NewSynchronizer(
 			allNetworkIDs:    allNetworkIDs,
 			forceSyncChunk:   false,
 			waitDuration:     time.Duration(0),
+			metrics:          metrics.Register(networkID),
 		}, nil
 	}
 	return &ClientSynchronizer{
@@ -103,6 +104,7 @@ func NewSynchronizer(
 		sovereignChain:    sovereignChain,
 		forceSyncChunk:    cfg.ForceL2SyncChunk,
 		waitDuration:      time.Duration(0),
+		metrics:           metrics.Register(networkID),
 	}, nil
 }
 
@@ -128,7 +130,8 @@ func (s *ClientSynchronizer) Sync() error {
 			return err
 		}
 	}
-	metrics.InitializationTime(time.Since(startInitialization))
+	s.metrics.LatestBlockSynced(lastBlockSynced.BlockNumber)
+	s.metrics.InitializationTime(time.Since(startInitialization))
 	log.Debugf("NetworkID: %d, initial lastBlockSynced: %+v", s.networkID, lastBlockSynced)
 	for {
 		select {
@@ -140,7 +143,7 @@ func (s *ClientSynchronizer) Sync() error {
 			log.Debugf("NetworkID: %d, syncing...", s.networkID)
 			//Sync L1Blocks
 			lastBlockSynced, err = s.syncBlocks(*lastBlockSynced)
-			metrics.FullL1SyncTime(time.Since(start))
+			s.metrics.FullL1SyncTime(time.Since(start))
 			if err != nil {
 				log.Warnf("networkID: %d, error syncing blocks: %v", s.networkID, err)
 				lastBlockSynced, err = s.storage.GetLastBlock(s.ctx, s.networkID, nil)
@@ -193,12 +196,12 @@ func (s *ClientSynchronizer) Sync() error {
 				log.Infof("networkID: %d, Virtual state is synced, getting trusted state", s.networkID)
 				startTrusted := time.Now()
 				err = s.syncTrustedState()
-				metrics.FullTrustedSyncTime(time.Since(startTrusted))
+				s.metrics.FullTrustedSyncTime(time.Since(startTrusted))
 				if err != nil {
 					log.Errorf("networkID: %d, error getting current trusted state", s.networkID)
 				}
 			}
-			metrics.FullSyncIterationTime(time.Since(start))
+			s.metrics.FullSyncIterationTime(time.Since(start))
 		}
 	}
 }
@@ -212,7 +215,7 @@ func (s *ClientSynchronizer) Stop() {
 func (s *ClientSynchronizer) syncTrustedState() error {
 	start := time.Now()
 	lastGER, err := s.zkEVMClient.GetLatestGlobalExitRoot(s.ctx)
-	metrics.GetTrustedGerTime(time.Since(start))
+	s.metrics.GetTrustedGerTime(time.Since(start))
 	if err != nil {
 		log.Warnf("networkID: %d, failed to get latest ger from trusted state. Error: %v", s.networkID, err)
 		return err
@@ -223,7 +226,7 @@ func (s *ClientSynchronizer) syncTrustedState() error {
 	}
 	start = time.Now()
 	exitRoots, err := s.zkEVMClient.ExitRootsByGER(s.ctx, lastGER)
-	metrics.GetTrustedExitRootsTime(time.Since(start))
+	s.metrics.GetTrustedExitRootsTime(time.Since(start))
 	if err != nil {
 		log.Warnf("networkID: %d, failed to get exitRoots from trusted state. Error: %v", s.networkID, err)
 		return err
@@ -257,6 +260,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 	// Call the blockchain to retrieve data
 	header, err := s.etherMan.HeaderByNumber(s.ctx, nil)
 	if err != nil {
+		log.Error("error HeaderByNumber getting latest block from ethereum: ", err)
 		return &lastBlockSynced, err
 	}
 	lastKnownBlock := header.Number
@@ -287,6 +291,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 			log.Debugf("NetworkID: %d, Checking lastKnownBlock again to see if it has changed during the sync process", s.networkID)
 			header, err := s.etherMan.HeaderByNumber(s.ctx, nil)
 			if err != nil {
+				log.Error("error HeaderByNumber getting latest block from ethereum: ", err)
 				return &lastBlockSynced, err
 			}
 			lastKnownBlock = header.Number
@@ -318,11 +323,12 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 		// The value pos (position) tells what is the array index where this value is.
 		start := time.Now()
 		blocks, order, err := s.etherMan.GetRollupInfoByBlockRange(s.ctx, fromBlock, &toBlock)
-		metrics.ReadL1DataTime(time.Since(start))
+		s.metrics.ReadL1DataTime(time.Since(start))
 		if err != nil {
+			log.Errorf("networkID: %d, error getting rollup info from block %d to block %d. Error: %v", s.networkID, fromBlock, toBlock, err)
 			return &lastBlockSynced, err
 		}
-
+		s.metrics.LatestBlockRollupInfo(toBlock)
 		if fromBlock == s.genBlockNumber && !s.forceSyncChunk {
 			if len(blocks) == 0 || (len(blocks) != 0 && blocks[0].BlockNumber != s.genBlockNumber) {
 				log.Debugf("NetworkID: %d. adding genesis empty block", s.networkID)
@@ -384,8 +390,9 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 
 		start = time.Now()
 		err = s.processBlockRange(blocks, order)
-		metrics.ProcessL1DataTime(time.Since(start))
+		s.metrics.ProcessL1DataTime(time.Since(start))
 		if err != nil {
+			log.Error("error processing block range: ", err)
 			return &lastBlockSynced, err
 		}
 		if len(blocks) > 0 && !s.forceSyncChunk {
@@ -398,6 +405,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 			// It's not stored in the db and if the service is restarted, it will query the same blocks again.
 			fb, err := s.etherMan.HeaderByNumber(s.ctx, big.NewInt(0).SetUint64(toBlock))
 			if err != nil {
+				log.Errorf("error getting HeaderByNumber for block: %d. Error: %v", toBlock, err)
 				return &lastBlockSynced, err
 			}
 			lastBlockSynced = etherman.Block{
@@ -471,12 +479,13 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processGlobalExitRoot(blocks[i].GlobalExitRoots[element.Pos], blockID, dbTx)
 				if err != nil {
+					log.Error("error processing global exit root: ", err)
 					return err
 				}
 				if isNewL1Ger {
-					metrics.L1GERCounter()
+					s.metrics.L1GERCounter()
 				} else if isNewL2Ger {
-					metrics.L2GERCounter()
+					s.metrics.L2GERCounter()
 				}
 			case etherman.RemoveL2GEROrder:
 				if len(blocks[i].RemoveL2GER) < element.Pos+1 {
@@ -484,33 +493,37 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processRemoveL2GlobalExitRoot(blocks[i].RemoveL2GER[element.Pos], blockID, dbTx)
 				if err != nil {
+					log.Error("error processing remove L2 GER: ", err)
 					return err
 				}
-				metrics.RemoveL2GERCounter()
+				s.metrics.RemoveL2GERCounter()
 			case etherman.DepositsOrder:
 				if len(blocks[i].Deposits) < element.Pos+1 {
 					return fmt.Errorf("deposits event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
 				}
 				err = s.processDeposit(blocks[i].Deposits[element.Pos], blockID, dbTx)
 				if err != nil {
+					log.Error("error processing deposit: ", err)
 					return err
 				}
-				metrics.DepositCounter()
+				s.metrics.DepositCounter()
 			case etherman.ClaimsOrder:
 				if len(blocks[i].Claims) < element.Pos+1 {
 					return fmt.Errorf("claims event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
 				}
 				err = s.processClaim(blocks[i].Claims[element.Pos], blockID, dbTx)
 				if err != nil {
+					log.Error("error processing claim: ", err)
 					return err
 				}
-				metrics.ClaimCounter()
+				s.metrics.ClaimCounter()
 			case etherman.TokensOrder:
 				if len(blocks[i].Tokens) < element.Pos+1 {
 					return fmt.Errorf("tokens event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
 				}
 				err = s.processTokenWrapped(blocks[i].Tokens[element.Pos], blockID, dbTx)
 				if err != nil {
+					log.Error("error processing token wrapped: ", err)
 					return err
 				}
 			case etherman.VerifyBatchOrder:
@@ -519,9 +532,10 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processVerifyBatch(blocks[i].VerifiedBatches[element.Pos], blockID, dbTx)
 				if err != nil {
+					log.Error("error processing verify batch: ", err)
 					return err
 				}
-				metrics.VerifyBatchCounter()
+				s.metrics.VerifyBatchCounter()
 			}
 		}
 		err = s.storage.Commit(s.ctx, dbTx)
@@ -647,7 +661,7 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock etherman.Block, synced
 				return nil, err
 			}
 			reorgedBlock = lb
-			metrics.ReorgedBlocksCounter()
+			s.metrics.ReorgedBlocksCounter()
 		} else {
 			log.Debugf("networkID: %d, checkReorg: Block %d hashOk %t", s.networkID, reorgedBlock.BlockNumber, block.BlockHash == reorgedBlock.BlockHash)
 			break
@@ -658,7 +672,7 @@ func (s *ClientSynchronizer) checkReorg(latestStoredBlock etherman.Block, synced
 	if latestStoredEthBlock.BlockHash != reorgedBlock.BlockHash {
 		latestStoredBlock = reorgedBlock
 		log.Info("NetworkID: ", s.networkID, ", reorg detected in block: ", latestStoredEthBlock.BlockNumber, " last block OK: ", latestStoredBlock.BlockNumber)
-		metrics.ReorgCounter()
+		s.metrics.ReorgCounter()
 		return &latestStoredBlock, nil
 	}
 	log.Debugf("NetworkID: %d, no reorg detected in block: %d. BlockHash: %s", s.networkID, latestStoredEthBlock.BlockNumber, latestStoredEthBlock.BlockHash.String())
@@ -770,7 +784,7 @@ func (s *ClientSynchronizer) processDeposit(deposit etherman.Deposit, blockID ui
 		log.Errorf("networkID: %d, failed to store new deposit in the bridge tree, BlockNumber: %d, Deposit: %+v err: %v", s.networkID, deposit.BlockNumber, deposit, err)
 		return s.rollback(deposit.BlockNumber, err, dbTx)
 	}
-	metrics.DepositAmount(deposit.Amount)
+	s.metrics.DepositAmount(deposit.Amount)
 	return nil
 }
 
@@ -782,7 +796,7 @@ func (s *ClientSynchronizer) processClaim(claim etherman.Claim, blockID uint64, 
 		log.Errorf("networkID: %d, error storing new Claim in Block:  %d, Claim: %+v, err: %v", s.networkID, claim.BlockNumber, claim, err)
 		return s.rollback(claim.BlockNumber, err, dbTx)
 	}
-	metrics.ClaimAmount(claim.Amount)
+	s.metrics.ClaimAmount(claim.Amount)
 	return nil
 }
 
@@ -794,7 +808,7 @@ func (s *ClientSynchronizer) processTokenWrapped(tokenWrapped etherman.TokenWrap
 		log.Errorf("networkID: %d, error storing new L1 TokenWrapped in Block:  %d, TokenWrapped: %+v, err: %v", s.networkID, tokenWrapped.BlockNumber, tokenWrapped, err)
 		return s.rollback(tokenWrapped.BlockNumber, err, dbTx)
 	}
-	metrics.WrappedTokensCounter()
+	s.metrics.WrappedTokensCounter()
 	return nil
 }
 

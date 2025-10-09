@@ -24,7 +24,7 @@ import (
 
 // NewSimulatedEtherman creates an etherman that uses a simulated blockchain. It's important to notice that the ChainID of the auth
 // must be 1337. The address that holds the auth will have an initial balance of 10 ETH
-func NewSimulatedEtherman(cfg Config, auth *bind.TransactOpts) (*Client, *simulated.Backend, common.Address, *polygonzkevmbridgev2.Polygonzkevmbridgev2, *polygonzkevm.Polygonzkevm, error) {
+func NewSimulatedEtherman(ctx context.Context, cfg Config, auth *bind.TransactOpts) (*Client, *simulated.Backend, common.Address, *polygonzkevmbridgev2.Polygonzkevmbridgev2, *polygonzkevm.Polygonzkevm, error) {
 	if auth == nil {
 		// read only client
 		return &Client{}, nil, common.Address{}, nil, nil, nil
@@ -52,7 +52,7 @@ func NewSimulatedEtherman(cfg Config, auth *bind.TransactOpts) (*Client, *simula
 	if err != nil {
 		return nil, nil, common.Address{}, nil, nil, err
 	}
-	nonce, err := client.Client().PendingNonceAt(context.TODO(), auth.From)
+	nonce, err := client.Client().PendingNonceAt(ctx, auth.From)
 	if err != nil {
 		log.Error("error: ", err)
 		return nil, nil, common.Address{}, nil, nil, err

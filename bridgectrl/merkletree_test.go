@@ -95,7 +95,7 @@ func TestMTAddLeaf(t *testing.T) {
 
 	for ti, testVector := range mtTestVectors {
 		t.Run(fmt.Sprintf("Test vector %d", ti), func(t *testing.T) {
-			store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+			store, testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 			require.NoError(t, err)
 
 			mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -156,7 +156,7 @@ func TestMTGetProof(t *testing.T) {
 
 	for ti, testVector := range mtTestVectors {
 		t.Run(fmt.Sprintf("Test vector %d", ti), func(t *testing.T) {
-			store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+			store, testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 			require.NoError(t, err)
 
 			mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -218,7 +218,7 @@ func TestUpdateMT(t *testing.T) {
 		input := testVector.ExistingLeaves
 		log.Debug("input: ", input)
 		ctx := context.Background()
-		store, testStore, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+		store, testStore, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 		require.NoError(t, err)
 
 		mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -284,7 +284,7 @@ func TestGetLeaves(t *testing.T) {
 	}
 	require.NoError(t, err)
 	ctx := context.Background()
-	store, testStore, err := newStorageSettings(databaseType)
+	store, testStore, err := newStorageSettings(ctx, databaseType)
 	require.NoError(t, err)
 	err = testStore.ExecTesting(ctx, string(data))
 	require.NoError(t, err)
@@ -308,7 +308,7 @@ func TestBuildMTRootAndStore(t *testing.T) {
 		input := testVector.ExistingLeaves
 		log.Debug("input: ", input)
 		ctx := context.Background()
-		store, _, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+		store, _, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 		require.NoError(t, err)
 
 		mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
@@ -362,7 +362,7 @@ func TestComputeSiblings(t *testing.T) {
 	}
 	require.NoError(t, err)
 	ctx := context.Background()
-	store, testStore, err := newStorageSettings(databaseType)
+	store, testStore, err := newStorageSettings(ctx, databaseType)
 	require.NoError(t, err)
 	err = testStore.ExecTesting(ctx, string(data))
 	require.NoError(t, err)
@@ -537,7 +537,7 @@ func TestCheckMerkleProof2(t *testing.T) {
 
 func TestPerformanceComputeRoot(t *testing.T) {
 	ctx := context.Background()
-	store, _, err := newStorageSettings(os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
+	store, _, err := newStorageSettings(ctx, os.Getenv("ZKEVM_BRIDGE_SYNCDB_DATABASE"))
 	require.NoError(t, err)
 	mt, err := NewMerkleTree(ctx, store, uint8(32), 0)
 	require.NoError(t, err)
@@ -564,14 +564,14 @@ type testStore interface {
 	AddTrustedGlobalExitRoot(_ context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx interface{}) (bool, error)
 }
 
-func newStorageSettings(storageType string) (merkleTreeStore, testStore, error) {
+func newStorageSettings(ctx context.Context, storageType string) (merkleTreeStore, testStore, error) {
 	if storageType == "postgres" {
 		dbCfg := pgstorage.NewConfigFromEnv()
-		err := pgstorage.InitOrReset(dbCfg)
+		err := pgstorage.InitOrReset(ctx, dbCfg)
 		if err != nil {
 			return nil, nil, err
 		}
-		mt, err := pgstorage.NewPostgresStorage(dbCfg)
+		mt, err := pgstorage.NewPostgresStorage(ctx, dbCfg)
 		return mt, mt, err
 	}
 	return nil, nil, fmt.Errorf("unknown storage type: %s", storageType)

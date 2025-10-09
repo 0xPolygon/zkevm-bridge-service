@@ -99,7 +99,7 @@ func NewManager(ctx context.Context, cfg *Config) (*Manager, error) {
 		ctx: ctx,
 	}
 
-	st, err := db.NewStorage(cfg.Storage)
+	st, err := db.NewStorage(ctx, cfg.Storage)
 	if err != nil {
 		return nil, err
 	}
@@ -599,7 +599,7 @@ func (m *Manager) CheckAccountTokenBalance(ctx context.Context, network NetworkS
 
 // GetClaimDataByGER gets the claim data by ger
 func (m *Manager) GetClaimDataByGER(ctx context.Context, networkID, depositCount uint32, ger common.Hash) ([MtHeight][bridgectrl.KeyLen]byte, [MtHeight][bridgectrl.KeyLen]byte, *etherman.GlobalExitRoot, error) {
-	res, err := m.bridgeService.GetProofByGER(context.Background(), &pb.GetProofByGERRequest{
+	res, err := m.bridgeService.GetProofByGER(ctx, &pb.GetProofByGERRequest{
 		NetId:      networkID,
 		DepositCnt: depositCount,
 		Ger:        ger.String(),
@@ -628,7 +628,7 @@ func (m *Manager) GetClaimDataByGER(ctx context.Context, networkID, depositCount
 
 // GetClaimData gets the claim data
 func (m *Manager) GetClaimData(ctx context.Context, networkID, depositCount uint32) ([MtHeight][bridgectrl.KeyLen]byte, [MtHeight][bridgectrl.KeyLen]byte, *etherman.GlobalExitRoot, error) {
-	res, err := m.bridgeService.GetProof(context.Background(), &pb.GetProofRequest{
+	res, err := m.bridgeService.GetProof(ctx, &pb.GetProofRequest{
 		NetId:      networkID,
 		DepositCnt: depositCount,
 	})

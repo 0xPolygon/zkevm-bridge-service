@@ -303,6 +303,10 @@ func (c *Client) SendClaim(ctx context.Context, deposit *pb.Deposit, smtProof [m
 	return WaitTxToBeMined(ctx, c.Client, tx, txTimeout)
 }
 
+func (c *Client) IsClaimed(leafIndex uint32, sourceBridgeNetwork uint32) (bool, error) {
+	return c.Bridge.IsClaimed(&bind.CallOpts{Pending: false}, leafIndex, sourceBridgeNetwork)
+}
+
 func (c *Client) GetGlobalExitRootFromSmc(ctx context.Context) (*etherman.GlobalExitRoot, error) {
 	br, err := polygonzkevmbridgev2.NewPolygonzkevmbridgev2(c.BridgeSCAddr, c.Client)
 	if err != nil {
