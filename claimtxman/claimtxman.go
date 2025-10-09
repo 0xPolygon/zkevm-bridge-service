@@ -187,7 +187,7 @@ func (tm *ClaimTxManager) processPendingDeposits(ger etherman.GlobalExitRoot) er
 		return err
 	}
 	if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
-		log.Infof("RollupID: %d, Rollup exitroot %v is updated. Initializing claim process. Error: %v", tm.rollupID, err)
+		log.Infof("RollupID: %d, Rollup exitroot %v is updated. Initializing claim process", tm.rollupID, ger.ExitRoots[1])
 		// If L2 claims processor is enabled
 		if tm.cfg.AreClaimsBetweenL2sEnabled {
 			log.Debugf("rollupID: %d, getting L2 deposits to autoClaim", tm.rollupID)
