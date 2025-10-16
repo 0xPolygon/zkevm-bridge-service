@@ -532,3 +532,19 @@ generate-mocks: ## Generates mocks for the tests, using mockery tool
 generate-smartcontracts-bindings:	## Generates the smart contracts bindings
 	cd scripts && ./generate-smartcontracts-bindings.sh
 	
+.PHONY: generate-docs
+generate-docs: ## Generates the documentation files
+	@mkdir -p docs
+	@OUT=docs/doc.txt; \
+	: > "$$OUT"; \
+	pkgs=$$(go list -e -f '{{if or (gt (len .GoFiles) 0) (gt (len .CgoFiles) 0)}}{{.ImportPath}}{{end}}' ./... | grep -Evi '(^|/)(mocks?|testdata|migrations|benchmark)(/|$$)'); \
+	for p in $$pkgs; do \
+	  { \
+	    echo "=============================="; \
+	    echo "PACKAGE: $$p"; \
+	    echo "=============================="; \
+	    go doc -src "$$p"; \
+	    echo; \
+	  } >> "$$OUT"; \
+	done; \
+	echo "Wrote $$OUT"
