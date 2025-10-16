@@ -553,6 +553,54 @@ func (_c *StorageInterface_GetPendingDepositsToClaim_Call) RunAndReturn(run func
 	return _c
 }
 
+// IgnoreDeposit provides a mock function with given fields: ctx, depositID, dbTx
+func (_m *StorageInterface) IgnoreDeposit(ctx context.Context, depositID uint64, dbTx interface{}) error {
+	ret := _m.Called(ctx, depositID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for IgnoreDeposit")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint64, interface{}) error); ok {
+		r0 = rf(ctx, depositID, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// StorageInterface_IgnoreDeposit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IgnoreDeposit'
+type StorageInterface_IgnoreDeposit_Call struct {
+	*mock.Call
+}
+
+// IgnoreDeposit is a helper method to define mock.On call
+//   - ctx context.Context
+//   - depositID uint64
+//   - dbTx interface{}
+func (_e *StorageInterface_Expecter) IgnoreDeposit(ctx interface{}, depositID interface{}, dbTx interface{}) *StorageInterface_IgnoreDeposit_Call {
+	return &StorageInterface_IgnoreDeposit_Call{Call: _e.mock.On("IgnoreDeposit", ctx, depositID, dbTx)}
+}
+
+func (_c *StorageInterface_IgnoreDeposit_Call) Run(run func(ctx context.Context, depositID uint64, dbTx interface{})) *StorageInterface_IgnoreDeposit_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint64), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *StorageInterface_IgnoreDeposit_Call) Return(_a0 error) *StorageInterface_IgnoreDeposit_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *StorageInterface_IgnoreDeposit_Call) RunAndReturn(run func(context.Context, uint64, interface{}) error) *StorageInterface_IgnoreDeposit_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Rollback provides a mock function with given fields: ctx, dbTx
 func (_m *StorageInterface) Rollback(ctx context.Context, dbTx interface{}) error {
 	ret := _m.Called(ctx, dbTx)
