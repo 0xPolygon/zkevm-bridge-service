@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
 	"github.com/ethereum/go-ethereum/common"
 )
 

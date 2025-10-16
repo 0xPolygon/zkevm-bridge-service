@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/db/pgstorage"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
 	packr "github.com/gobuffalo/packr/v2"
 	pgx "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"

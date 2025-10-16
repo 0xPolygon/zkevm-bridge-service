@@ -8,4 +8,4 @@ make generate-smartcontracts-bindings
 ```
 
 ## Folder json
-This folder contains the compiled contracts, usually you can find it at: [https://github.com/0xPolygonHermez/zkevm-contracts](https://github.com/0xPolygonHermez/zkevm-contracts)
+This folder contains the compiled contracts, usually you can find it at: [https://github.com/0xPolygon/zkevm-contracts](https://github.com/0xPolygon/zkevm-contracts)

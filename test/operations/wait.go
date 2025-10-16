@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
+	"github.com/0xPolygon/zkevm-bridge-service/utils"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"google.golang.org/grpc"

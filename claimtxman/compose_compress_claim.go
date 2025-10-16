@@ -7,9 +7,9 @@ import (
 	"math/big"
 	"slices"
 
-	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/claimcompressor"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/test/mocksmartcontracts/polygonzkevmbridge"
+	ctmtypes "github.com/0xPolygon/zkevm-bridge-service/claimtxman/types"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/claimcompressor"
+	"github.com/0xPolygon/zkevm-bridge-service/test/mocksmartcontracts/polygonzkevmbridge"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"golang.org/x/exp/maps"

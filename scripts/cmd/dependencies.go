@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/0xPolygonHermez/zkevm-bridge-service/scripts/cmd/dependencies"
+	"github.com/0xPolygon/zkevm-bridge-service/scripts/cmd/dependencies"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -13,11 +13,11 @@ func updateDeps(ctx *cli.Context) error {
 		},
 		PB: &dependencies.PBConfig{
 			TargetDirPath: "../../../proto/src",
-			SourceRepo:    "https://github.com/0xPolygonHermez/zkevm-comms-protocol.git",
+			SourceRepo:    "https://github.com/0xPolygon/zkevm-comms-protocol.git",
 		},
 		TV: &dependencies.TVConfig{
 			TargetDirPath: "../../../test/vectors/src",
-			SourceRepo:    "https://github.com/0xPolygonHermez/zkevm-testvectors.git",
+			SourceRepo:    "https://github.com/0xPolygon/zkevm-testvectors.git",
 		},
 	}
 

@@ -7,9 +7,9 @@ import (
 	"os"
 	"testing"
 
-	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	ctmtypes "github.com/0xPolygon/zkevm-bridge-service/claimtxman/types"
+	"github.com/0xPolygon/zkevm-bridge-service/db/pgstorage"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/stretchr/testify/require"

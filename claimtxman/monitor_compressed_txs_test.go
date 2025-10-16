@@ -3,8 +3,8 @@ package claimtxman_test
 import (
 	"testing"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman"
-	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
+	"github.com/0xPolygon/zkevm-bridge-service/claimtxman"
+	ctmtypes "github.com/0xPolygon/zkevm-bridge-service/claimtxman/types"
 	deepcopy "github.com/barkimedes/go-deepcopy"
 	"github.com/stretchr/testify/require"
 )
