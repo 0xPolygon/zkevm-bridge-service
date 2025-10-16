@@ -9,8 +9,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/db/pgstorage"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
 	"github.com/ethereum/go-ethereum/common"
 	pgx "github.com/jackc/pgx/v4"
 	"github.com/stretchr/testify/assert"

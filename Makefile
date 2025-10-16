@@ -82,10 +82,10 @@ STOP_BRIDGE_SOVEREIGN_CHAIN := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_BRIDGE_SO
 STOP_AGGORACLE := $(DOCKER_COMPOSE) stop $(DOCKER_COMPOSE_AGGORACLE) && $(DOCKER_COMPOSE) rm -f $(DOCKER_COMPOSE_AGGORACLE)
 STOP := $(DOCKER_COMPOSE) down --remove-orphans
 
-LDFLAGS += -X 'github.com/0xPolygonHermez/zkevm-bridge-service.Version=$(VERSION)'
-LDFLAGS += -X 'github.com/0xPolygonHermez/zkevm-bridge-service.GitRev=$(GITREV)'
-LDFLAGS += -X 'github.com/0xPolygonHermez/zkevm-bridge-service.GitBranch=$(GITBRANCH)'
-LDFLAGS += -X 'github.com/0xPolygonHermez/zkevm-bridge-service.BuildDate=$(DATE)'
+LDFLAGS += -X 'github.com/0xPolygon/zkevm-bridge-service.Version=$(VERSION)'
+LDFLAGS += -X 'github.com/0xPolygon/zkevm-bridge-service.GitRev=$(GITREV)'
+LDFLAGS += -X 'github.com/0xPolygon/zkevm-bridge-service.GitBranch=$(GITBRANCH)'
+LDFLAGS += -X 'github.com/0xPolygon/zkevm-bridge-service.BuildDate=$(DATE)'
 
 GO_BASE := $(shell pwd)
 GO_BIN := $(GO_BASE)/dist

@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/jsonrpcclient/types"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/jsonrpcclient/types"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
 )
 
 const jsonRPCVersion = "2.0"

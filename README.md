@@ -1,8 +1,8 @@
 # zkEVM Bridge Service
 
-[![License](https://img.shields.io/github/license/0xPolygonHermez/zkevm-bridge-service)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/0xPolygonHermez/zkevm-bridge-service)](https://goreportcard.com/report/github.com/0xPolygonHermez/zkevm-bridge-service)
-[![GitHub release](https://img.shields.io/github/release/0xPolygonHermez/zkevm-bridge-service.svg)](https://github.com/0xPolygonHermez/zkevm-bridge-service/releases)
+[![License](https://img.shields.io/github/license/0xPolygon/zkevm-bridge-service)](LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/0xPolygon/zkevm-bridge-service)](https://goreportcard.com/report/github.com/0xPolygon/zkevm-bridge-service)
+[![GitHub release](https://img.shields.io/github/release/0xPolygon/zkevm-bridge-service.svg)](https://github.com/0xPolygon/zkevm-bridge-service/releases)
 
 A robust, high-performance backend service written in Go that enables seamless asset bridging between Ethereum L1 and L2 networks connected to the Agglayer. This service provides the core infrastructure for cross-chain transfers by generating and managing Merkle proofs, monitoring transactions, and handling claim operations.
 
@@ -252,7 +252,7 @@ bridge_processing_duration_seconds
 ## 🆘 Support
 
 - **Documentation**: Check our [docs](docs/) directory
-- **Issues**: Report bugs via [GitHub Issues](https://github.com/0xPolygonHermez/zkevm-bridge-service/issues)
+- **Issues**: Report bugs via [GitHub Issues](https://github.com/0xPolygon/zkevm-bridge-service/issues)
 - **Discord**: Join the [Polygon zkEVM Discord](https://discord.gg/0xPolygonRnD) for community support
 - **Forum**: Visit the [Polygon Community Forum](https://forum.polygon.technology/)
 

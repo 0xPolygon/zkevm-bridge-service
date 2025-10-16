@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	zkevmbridgeservice "github.com/0xPolygonHermez/zkevm-bridge-service"
+	zkevmbridgeservice "github.com/0xPolygon/zkevm-bridge-service"
 	cli "github.com/urfave/cli/v2"
 )
 

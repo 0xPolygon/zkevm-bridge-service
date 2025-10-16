@@ -1,7 +1,7 @@
 package db
 
 import (
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db/pgstorage"
+	"github.com/0xPolygon/zkevm-bridge-service/db/pgstorage"
 )
 
 // Config struct

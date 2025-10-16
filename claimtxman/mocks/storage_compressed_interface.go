@@ -5,7 +5,7 @@ package mock_txcompressor
 import (
 	context "context"
 
-	types "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
+	types "github.com/0xPolygon/zkevm-bridge-service/claimtxman/types"
 	mock "github.com/stretchr/testify/mock"
 )
 

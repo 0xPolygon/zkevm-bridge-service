@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonrollupmanager"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman/smartcontracts/polygonzkevm"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonrollupmanager"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonzkevm"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/utils"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 )

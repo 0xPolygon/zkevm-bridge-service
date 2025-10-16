@@ -4,7 +4,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
 	"github.com/spf13/afero"
 )
 

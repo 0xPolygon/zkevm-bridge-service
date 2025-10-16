@@ -1,7 +1,7 @@
 package claimtxman
 
 import (
-	"github.com/0xPolygonHermez/zkevm-bridge-service/config/types"
+	"github.com/0xPolygon/zkevm-bridge-service/config/types"
 	"github.com/ethereum/go-ethereum/common"
 )
 
