@@ -10,9 +10,9 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/test/vectors"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/test/vectors"
+	"github.com/0xPolygon/zkevm-bridge-service/utils"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

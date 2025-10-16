@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
 	"github.com/stretchr/testify/assert"
 )
 

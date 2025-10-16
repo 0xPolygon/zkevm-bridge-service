@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/hex"
+	"github.com/0xPolygon/zkevm-bridge-service/hex"
 	"github.com/ethereum/go-ethereum/common"
 )
 

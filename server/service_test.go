@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
