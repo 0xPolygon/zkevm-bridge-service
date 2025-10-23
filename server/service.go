@@ -163,23 +163,26 @@ func (s *bridgeService) GetClaimProof(ctx context.Context, depositCnt, networkID
 
 	var globalExitRoot *etherman.GlobalExitRoot
 	if s.finalizedGER && deposit.DestinationNetwork != 0 && networkID != 0 { // This finalizedGER flag must be disabled if all networks are synced in the same bridge service.
+		log.Debug("API GetClaimProof, getting GetLatestTrustedExitRoot for networkID ", networkID)
 		globalExitRoot, err = s.storage.GetLatestTrustedExitRoot(ctx, networkID, dbTx)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 	} else {
+		log.Debugf("API GetClaimProof, getting GetLatestExitRoot for networkID %d and destNetwork: %d", networkID, deposit.DestinationNetwork)
 		globalExitRoot, err = s.storage.GetLatestExitRoot(ctx, networkID, deposit.DestinationNetwork, dbTx)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 	}
-
+	log.Debugf("API GetClaimProof, got GlobalExitRoot: %+v", globalExitRoot)
 	var (
 		merkleProof       [][bridgectrl.KeyLen]byte
 		rollupMerkleProof [][bridgectrl.KeyLen]byte
 		rollupLeaf        common.Hash
 	)
 	if networkID == 0 { // Mainnet
+		log.Debugf("API GetClaimProof, getting getProof for depositCnt %d and mainnetExitRoot: %v", depositCnt, globalExitRoot.ExitRoots[0])
 		merkleProof, err = s.getProof(ctx, depositCnt, globalExitRoot.ExitRoots[0], dbTx)
 		if err != nil {
 			log.Error("error getting merkleProof. Error: ", err)
@@ -187,11 +190,13 @@ func (s *bridgeService) GetClaimProof(ctx context.Context, depositCnt, networkID
 		}
 		rollupMerkleProof = emptyProof()
 	} else { // Rollup
+		log.Debugf("API GetClaimProof, getting getRollupExitProof for rollupIndex %d and rollupsExitRoot: %v", networkID-1, globalExitRoot.ExitRoots[1])
 		rollupMerkleProof, rollupLeaf, err = s.getRollupExitProof(ctx, networkID-1, globalExitRoot.ExitRoots[1], dbTx)
 		if err != nil {
 			log.Error("error getting rollupProof. Error: ", err)
 			return nil, nil, nil, fmt.Errorf("getting the rollup proof failed, error: %v, network: %d", err, networkID)
 		}
+		log.Debugf("API GetClaimProof, getting getProof for rollupLeaf: %v", rollupLeaf)
 		merkleProof, err = s.getProof(ctx, depositCnt, rollupLeaf, dbTx)
 		if err != nil {
 			log.Error("error getting merkleProof. Error: ", err)

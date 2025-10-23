@@ -265,6 +265,7 @@ func (p *PostgresStorage) GetDeposit(ctx context.Context, depositCounter, networ
 // GetLatestExitRoot gets the latest global exit root.
 func (p *PostgresStorage) GetLatestExitRoot(ctx context.Context, networkID, destNetwork uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error) {
 	if destNetwork != 0 {
+		log.Debugf("DB GetLatestExitRoot: destNetwork(%d) != 0, querying GetLatestTrustedExitRoot", destNetwork)
 		return p.GetLatestTrustedExitRoot(ctx, destNetwork, dbTx)
 	}
 
@@ -357,8 +358,10 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 		return nil, err
 	}
 	if len(exitRoots) == 2 { //nolint:mnd
+		log.Debug("DB GetLatestTrustedExitRoot: found both exit roots in the DB")
 		ger.ExitRoots = []common.Hash{common.BytesToHash(exitRoots[0]), common.BytesToHash(exitRoots[1])}
 	} else {
+		log.Debug("DB GetLatestTrustedExitRoot: just the ger found in the DB, querying L1 GER for the missing exit roots")
 		// Query to look for the missing values
 		l1GER, err := p.GetL1ExitRootByGER(ctx, ger.GlobalExitRoot, dbTx)
 		if err != nil {
