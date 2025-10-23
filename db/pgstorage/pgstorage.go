@@ -368,7 +368,7 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 			if errors.Is(err, gerror.ErrStorageNotFound) {
 				log.Warn("Missing L1Ger for the L2Ger entry")
 			}
-			return nil, err
+			return nil, gerror.ErrL1GERNotFound
 		}
 		ger.ExitRoots = l1GER.ExitRoots
 	}

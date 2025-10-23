@@ -564,6 +564,10 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 		// Send latest GER synced in L2 to claimTxManager
 		ger, err := s.storage.GetLatestTrustedExitRoot(s.ctx, s.networkID, nil)
 		if err != nil {
+			if errors.Is(err, gerror.ErrL1GERNotFound) {
+				log.Infof("networkID: %d, L1GER not found on database yet. Skipping to not provide an incomplete GER to the claimTxManager...", s.networkID)
+				return nil
+			}
 			log.Errorf("networkID: %d, error getting latest GER stored on database. Error: %v", s.networkID, err)
 			return err
 		}
@@ -751,7 +755,7 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 		// First read the mainnetExitRoot and rollupsExitRoot to store all the information in the db.
 		ger, err := s.storage.GetL1ExitRootByGER(s.ctx, globalExitRoot.GlobalExitRoot, nil)
 		if errors.Is(err, gerror.ErrStorageNotFound) {
-			log.Warnf("networkID: %d, L1Ger entry not found in the database. GER: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
+			log.Infof("networkID: %d, L1Ger entry not found in the database. GER: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
 		} else if err != nil {
 			log.Errorf("networkID: %d, error getting the GlobalExitRoot in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
 			return s.rollback(globalExitRoot.BlockNumber, err, dbTx)

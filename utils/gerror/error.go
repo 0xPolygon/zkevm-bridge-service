@@ -15,4 +15,6 @@ var (
 	ErrDepositNotSynced = errors.New("not synchronized deposit")
 	// ErrNetworkNotRegister is used when the networkID is not registered in the bridge
 	ErrNetworkNotRegister = errors.New("not registered network")
+	// ErrL1GERNotFound is used when the L1GER is not found in the storage
+	ErrL1GERNotFound = errors.New("l1GER not found in the Storage")
 )

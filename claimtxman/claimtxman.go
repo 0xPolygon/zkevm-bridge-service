@@ -146,7 +146,7 @@ func (tm *ClaimTxManager) Start() {
 					}
 				}()
 			} else {
-				log.Infof("Waiting for networkID %d to be synced before processing deposits", tm.l2NetworkID)
+				log.Infof("Waiting for networkID %d and L1 to be synced before processing deposits", tm.l2NetworkID)
 			}
 		case <-compressorTicker.C:
 			if tm.l2Synced && tm.l1Synced && tm.cfg.GroupingClaims.Enabled && ger.GlobalExitRoot != latestProcessedGer {
