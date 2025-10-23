@@ -135,11 +135,6 @@ func (tm *ClaimTxManager) Start() {
 			log.Debugf("RollupID: %d Received GER event: %+v", tm.rollupID, ger)
 			if tm.l2Synced && tm.l1Synced {
 				log.Debugf("RollupID: %d UpdateDepositsStatus for ger: %s", tm.rollupID, ger.GlobalExitRoot.String())
-				err := tm.updateDepositsStatus(ger)
-				if err != nil {
-					log.Errorf("rollupID: %d, failed to update deposits status: %v", tm.rollupID, err)
-					continue
-				}
 				if tm.cfg.GroupingClaims.Enabled {
 					log.Debugf("rollupID: %d, Ger value updated and ready to be processed...", tm.rollupID)
 					continue
@@ -186,6 +181,11 @@ func (tm *ClaimTxManager) processPendingDeposits(ger etherman.GlobalExitRoot) er
 	dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
 	if err != nil {
 		return err
+	}
+	err = tm.updateDepositsStatus(ger, dbTx)
+	if err != nil {
+		log.Errorf("rollupID: %d, failed to update deposits status: %v", tm.rollupID, err)
+		return tm.rollbackState(dbTx, err)
 	}
 	if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
 		log.Infof("RollupID: %d, Rollup exitroot %v is updated. Initializing claim process", tm.rollupID, ger.ExitRoots[1])
@@ -393,30 +393,21 @@ func (tm *ClaimTxManager) rollbackState(dbTx interface{}, err error) error {
 	return err
 }
 
-func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) error {
-	dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
-	if err != nil {
-		return err
-	}
+func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot, dbTx interface{}) error {
 	if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
 		log.Infof("RollupID: %d, Rollup exitroot %v is updated", tm.rollupID, ger.ExitRoots[1])
-		err = tm.storage.UpdateL2DepositsStatus(tm.ctx, ger.ExitRoots[1][:], tm.rollupID, tm.l2NetworkID, dbTx)
+		err := tm.storage.UpdateL2DepositsStatus(tm.ctx, ger.ExitRoots[1][:], tm.rollupID, tm.l2NetworkID, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error updating L2DepositsStatus. Error: %v", tm.rollupID, err)
-			return tm.rollbackState(dbTx, err)
+			return err
 		}
 	} else { // L1 exit root is updated in the trusted state
 		log.Infof("RollupID: %d, Mainnet exitroot %v is updated", tm.rollupID, ger.ExitRoots[0])
-		err = tm.storage.UpdateL1DepositsStatus(tm.ctx, ger.ExitRoots[0][:], tm.l2NetworkID, dbTx)
+		err := tm.storage.UpdateL1DepositsStatus(tm.ctx, ger.ExitRoots[0][:], tm.l2NetworkID, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error getting and updating L1DepositsStatus. Error: %v", tm.rollupID, err)
-			return tm.rollbackState(dbTx, err)
+			return err
 		}
-	}
-	err = tm.storage.Commit(tm.ctx, dbTx)
-	if err != nil {
-		log.Errorf("rollupID: %d, AddClaimTx committing dbTx. Err: %v", tm.rollupID, err)
-		return tm.rollbackState(dbTx, err)
 	}
 	return nil
 }
