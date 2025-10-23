@@ -83,8 +83,9 @@ func Load(configFilePath string, network string) (*Config, error) {
 	}
 	if len(cfg.L2PolygonZkEVMGlobalExitRootAddresses) != len(cfg.RequireSovereignChainSmcs) ||
 		len(cfg.RequireSovereignChainSmcs) != len(cfg.L2PolygonBridgeAddresses) ||
-		len(cfg.L2PolygonBridgeAddresses) != len(cfg.Etherman.L2URLs) {
-		return nil, errors.New("the length of RequireSovereignChainSmcs, L2PolygonZkEVMGlobalExitRootAddresses, L2PolygonBridgeAddresses and L2URLs must be the same")
+		len(cfg.L2PolygonBridgeAddresses) != len(cfg.Etherman.L2URLs) ||
+		len(cfg.Etherman.L2URLs) != len(cfg.L2GenBlockNumbers) {
+		return nil, errors.New("the length of RequireSovereignChainSmcs, L2PolygonZkEVMGlobalExitRootAddresses, L2PolygonBridgeAddresses, L2GenBlockNumbers and L2URLs must be the same")
 	}
 
 	return cfg, nil

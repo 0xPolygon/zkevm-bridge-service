@@ -109,10 +109,10 @@ func start(ctx *cli.Context) error {
 		chSyncedL2 := make(chan uint32)
 		chsExitRootEvent = append(chsExitRootEvent, chExitRootEventL2)
 		chsSyncedL2 = append(chsSyncedL2, chSyncedL2)
-		go runSynchronizer(ctx.Context, 0, bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint32{}, c.RequireSovereignChainSmcs[i])
+		go runSynchronizer(ctx.Context, c.L2GenBlockNumbers[i], bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint32{}, c.RequireSovereignChainSmcs[i])
 	}
 	chSynced := make(chan uint32)
-	go runSynchronizer(ctx.Context, c.GenBlockNumber, bridgeController, l1Etherman, c.Synchronizer, storage, nil, nil, chsExitRootEvent, chSynced, networkIDs, false)
+	go runSynchronizer(ctx.Context, c.L1GenBlockNumber, bridgeController, l1Etherman, c.Synchronizer, storage, nil, nil, chsExitRootEvent, chSynced, networkIDs, false)
 	go func() {
 		for {
 			select {
