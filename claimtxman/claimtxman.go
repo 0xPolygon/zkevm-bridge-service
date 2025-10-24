@@ -132,7 +132,6 @@ func (tm *ClaimTxManager) Start() {
 			}
 		case channelGer := <-tm.chExitRootEvent:
 			ger = *channelGer
-			log.Debugf("RollupID: %d Received GER event: %+v", tm.rollupID, ger)
 			if tm.l2Synced && tm.l1Synced {
 				log.Debugf("RollupID: %d UpdateDepositsStatus for ger: %s", tm.rollupID, ger.GlobalExitRoot.String())
 				if tm.cfg.GroupingClaims.Enabled {
