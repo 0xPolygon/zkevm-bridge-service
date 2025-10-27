@@ -128,7 +128,7 @@ func TestUpdateDepositStatus(t *testing.T) {
 	blockID, err := store.AddBlock(ctx, block, nil)
 	require.NoError(t, err)
 
-	deposit := &etherman.Deposit{
+	deposit1 := &etherman.Deposit{
 		NetworkID:          0,
 		OriginalNetwork:    0,
 		OriginalAddress:    common.HexToAddress("0x6B175474E89094C44Da98b954EedeAC495271d0F"),
@@ -140,10 +140,10 @@ func TestUpdateDepositStatus(t *testing.T) {
 		DepositCount:       1,
 		Metadata:           common.FromHex("0x0"),
 	}
-	depositID, err := testStore.AddDeposit(ctx, deposit, nil)
+	depositID, err := testStore.AddDeposit(ctx, deposit1, nil)
 	require.NoError(t, err)
 	l1Root := common.FromHex("0x838c5655cb21c6cb83313b5a631175dff4963772cce9108188b34ac87c81c41e")
-	require.NoError(t, testStore.SetRoot(ctx, l1Root, depositID, deposit.NetworkID, nil))
+	require.NoError(t, testStore.SetRoot(ctx, l1Root, depositID, deposit1.NetworkID, nil))
 
 	block = &etherman.Block{
 		BlockNumber: 1,
@@ -154,22 +154,22 @@ func TestUpdateDepositStatus(t *testing.T) {
 	require.NoError(t, err)
 
 	destAdr := "0x4d5Cf5032B2a844602278b01199ED191A86c93ff"
-	deposit = &etherman.Deposit{
+	deposit2 := &etherman.Deposit{
 		NetworkID:          1,
 		OriginalNetwork:    0,
 		OriginalAddress:    common.HexToAddress("0x6B175474E89094C44Da98b954EedeAC495271d0F"),
 		Amount:             big.NewInt(1000000),
-		DestinationNetwork: 1,
+		DestinationNetwork: 2,
 		DestinationAddress: common.HexToAddress(destAdr),
 		BlockNumber:        1,
 		BlockID:            blockID,
 		DepositCount:       1,
 		Metadata:           common.FromHex("0x0"),
 	}
-	depositID, err = testStore.AddDeposit(ctx, deposit, nil)
+	depositID, err = testStore.AddDeposit(ctx, deposit2, nil)
 	require.NoError(t, err)
 	l2Root := common.HexToHash("0xb4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30")
-	require.NoError(t, testStore.SetRoot(ctx, l2Root.Bytes(), depositID, deposit.NetworkID, nil))
+	require.NoError(t, testStore.SetRoot(ctx, l2Root.Bytes(), depositID, deposit2.NetworkID, nil))
 	if storageType == "postgres" {
 		err = testStore.ExecTesting(ctx, fmt.Sprintf("INSERT INTO mt.rollup_exit (leaf, rollup_id, root, block_id) VALUES ('\\x%s', 1, '\\x%s', %d)", "b4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30", "b4c11951957c6f8f642c4af61cd6b24640fec6dc7fc607ee8206a99e92410d30", blockID))
 	} else {
@@ -177,24 +177,30 @@ func TestUpdateDepositStatus(t *testing.T) {
 	}
 	require.NoError(t, err)
 
-	deposit = &etherman.Deposit{
+	deposit3 := &etherman.Deposit{
 		NetworkID:          1,
 		OriginalNetwork:    0,
 		OriginalAddress:    common.HexToAddress("0x6B175474E89094C44Da98b954EedeAC495271d0F"),
 		Amount:             big.NewInt(1000000),
-		DestinationNetwork: 1,
+		DestinationNetwork: 0,
 		DestinationAddress: common.HexToAddress(destAdr),
 		BlockNumber:        1,
 		BlockID:            blockID,
 		DepositCount:       2,
 		Metadata:           common.FromHex("0x0"),
 	}
-	depositID, err = testStore.AddDeposit(ctx, deposit, nil)
+	depositID, err = testStore.AddDeposit(ctx, deposit3, nil)
 	require.NoError(t, err)
-	l2Root1 := common.FromHex("0xda7bce9f4e8618b6bd2f4132ce798cdc7a60e7e1460a7299e3c6342a579626d2")
-	require.NoError(t, testStore.SetRoot(ctx, l2Root1, depositID, deposit.NetworkID, nil))
+	l2Root1 := common.HexToHash("0xda7bce9f4e8618b6bd2f4132ce798cdc7a60e7e1460a7299e3c6342a579626d2")
+	require.NoError(t, testStore.SetRoot(ctx, l2Root1.Bytes(), depositID, deposit3.NetworkID, nil))
+	if storageType == "postgres" {
+		err = testStore.ExecTesting(ctx, fmt.Sprintf("INSERT INTO mt.rollup_exit (leaf, rollup_id, root, block_id) VALUES ('\\x%s', 1, '\\x%s', %d)", "da7bce9f4e8618b6bd2f4132ce798cdc7a60e7e1460a7299e3c6342a579626d2", "da7bce9f4e8618b6bd2f4132ce798cdc7a60e7e1460a7299e3c6342a579626d2", blockID))
+	} else {
+		require.NoError(t, fmt.Errorf("database type not supported"))
+	}
+	require.NoError(t, err)
 
-	err = store.UpdateL1DepositsStatus(ctx, l1Root, deposit.DestinationNetwork, nil)
+	err = store.UpdateL1DepositsStatus(ctx, l1Root, deposit1.DestinationNetwork, nil)
 	require.NoError(t, err)
 	deposits, _, err := store.GetPendingDepositsToClaim(ctx, common.Address{}, 1, 0, 10, 0, 0, nil)
 	require.NoError(t, err)
@@ -203,12 +209,19 @@ func TestUpdateDepositStatus(t *testing.T) {
 	require.Equal(t, uint32(1), deposits[0].DepositCount)
 	require.Equal(t, uint32(0), deposits[0].NetworkID)
 
-	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root.Bytes(), 1, 1, nil))
+	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root.Bytes(), 1, 1, false, nil))
 	deposits, err = testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 2)
 	require.True(t, deposits[1].ReadyForClaim)
 	require.False(t, deposits[0].ReadyForClaim)
+
+	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root1.Bytes(), 1, 1, true, nil))
+	deposits, err = testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
+	require.NoError(t, err)
+	require.Len(t, deposits, 2)
+	require.True(t, deposits[1].ReadyForClaim)
+	require.True(t, deposits[0].ReadyForClaim)
 }
 
 func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
@@ -232,7 +245,7 @@ func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 		OriginalNetwork:    0,
 		OriginalAddress:    common.HexToAddress("0x6B175474E89094C44Da98b954EedeAC495271d0F"),
 		Amount:             big.NewInt(1000000),
-		DestinationNetwork: 1,
+		DestinationNetwork: 0,
 		DestinationAddress: common.HexToAddress(destAdr),
 		BlockNumber:        1,
 		BlockID:            blockID1,
@@ -263,7 +276,7 @@ func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 		OriginalNetwork:    0,
 		OriginalAddress:    common.HexToAddress("0x6B175474E89094C44Da98b954EedeAC495271d0F"),
 		Amount:             big.NewInt(1000000),
-		DestinationNetwork: 2,
+		DestinationNetwork: 1,
 		DestinationAddress: common.HexToAddress(destAdr),
 		BlockNumber:        1,
 		BlockID:            blockID2,
@@ -275,14 +288,14 @@ func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 	l2Root2 := common.FromHex("0x90c89934975cc71a021a11dbe78cb2008d77e018dfffcc629b8d6d4dc905ac5c")
 	require.NoError(t, testStore.SetRoot(ctx, l2Root2, depositID2, deposit2.NetworkID, nil))
 	if storageType == "postgres" {
-		err = testStore.ExecTesting(ctx, fmt.Sprintf("INSERT INTO mt.rollup_exit (leaf, rollup_id, root, block_id) VALUES ('\\x%s', 1, '\\x%s', %d)", "90c89934975cc71a021a11dbe78cb2008d77e018dfffcc629b8d6d4dc905ac5c", "90c89934975cc71a021a11dbe78cb2008d77e018dfffcc629b8d6d4dc905ac5c", blockID2))
+		err = testStore.ExecTesting(ctx, fmt.Sprintf("INSERT INTO mt.rollup_exit (leaf, rollup_id, root, block_id) VALUES ('\\x%s', 2, '\\x%s', %d)", "90c89934975cc71a021a11dbe78cb2008d77e018dfffcc629b8d6d4dc905ac5c", "90c89934975cc71a021a11dbe78cb2008d77e018dfffcc629b8d6d4dc905ac5c", blockID2))
 	} else {
 		require.NoError(t, fmt.Errorf("database type not supported"))
 	}
 	require.NoError(t, err)
 
 	// This root is for network 1, this won't upgrade anything
-	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root1, 1, 2, nil))
+	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root1, 1, 2, true, nil))
 	deposits, err := testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 2)
@@ -290,21 +303,21 @@ func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 	require.False(t, deposits[0].ReadyForClaim)
 
 	// This root is for network 2, this won't upgrade anything
-	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root2, 1, 1, nil))
+	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root2, 1, 1, true, nil))
 	deposits, err = testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 2)
 	require.False(t, deposits[1].ReadyForClaim)
 	require.False(t, deposits[0].ReadyForClaim)
 
-	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root1, 1, 1, nil))
+	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root1, 1, 1, true, nil))
 	deposits, err = testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 2)
 	require.True(t, deposits[1].ReadyForClaim)
 	require.False(t, deposits[0].ReadyForClaim)
 
-	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root2, 1, 2, nil))
+	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root2, 2, 2, false, nil))
 	deposits, err = testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 2)

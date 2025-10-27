@@ -365,7 +365,7 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 			if errors.Is(err, gerror.ErrStorageNotFound) {
 				log.Warn("Missing L1Ger for the L2Ger entry")
 			}
-			return nil, err
+			return nil, gerror.ErrL1GERNotFound
 		}
 		ger.ExitRoots = l1GER.ExitRoots
 	}
@@ -649,11 +649,21 @@ func (p *PostgresStorage) UpdateL1DepositsStatus(ctx context.Context, exitRoot [
 }
 
 // UpdateL2DepositsStatus updates the ready_for_claim status of L2 deposits.
-func (p *PostgresStorage) UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID, networkID uint32, dbTx interface{}) error {
-	const updateL2DepositsStatusSQL = `UPDATE sync.deposit SET ready_for_claim = true
-		WHERE deposit_cnt <=
-		(SELECT sync.deposit.deposit_cnt FROM mt.root INNER JOIN sync.deposit ON sync.deposit.id = mt.root.deposit_id WHERE mt.root.root = (select leaf from mt.rollup_exit where root = $1 and rollup_id = $2) AND mt.root.network = $3)
-			AND network_id = $3 AND ready_for_claim = false;`
+func (p *PostgresStorage) UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID, networkID uint32, isDestNetL1 bool, dbTx interface{}) error {
+	var updateL2DepositsStatusSQL string 
+	// if the destination network is L1, the merkle proof can be retrieved inmediately. Thats why we can set is ready_for_claim to true directly.
+	if isDestNetL1 {
+		updateL2DepositsStatusSQL= `UPDATE sync.deposit SET ready_for_claim = true
+			WHERE deposit_cnt <=
+			(SELECT sync.deposit.deposit_cnt FROM mt.root INNER JOIN sync.deposit ON sync.deposit.id = mt.root.deposit_id WHERE mt.root.root = (select leaf from mt.rollup_exit where root = $1 and rollup_id = $2) AND mt.root.network = $3)
+				AND network_id = $3 AND ready_for_claim = false AND dest_net = 0;`
+	} else {
+		// if the destination network is another L2, we set ready_for_claim to true only when the L1GER is stored in L2 because if not, we would return the previous Ger and it doesn't contain the L2 deposit.
+		updateL2DepositsStatusSQL= `UPDATE sync.deposit SET ready_for_claim = true
+			WHERE deposit_cnt <=
+			(SELECT sync.deposit.deposit_cnt FROM mt.root INNER JOIN sync.deposit ON sync.deposit.id = mt.root.deposit_id WHERE mt.root.root = (select leaf from mt.rollup_exit where root = $1 and rollup_id = $2) AND mt.root.network = $3)
+				AND network_id = $3 AND ready_for_claim = false AND dest_net != 0;`
+	}
 	_, err := p.getExecQuerier(dbTx).Exec(ctx, updateL2DepositsStatusSQL, exitRoot, rollupID, networkID)
 	return err
 }
