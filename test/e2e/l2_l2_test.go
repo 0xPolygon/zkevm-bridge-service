@@ -69,10 +69,10 @@ func TestL2L2(t *testing.T) {
 		v, _ := big.NewInt(0).SetString("99999999216985000000000", 10)
 		t.Log("balance: ", balance)
 		require.Equal(t, 0, v.Cmp(balance))
+		time.Sleep(5 * time.Second)
 		// Get the claim data
 		smtProof, smtRollupProof, globaExitRoot, err := opsman1.GetClaimData(ctx, deposits[0].NetworkId, deposits[0].DepositCnt)
 		require.NoError(t, err)
-		time.Sleep(5 * time.Second)
 		// Claim funds in destination L2
 		err = opsman2.SendL2Claim(ctx, deposits[0], smtProof, smtRollupProof, globaExitRoot, operations.L22)
 		require.NoError(t, err)

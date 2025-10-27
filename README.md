@@ -91,7 +91,8 @@ cp config/config.local.toml config/config.toml
   L2URLs = ["http://zkevm-node:8123"]
 
 [NetworkConfig]
-  GenBlockNumber = 0
+  L1GenBlockNumber = 0
+  L2GenBlockNumbers = [0]
   PolygonBridgeAddress = "0xFe12ABaa190Ef0c8638Ee0ba9F828BF41368Ca0E"
   PolygonZkEVMGlobalExitRootAddress = "0x8A791620dd6260079BF849Dc5567aDC3F2FdC318"
   PolygonRollupManagerAddress = "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
