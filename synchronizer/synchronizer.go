@@ -84,7 +84,7 @@ func NewSynchronizer(
 			chsExitRootEvent: chsExitRootEvent,
 			l1RollupExitRoot: ger.ExitRoots[1],
 			allNetworkIDs:    allNetworkIDs,
-			forceSyncChunk:   false,
+			forceSyncChunk:   cfg.ForceL1SyncChunk,
 			waitDuration:     time.Duration(0),
 			metrics:          metrics.Register(networkID),
 		}, nil

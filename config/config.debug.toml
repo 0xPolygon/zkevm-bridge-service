@@ -40,6 +40,7 @@ L2URLs = ["http://localhost:8123"]
 SyncInterval = "1s"
 SyncChunkSize = 100
 ForceL2SyncChunk = false
+ForceL1SyncChunk = false
 
 [BridgeController]
 Height = 32

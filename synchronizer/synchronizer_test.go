@@ -65,7 +65,7 @@ func NewSynchronizerTest(
 			l1RollupExitRoot: ger.ExitRoots[1],
 			allNetworkIDs:    allNetworkIDs,
 			synced:           true,
-			forceSyncChunk:   false,
+			forceSyncChunk:   cfg.ForceL1SyncChunk,
 			waitDuration:     time.Duration(1 * time.Second),
 			metrics:          metrics.Register(networkID),
 		}, nil
@@ -237,6 +237,7 @@ func TestSyncTrustedGer(t *testing.T) {
 		cfg := Config{
 			SyncInterval:  cfgTypes.Duration{Duration: 1 * time.Second},
 			SyncChunkSize: 10,
+			ForceL2SyncChunk: false,
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		m.Etherman.On("GetNetworkID").Return(uint32(1))
@@ -378,6 +379,7 @@ func TestReorg(t *testing.T) {
 		cfg := Config{
 			SyncInterval:  cfgTypes.Duration{Duration: 1 * time.Second},
 			SyncChunkSize: 10,
+			ForceL1SyncChunk: false,
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		parentContext := context.Background()
@@ -607,6 +609,7 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 		cfg := Config{
 			SyncInterval:  cfgTypes.Duration{Duration: 1 * time.Second},
 			SyncChunkSize: 10,
+			ForceL1SyncChunk: false,
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		parentContext := context.Background()
@@ -761,6 +764,7 @@ func TestRegularReorg(t *testing.T) {
 		cfg := Config{
 			SyncInterval:  cfgTypes.Duration{Duration: 1 * time.Second},
 			SyncChunkSize: 10,
+			ForceL1SyncChunk: false,
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		parentContext := context.Background()
@@ -957,6 +961,7 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 		cfg := Config{
 			SyncInterval:  cfgTypes.Duration{Duration: 1 * time.Second},
 			SyncChunkSize: 10,
+			ForceL1SyncChunk: false,
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		parentContext := context.Background()
@@ -1149,6 +1154,7 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 		cfg := Config{
 			SyncInterval:  cfgTypes.Duration{Duration: 1 * time.Second},
 			SyncChunkSize: 10,
+			ForceL1SyncChunk: false,
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		parentContext := context.Background()
@@ -1518,6 +1524,7 @@ func TestMessyEvents(t *testing.T) {
 		cfg := Config{
 			SyncInterval:  cfgTypes.Duration{Duration: 1 * time.Second},
 			SyncChunkSize: 10,
+			ForceL1SyncChunk: false,
 		}
 		ctx := mock.MatchedBy(func(ctx context.Context) bool { return ctx != nil })
 		m.Etherman.On("GetNetworkID").Return(uint32(0))

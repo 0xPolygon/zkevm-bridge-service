@@ -14,4 +14,6 @@ type Config struct {
 
 	// ForceL2SyncChunk is a flag to force the L2 synchronizer to sync a chunk. This will disable part of the reorg protection
 	ForceL2SyncChunk bool `mapstructure:"ForceL2SyncChunk"`
+	// ForceL1SyncChunk is a flag to force the L1 synchronizer to sync a chunk. This will disable part of the reorg protection
+	ForceL1SyncChunk bool `mapstructure:"ForceL1SyncChunk"`
 }
