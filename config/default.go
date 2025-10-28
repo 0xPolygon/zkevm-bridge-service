@@ -52,6 +52,7 @@ L2URLs = [""]
 SyncInterval = "2s"
 SyncChunkSize = 100
 ForceL2SyncChunk = true
+ForceL1SyncChunk = false
 
 [BridgeController]
 Height = 32
