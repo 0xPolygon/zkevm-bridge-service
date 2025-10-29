@@ -130,6 +130,22 @@ func (s *ClientSynchronizer) Sync() error {
 			return err
 		}
 	}
+	header, err := s.etherMan.HeaderByNumber(s.ctx, nil)
+	if err != nil {
+		log.Warnf("networkID: %d, error getting latest block from. Error: %s", s.networkID, err.Error())
+		return err
+	}
+	remainingBlocks := header.Number.Uint64() - lastBlockSynced.BlockNumber
+	syncStatus := etherman.SyncStatus{
+		NetworkID:       s.networkID,
+		Percentage:      0,
+		RemainingBlocks: remainingBlocks,
+		Synced:          false,
+	}
+	err = s.storage.AddSyncStatus(s.ctx, syncStatus, nil)
+	if err != nil {
+		log.Errorf("networkID: %d, error storing sync status. Error: %v", s.networkID, err)
+	}
 	s.metrics.LatestBlockSynced(lastBlockSynced.BlockNumber)
 	s.metrics.InitializationTime(time.Since(startInitialization))
 	log.Debugf("NetworkID: %d, initial lastBlockSynced: %+v", s.networkID, lastBlockSynced)
@@ -307,6 +323,16 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 					s.waitDuration = s.cfg.SyncInterval.Duration
 					s.synced = true
 					s.chSynced <- s.networkID
+					syncStatus := etherman.SyncStatus{
+						NetworkID:       s.networkID,
+						Percentage:      100,
+						RemainingBlocks: 0,
+						Synced:          s.synced,
+					}
+					err = s.storage.AddSyncStatus(s.ctx, syncStatus, nil)
+					if err != nil {
+						log.Errorf("networkID: %d, error storing sync status. Error: %v", s.networkID, err)
+					}
 				}
 			} else {
 				log.Debugf("NetworkID: %d, New lastKnownBlock (%d) has changed and now is higher than toBlock (%d)", s.networkID, lastKnownBlock.Uint64(), toBlock)
@@ -450,18 +476,20 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 			toBlock = toBlock + s.cfg.SyncChunkSize
 			log.Debugf("NetworkID: %d, synced!. New interval: from block %d, to block %d", s.networkID, fromBlock, toBlock)
 		}
-		remainingBlocks := new(big.Int).Sub(lastKnownBlock, toBlockBigInt)
-		percentage := big.NewInt(0).Div(big.NewInt(0).Mul(new(big.Int).Sub(initialRemainingBlocks, remainingBlocks), big.NewInt(100)), initialRemainingBlocks)
-		log.Infof("NetworkID %d Syncing, %s blocks remaining (%s%% synced)", s.networkID, remainingBlocks.String(), percentage.String())
-		syncStatus := etherman.SyncStatus{
-			NetworkID:       s.networkID,
-    		Percentage:      uint32(percentage.Uint64()), // safe to cast, percentage cannot be that high
-    		RemainingBlocks: remainingBlocks.Uint64(),
-    		Synced:          s.synced,
-		}
-		err = s.storage.AddSyncStatus(s.ctx, syncStatus, nil)
-		if err != nil {
-			log.Errorf("networkID: %d, error storing sync status. Error: %v", s.networkID, err)
+		if !s.synced {
+			remainingBlocks := new(big.Int).Sub(lastKnownBlock, toBlockBigInt)
+			percentage := big.NewInt(0).Div(big.NewInt(0).Mul(new(big.Int).Sub(initialRemainingBlocks, remainingBlocks), big.NewInt(100)), initialRemainingBlocks)
+			log.Infof("NetworkID %d Syncing, %s blocks remaining (%s%% synced)", s.networkID, remainingBlocks.String(), percentage.String())
+			syncStatus := etherman.SyncStatus{
+				NetworkID:       s.networkID,
+				Percentage:      uint32(percentage.Uint64()), // safe to cast, percentage cannot be that high
+				RemainingBlocks: remainingBlocks.Uint64(),
+				Synced:          s.synced,
+			}
+			err = s.storage.AddSyncStatus(s.ctx, syncStatus, nil)
+			if err != nil {
+				log.Errorf("networkID: %d, error storing sync status. Error: %v", s.networkID, err)
+			}
 		}
 	}
 

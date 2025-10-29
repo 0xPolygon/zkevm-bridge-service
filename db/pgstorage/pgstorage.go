@@ -888,7 +888,7 @@ func (p *PostgresStorage) AddSyncStatus(ctx context.Context, syncStatus etherman
 
 // GetSyncStatus returns the sync status for all the networks.
 func (p *PostgresStorage) GetSyncStatus(ctx context.Context, dbTx interface{}) ([]*etherman.SyncStatus, error) {
-	const getSyncStatusSQL = "SELECT network_id, percentage, remaining_blocks, synced FROM sync.status"
+	const getSyncStatusSQL = "SELECT network_id, percentage, remaining_blocks, synced FROM sync.status order by network_id asc"
 	rows, err := p.getExecQuerier(dbTx).Query(ctx, getSyncStatusSQL)
 	if err != nil {
 		return nil, err

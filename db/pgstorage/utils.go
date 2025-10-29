@@ -62,7 +62,9 @@ func runMigrations(cfg Config, direction migrate.MigrationDirection) error {
 	}
 
 	log.Info("successfully ran ", nMigrations, " migrations")
-	return nil
+	const cleanStatusSQL = "DELETE FROM sync.status"
+	_, err = db.Exec(cleanStatusSQL)
+	return err
 }
 
 // InitOrReset will initializes the db running the migrations or
