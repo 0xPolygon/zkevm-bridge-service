@@ -285,6 +285,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 		fromBlock = lastBlockSynced.BlockNumber
 	}
 	toBlock := fromBlock + s.cfg.SyncChunkSize
+	initialRemainingBlocks := new(big.Int).Sub(lastKnownBlock, big.NewInt(0).SetUint64(lastBlockSynced.BlockNumber))
 
 	for {
 		if toBlock > lastKnownBlock.Uint64() {
@@ -415,15 +416,27 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 			log.Debugf("NetworkID: %d, Keeping empty block in memory as lastBlockSynced. BlockNumber: %d. BlockHash: %s", s.networkID, lastBlockSynced.BlockNumber, lastBlockSynced.BlockHash.String())
 		}
 
+		var toBlockBigInt *big.Int
 		if lastKnownBlock.Cmp(new(big.Int).SetUint64(toBlock)) < 1 { // lastKnownBlock <= toBlock
 			if !s.synced {
 				log.Infof("NetworkID %d Synced!", s.networkID)
 				s.waitDuration = s.cfg.SyncInterval.Duration
 				s.synced = true
 				s.chSynced <- s.networkID
+				syncStatus := etherman.SyncStatus{
+					NetworkID:       s.networkID,
+					Percentage:      100,
+					RemainingBlocks: 0,
+					Synced:          s.synced,
+				}
+				err = s.storage.AddSyncStatus(s.ctx, syncStatus, nil)
+				if err != nil {
+					log.Errorf("networkID: %d, error storing sync status. Error: %v", s.networkID, err)
+				}
 			}
 			break
 		} else if !s.synced || s.forceSyncChunk {
+			toBlockBigInt = new(big.Int).SetUint64(toBlock)
 			fromBlock = toBlock + 1
 			toBlock = fromBlock + s.cfg.SyncChunkSize
 			if s.forceSyncChunk {
@@ -432,9 +445,23 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 				log.Debugf("NetworkID: %d, not synced yet. Avoid check the same interval. New interval: from block %d, to block %d", s.networkID, fromBlock, toBlock)
 			}
 		} else {
+			toBlockBigInt = new(big.Int).SetUint64(toBlock)
 			fromBlock = lastBlockSynced.BlockNumber
 			toBlock = toBlock + s.cfg.SyncChunkSize
 			log.Debugf("NetworkID: %d, synced!. New interval: from block %d, to block %d", s.networkID, fromBlock, toBlock)
+		}
+		remainingBlocks := new(big.Int).Sub(lastKnownBlock, toBlockBigInt)
+		percentage := big.NewInt(0).Div(big.NewInt(0).Mul(new(big.Int).Sub(initialRemainingBlocks, remainingBlocks), big.NewInt(100)), initialRemainingBlocks)
+		log.Infof("NetworkID %d Syncing, %s blocks remaining (%s%% synced)", s.networkID, remainingBlocks.String(), percentage.String())
+		syncStatus := etherman.SyncStatus{
+			NetworkID:       s.networkID,
+    		Percentage:      uint32(percentage.Uint64()), // safe to cast, percentage cannot be that high
+    		RemainingBlocks: remainingBlocks.Uint64(),
+    		Synced:          s.synced,
+		}
+		err = s.storage.AddSyncStatus(s.ctx, syncStatus, nil)
+		if err != nil {
+			log.Errorf("networkID: %d, error storing sync status. Error: %v", s.networkID, err)
 		}
 	}
 
