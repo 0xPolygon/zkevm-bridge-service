@@ -102,3 +102,11 @@ type RollupExitLeaf struct {
 	RollupId uint32
 	Root     common.Hash
 }
+
+// SyncStatus struct
+type SyncStatus struct {
+	NetworkID       uint32
+	Percentage      uint32
+	RemainingBlocks uint64
+	Synced          bool
+}

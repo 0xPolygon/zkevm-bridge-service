@@ -7,6 +7,7 @@ import (
 	"time"
 
 	ctmtypes "github.com/0xPolygon/zkevm-bridge-service/claimtxman/types"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
 	"github.com/0xPolygon/zkevm-bridge-service/log"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/stretchr/testify/assert"
@@ -260,4 +261,56 @@ func TestGetPendingDepositsToClaim(t *testing.T) {
 	assert.Equal(t, []byte{}, deposits[0].Metadata)
 	assert.Equal(t, uint64(3), deposits[0].Id)
 	assert.Equal(t, true, deposits[0].ReadyForClaim)
+}
+
+func TestAddSyncStatus(t *testing.T) {
+	store := createStore(t)
+	ctx := context.Background()
+	status1 := etherman.SyncStatus{
+		NetworkID:       0,
+		Percentage:      50,
+		RemainingBlocks: 1000,
+		Synced:          false,
+	}
+	err := store.AddSyncStatus(ctx, status1, nil)
+	require.NoError(t, err)
+	status1bis := etherman.SyncStatus{
+		NetworkID:       0,
+		Percentage:      51,
+		RemainingBlocks: 1000,
+		Synced:          false,
+	}
+	err = store.AddSyncStatus(ctx, status1bis, nil)
+	require.NoError(t, err)
+	status2 := etherman.SyncStatus{
+		NetworkID:       1,
+		Percentage:      99,
+		RemainingBlocks: 23,
+		Synced:          false,
+	}
+	err = store.AddSyncStatus(ctx, status2, nil)
+	require.NoError(t, err)
+	status3 := etherman.SyncStatus{
+		NetworkID:       2,
+		Percentage:      100,
+		RemainingBlocks: 0,
+		Synced:          true,
+	}
+	err = store.AddSyncStatus(ctx, status3, nil)
+	require.NoError(t, err)
+	status, err := store.GetSyncStatus(ctx, nil)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(status))
+	assert.Equal(t, uint32(0), status[0].NetworkID)
+	assert.Equal(t, uint32(51), status[0].Percentage)
+	assert.Equal(t, uint64(1000), status[0].RemainingBlocks)
+	assert.Equal(t, false, status[0].Synced)
+	assert.Equal(t, uint32(1), status[1].NetworkID)
+	assert.Equal(t, uint32(99), status[1].Percentage)
+	assert.Equal(t, uint64(23), status[1].RemainingBlocks)
+	assert.Equal(t, false, status[1].Synced)
+	assert.Equal(t, uint32(2), status[2].NetworkID)
+	assert.Equal(t, uint32(100), status[2].Percentage)
+	assert.Equal(t, uint64(0), status[2].RemainingBlocks)
+	assert.Equal(t, true, status[2].Synced)
 }
