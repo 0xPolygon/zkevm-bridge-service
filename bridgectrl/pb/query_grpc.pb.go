@@ -23,6 +23,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	BridgeService_CheckAPI_FullMethodName                 = "/bridge.v1.BridgeService/CheckAPI"
+	BridgeService_GetSyncStatus_FullMethodName            = "/bridge.v1.BridgeService/GetSyncStatus"
 	BridgeService_GetBridges_FullMethodName               = "/bridge.v1.BridgeService/GetBridges"
 	BridgeService_GetProof_FullMethodName                 = "/bridge.v1.BridgeService/GetProof"
 	BridgeService_GetProofByGER_FullMethodName            = "/bridge.v1.BridgeService/GetProofByGER"
@@ -40,6 +41,8 @@ type BridgeServiceClient interface {
 	// Getters
 	// / Get api version
 	CheckAPI(ctx context.Context, in *CheckAPIRequest, opts ...grpc.CallOption) (*CheckAPIResponse, error)
+	// / Get sync status
+	GetSyncStatus(ctx context.Context, in *GetSyncStatusRequest, opts ...grpc.CallOption) (*GetSyncStatusResponse, error)
 	// / Get bridges for the destination address both in L1 and L2
 	GetBridges(ctx context.Context, in *GetBridgesRequest, opts ...grpc.CallOption) (*GetBridgesResponse, error)
 	// / Get the merkle proof for the specific deposit
@@ -69,6 +72,15 @@ func NewBridgeServiceClient(cc grpc.ClientConnInterface) BridgeServiceClient {
 func (c *bridgeServiceClient) CheckAPI(ctx context.Context, in *CheckAPIRequest, opts ...grpc.CallOption) (*CheckAPIResponse, error) {
 	out := new(CheckAPIResponse)
 	err := c.cc.Invoke(ctx, BridgeService_CheckAPI_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *bridgeServiceClient) GetSyncStatus(ctx context.Context, in *GetSyncStatusRequest, opts ...grpc.CallOption) (*GetSyncStatusResponse, error) {
+	out := new(GetSyncStatusResponse)
+	err := c.cc.Invoke(ctx, BridgeService_GetSyncStatus_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -154,6 +166,8 @@ type BridgeServiceServer interface {
 	// Getters
 	// / Get api version
 	CheckAPI(context.Context, *CheckAPIRequest) (*CheckAPIResponse, error)
+	// / Get sync status
+	GetSyncStatus(context.Context, *GetSyncStatusRequest) (*GetSyncStatusResponse, error)
 	// / Get bridges for the destination address both in L1 and L2
 	GetBridges(context.Context, *GetBridgesRequest) (*GetBridgesResponse, error)
 	// / Get the merkle proof for the specific deposit
@@ -179,6 +193,9 @@ type UnimplementedBridgeServiceServer struct {
 
 func (UnimplementedBridgeServiceServer) CheckAPI(context.Context, *CheckAPIRequest) (*CheckAPIResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CheckAPI not implemented")
+}
+func (UnimplementedBridgeServiceServer) GetSyncStatus(context.Context, *GetSyncStatusRequest) (*GetSyncStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSyncStatus not implemented")
 }
 func (UnimplementedBridgeServiceServer) GetBridges(context.Context, *GetBridgesRequest) (*GetBridgesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetBridges not implemented")
@@ -231,6 +248,24 @@ func _BridgeService_CheckAPI_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(BridgeServiceServer).CheckAPI(ctx, req.(*CheckAPIRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _BridgeService_GetSyncStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSyncStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BridgeServiceServer).GetSyncStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BridgeService_GetSyncStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BridgeServiceServer).GetSyncStatus(ctx, req.(*GetSyncStatusRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -389,6 +424,10 @@ var BridgeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CheckAPI",
 			Handler:    _BridgeService_CheckAPI_Handler,
+		},
+		{
+			MethodName: "GetSyncStatus",
+			Handler:    _BridgeService_GetSyncStatus_Handler,
 		},
 		{
 			MethodName: "GetBridges",
