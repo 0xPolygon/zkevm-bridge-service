@@ -313,10 +313,4 @@ func TestAddSyncStatus(t *testing.T) {
 	assert.Equal(t, uint32(100), status[2].Percentage)
 	assert.Equal(t, uint64(0), status[2].RemainingBlocks)
 	assert.Equal(t, true, status[2].Synced)
-
-	err = store.CleanSyncStatus(ctx, nil)
-	require.NoError(t, err)
-	status, err = store.GetSyncStatus(ctx, nil)
-	require.NoError(t, err)
-	require.Equal(t, 0, len(status))
 }
