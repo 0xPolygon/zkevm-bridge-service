@@ -22,25 +22,26 @@ type Synchronizer interface {
 
 // ClientSynchronizer connects L1 and L2
 type ClientSynchronizer struct {
-	etherMan          ethermanInterface
-	bridgeCtrl        bridgectrlInterface
-	storage           storageInterface
-	ctx               context.Context
-	cancelCtx         context.CancelFunc
-	genBlockNumber    uint64
-	cfg               Config
-	networkID         uint32
-	chExitRootEventL2 chan *etherman.GlobalExitRoot
-	chsExitRootEvent  []chan *etherman.GlobalExitRoot
-	chSynced          chan uint32
-	zkEVMClient       zkEVMClientInterface
-	synced            bool
-	l1RollupExitRoot  common.Hash
-	allNetworkIDs     []uint32
-	sovereignChain    bool
-	forceSyncChunk    bool
-	waitDuration      time.Duration
-	metrics           metrics.MetricsInterface
+	etherMan               ethermanInterface
+	bridgeCtrl             bridgectrlInterface
+	storage                storageInterface
+	ctx                    context.Context
+	cancelCtx              context.CancelFunc
+	genBlockNumber         uint64
+	cfg                    Config
+	networkID              uint32
+	chExitRootEventL2      chan *etherman.GlobalExitRoot
+	chsExitRootEvent       []chan *etherman.GlobalExitRoot
+	chSynced               chan uint32
+	zkEVMClient            zkEVMClientInterface
+	synced                 bool
+	l1RollupExitRoot       common.Hash
+	allNetworkIDs          []uint32
+	sovereignChain         bool
+	forceSyncChunk         bool
+	waitDuration           time.Duration
+	metrics                metrics.MetricsInterface
+	initialRemainingBlocks *big.Int
 }
 
 // NewSynchronizer creates and initializes an instance of Synchronizer
@@ -72,39 +73,41 @@ func NewSynchronizer(
 
 	if networkID == 0 {
 		return &ClientSynchronizer{
-			bridgeCtrl:       bridge,
-			storage:          storage.(storageInterface),
-			etherMan:         ethMan,
-			ctx:              ctx,
-			cancelCtx:        cancel,
-			genBlockNumber:   genBlockNumber,
-			cfg:              cfg,
-			networkID:        networkID,
-			chSynced:         chSynced,
-			chsExitRootEvent: chsExitRootEvent,
-			l1RollupExitRoot: ger.ExitRoots[1],
-			allNetworkIDs:    allNetworkIDs,
-			forceSyncChunk:   cfg.ForceL1SyncChunk,
-			waitDuration:     time.Duration(0),
-			metrics:          metrics.Register(networkID),
+			bridgeCtrl:             bridge,
+			storage:                storage.(storageInterface),
+			etherMan:               ethMan,
+			ctx:                    ctx,
+			cancelCtx:              cancel,
+			genBlockNumber:         genBlockNumber,
+			cfg:                    cfg,
+			networkID:              networkID,
+			chSynced:               chSynced,
+			chsExitRootEvent:       chsExitRootEvent,
+			l1RollupExitRoot:       ger.ExitRoots[1],
+			allNetworkIDs:          allNetworkIDs,
+			forceSyncChunk:         cfg.ForceL1SyncChunk,
+			waitDuration:           time.Duration(0),
+			metrics:                metrics.Register(networkID),
+			initialRemainingBlocks: big.NewInt(0),
 		}, nil
 	}
 	return &ClientSynchronizer{
-		bridgeCtrl:        bridge,
-		storage:           storage.(storageInterface),
-		etherMan:          ethMan,
-		ctx:               ctx,
-		cancelCtx:         cancel,
-		genBlockNumber:    genBlockNumber,
-		cfg:               cfg,
-		chSynced:          chSynced,
-		zkEVMClient:       zkEVMClient,
-		chExitRootEventL2: chExitRootEventL2,
-		networkID:         networkID,
-		sovereignChain:    sovereignChain,
-		forceSyncChunk:    cfg.ForceL2SyncChunk,
-		waitDuration:      time.Duration(0),
-		metrics:           metrics.Register(networkID),
+		bridgeCtrl:             bridge,
+		storage:                storage.(storageInterface),
+		etherMan:               ethMan,
+		ctx:                    ctx,
+		cancelCtx:              cancel,
+		genBlockNumber:         genBlockNumber,
+		cfg:                    cfg,
+		chSynced:               chSynced,
+		zkEVMClient:            zkEVMClient,
+		chExitRootEventL2:      chExitRootEventL2,
+		networkID:              networkID,
+		sovereignChain:         sovereignChain,
+		forceSyncChunk:         cfg.ForceL2SyncChunk,
+		waitDuration:           time.Duration(0),
+		metrics:                metrics.Register(networkID),
+		initialRemainingBlocks: big.NewInt(0),
 	}, nil
 }
 
@@ -145,7 +148,10 @@ func (s *ClientSynchronizer) Sync() error {
 	err = s.storage.AddSyncStatus(s.ctx, syncStatus, nil)
 	if err != nil {
 		log.Errorf("networkID: %d, error storing sync status. Error: %v", s.networkID, err)
+		return err
 	}
+	s.initialRemainingBlocks = big.NewInt(0).SetUint64(remainingBlocks)
+
 	s.metrics.LatestBlockSynced(lastBlockSynced.BlockNumber)
 	s.metrics.InitializationTime(time.Since(startInitialization))
 	log.Debugf("NetworkID: %d, initial lastBlockSynced: %+v", s.networkID, lastBlockSynced)
@@ -301,7 +307,6 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 		fromBlock = lastBlockSynced.BlockNumber
 	}
 	toBlock := fromBlock + s.cfg.SyncChunkSize
-	initialRemainingBlocks := new(big.Int).Sub(lastKnownBlock, big.NewInt(0).SetUint64(lastBlockSynced.BlockNumber))
 
 	for {
 		if toBlock > lastKnownBlock.Uint64() {
@@ -477,7 +482,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 		}
 		if !s.synced {
 			remainingBlocks := new(big.Int).Sub(lastKnownBlock, toBlockBigInt)
-			percentage := big.NewInt(0).Div(big.NewInt(0).Mul(new(big.Int).Sub(initialRemainingBlocks, remainingBlocks), big.NewInt(100)), initialRemainingBlocks)
+			percentage := big.NewInt(0).Div(big.NewInt(0).Mul(new(big.Int).Sub(s.initialRemainingBlocks, remainingBlocks), big.NewInt(100)), s.initialRemainingBlocks)
 			log.Infof("NetworkID %d Syncing, %s blocks remaining (%s%% synced)", s.networkID, remainingBlocks.String(), percentage.String())
 			syncStatus := etherman.SyncStatus{
 				NetworkID:       s.networkID,
