@@ -330,7 +330,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 					s.chSynced <- s.networkID
 					syncStatus := etherman.SyncStatus{
 						NetworkID:       s.networkID,
-						Percentage:      100,
+						Percentage:      100, //nolint:mnd
 						RemainingBlocks: 0,
 						Synced:          s.synced,
 					}
@@ -455,7 +455,7 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 				s.chSynced <- s.networkID
 				syncStatus := etherman.SyncStatus{
 					NetworkID:       s.networkID,
-					Percentage:      100,
+					Percentage:      100, //nolint:mnd
 					RemainingBlocks: 0,
 					Synced:          s.synced,
 				}
@@ -482,11 +482,11 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 		}
 		if !s.synced {
 			remainingBlocks := new(big.Int).Sub(lastKnownBlock, toBlockBigInt)
-			percentage := big.NewInt(0).Div(big.NewInt(0).Mul(new(big.Int).Sub(s.initialRemainingBlocks, remainingBlocks), big.NewInt(100)), s.initialRemainingBlocks)
+			percentage := big.NewInt(0).Div(big.NewInt(0).Mul(new(big.Int).Sub(s.initialRemainingBlocks, remainingBlocks), big.NewInt(100)), s.initialRemainingBlocks) //nolint:mnd
 			log.Infof("NetworkID %d Syncing, %s blocks remaining (%s%% synced)", s.networkID, remainingBlocks.String(), percentage.String())
 			syncStatus := etherman.SyncStatus{
 				NetworkID:       s.networkID,
-				Percentage:      uint32(percentage.Uint64()), // safe to cast, percentage cannot be that high
+				Percentage:      uint32(percentage.Uint64()), //nolint:gosec,mnd safe to cast, percentage cannot be that high
 				RemainingBlocks: remainingBlocks.Uint64(),
 				Synced:          s.synced,
 			}

@@ -175,7 +175,7 @@ func runRestServer(ctx context.Context, grpcPort, httpPort string) error {
 			}
 			
 			w.WriteHeader(http.StatusNotFound)
-			w.Write([]byte(`{"error":"Not Found","path":"` + path + `"}`))
+			_, _ = w.Write([]byte(`{"error":"Not Found","path":"` + path + `"}`))
 			return
 		}
 		
