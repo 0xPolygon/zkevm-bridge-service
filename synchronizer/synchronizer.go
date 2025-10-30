@@ -419,7 +419,6 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 		err = s.processBlockRange(blocks, order)
 		s.metrics.ProcessL1DataTime(time.Since(start))
 		if err != nil {
-			log.Error("error processing block range: ", err)
 			return &lastBlockSynced, err
 		}
 		if len(blocks) > 0 && !s.forceSyncChunk {
@@ -534,7 +533,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processGlobalExitRoot(blocks[i].GlobalExitRoots[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing global exit root: ", err)
 					return err
 				}
 				if isNewL1Ger {
@@ -548,7 +546,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processRemoveL2GlobalExitRoot(blocks[i].RemoveL2GER[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing remove L2 GER: ", err)
 					return err
 				}
 				s.metrics.RemoveL2GERCounter()
@@ -558,7 +555,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processDeposit(blocks[i].Deposits[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing deposit: ", err)
 					return err
 				}
 				s.metrics.DepositCounter()
@@ -568,7 +564,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processClaim(blocks[i].Claims[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing claim: ", err)
 					return err
 				}
 				s.metrics.ClaimCounter()
@@ -578,7 +573,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processTokenWrapped(blocks[i].Tokens[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing token wrapped: ", err)
 					return err
 				}
 			case etherman.VerifyBatchOrder:
@@ -587,7 +581,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processVerifyBatch(blocks[i].VerifiedBatches[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing verify batch: ", err)
 					return err
 				}
 				s.metrics.VerifyBatchCounter()
