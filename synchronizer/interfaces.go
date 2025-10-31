@@ -4,8 +4,8 @@ import (
 	"context"
 	"math/big"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
-	rpcTypes "github.com/0xPolygonHermez/zkevm-bridge-service/jsonrpcclient/types"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
+	rpcTypes "github.com/0xPolygon/zkevm-bridge-service/jsonrpcclient/types"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 )
@@ -38,6 +38,7 @@ type storageInterface interface {
 	GetL2ExitRootsByGER(ctx context.Context, ger common.Hash, dbTx interface{}) ([]etherman.GlobalExitRoot, error)
 	UpdateL2GER(ctx context.Context, ger etherman.GlobalExitRoot, dbTx interface{}) error
 	AddRemoveL2GER(ctx context.Context, globalExitRoot etherman.GlobalExitRoot, dbTx interface{}) error
+	AddSyncStatus(ctx context.Context, syncStatus etherman.SyncStatus, dbTx interface{}) error
 }
 
 type bridgectrlInterface interface {

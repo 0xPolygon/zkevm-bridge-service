@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl/pb"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/server/metrics"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
+	"github.com/0xPolygon/zkevm-bridge-service/bridgectrl"
+	"github.com/0xPolygon/zkevm-bridge-service/bridgectrl/pb"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/server/metrics"
+	"github.com/0xPolygon/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
 	lru "github.com/hashicorp/golang-lru/v2"
 )
@@ -666,5 +666,28 @@ func (s *bridgeService) GetProofV2(ctx context.Context, req *pb.GetProofV2Reques
 			MainExitRoot:      globalExitRoot.ExitRoots[0].Hex(),
 			RollupExitRoot:    globalExitRoot.ExitRoots[1].Hex(),
 		},
+	}, nil
+}
+
+// GetSyncStatus returns the sync Status of all networks.
+// Bridge rest API endpoint
+func (s *bridgeService) GetSyncStatus(ctx context.Context, req *pb.GetSyncStatusRequest) (*pb.GetSyncStatusResponse, error) {
+	status, err := s.storage.GetSyncStatus(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	var returnSyncStatus []*pb.SyncStatus
+	for _, syncStatus := range status {
+		ss := &pb.SyncStatus{
+			NetworkId:      syncStatus.NetworkID,
+			Percentage:     syncStatus.Percentage,
+			RemainingBlocks: syncStatus.RemainingBlocks,
+			Synced:         syncStatus.Synced,
+		}
+		returnSyncStatus = append(returnSyncStatus, ss)
+	}
+
+	return &pb.GetSyncStatusResponse{
+		Sync: returnSyncStatus,
 	}, nil
 }

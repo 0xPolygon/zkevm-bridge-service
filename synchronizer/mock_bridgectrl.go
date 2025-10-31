@@ -5,7 +5,7 @@ package synchronizer
 import (
 	context "context"
 
-	etherman "github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	etherman "github.com/0xPolygon/zkevm-bridge-service/etherman"
 	mock "github.com/stretchr/testify/mock"
 )
 

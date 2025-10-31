@@ -3,16 +3,16 @@ package claimtxman
 import (
 	"context"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/bridgectrl"
+	"github.com/0xPolygon/zkevm-bridge-service/claimtxman/types"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
 	"github.com/ethereum/go-ethereum/common"
 )
 
 type StorageInterface interface {
 	AddBlock(ctx context.Context, block *etherman.Block, dbTx interface{}) (uint64, error)
 	UpdateL1DepositsStatus(ctx context.Context, exitRoot []byte, destinationNetwork uint32, dbTx interface{}) error
-	UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID, networkID uint32, dbTx interface{}) error
+	UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID, networkID uint32, isDestNetL1 bool, dbTx interface{}) error
 	GetDepositsFromOtherL2ToClaim(ctx context.Context, destinationNetwork uint32, dbTx interface{}) ([]*etherman.Deposit, error)
 	GetPendingDepositsToClaim(ctx context.Context, destAddress common.Address, destNetwork, leafType, limit, offset uint32, fromNetwork int8, dbTx interface{}) ([]*etherman.Deposit, uint64, error)
 	GetLatestTrustedGERByDeposit(ctx context.Context, depositCnt, networkID, destinationNetwork uint32, dbTx interface{}) (common.Hash, error)

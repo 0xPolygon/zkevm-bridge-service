@@ -1,0 +1,1273 @@
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service
+==============================
+package zkevmbridgeservice // import "github.com/0xPolygon/zkevm-bridge-service"
+
+var Version = "v0.1.0" ...
+func PrintVersion(w io.Writer)
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/autoclaimservice
+==============================
+
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/autoclaimservice/autoclaim
+==============================
+package autoclaim // import "github.com/0xPolygon/zkevm-bridge-service/autoclaimservice/autoclaim"
+
+func NewAutoClaim(ctx context.Context, c *Config, blockchainManager *blockchainmanager.Client) (autoclaim, error)
+type Config struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/autoclaimservice/blockchainmanager
+==============================
+package blockchainmanager // import "github.com/0xPolygon/zkevm-bridge-service/autoclaimservice/blockchainmanager"
+
+const LeafTypeAsset uint32 = 0 ...
+func GetSignerFromKeystore(ctx context.Context, ethClient *ethclient.Client, ...) (*bind.TransactOpts, error)
+type Client struct{ ... }
+    func NewClient(ctx context.Context, cfg *Config) (*Client, error)
+type Config struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/autoclaimservice/config
+==============================
+package config // import "github.com/0xPolygon/zkevm-bridge-service/autoclaimservice/config"
+
+const DefaultValues = ...
+type Config struct{ ... }
+    func Default() (*Config, error)
+    func Load(configFilePath string) (*Config, error)
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/bridgectrl
+==============================
+package bridgectrl // import "github.com/0xPolygon/zkevm-bridge-service/bridgectrl"
+
+const KeyLen = 32
+var HashZero = [KeyLen]byte{ ... }
+func ComputeSiblings(rollupIndex uint32, leaves [][KeyLen]byte, height uint8) ([][KeyLen]byte, common.Hash, error)
+func Hash(data ...[KeyLen]byte) [KeyLen]byte
+type BridgeController struct{ ... }
+    func NewBridgeController(ctx context.Context, cfg Config, networkIDs []uint32, mtStore interface{}) (*BridgeController, error)
+type Config struct{ ... }
+type MerkleTree struct{ ... }
+    func NewMerkleTree(ctx context.Context, store merkleTreeStore, height uint8, networkID uint32) (*MerkleTree, error)
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/bridgectrl/pb
+==============================
+package pb // import "github.com/0xPolygon/zkevm-bridge-service/bridgectrl/pb"
+
+Package pb is a reverse proxy.
+
+It translates gRPC into RESTful JSON APIs.
+
+const BridgeService_CheckAPI_FullMethodName = "/bridge.v1.BridgeService/CheckAPI" ...
+var BridgeService_ServiceDesc = grpc.ServiceDesc{ ... }
+var File_query_proto protoreflect.FileDescriptor
+func RegisterBridgeServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error
+func RegisterBridgeServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client BridgeServiceClient) error
+func RegisterBridgeServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, ...) (err error)
+func RegisterBridgeServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server BridgeServiceServer) error
+func RegisterBridgeServiceServer(s grpc.ServiceRegistrar, srv BridgeServiceServer)
+type BridgeServiceClient interface{ ... }
+    func NewBridgeServiceClient(cc grpc.ClientConnInterface) BridgeServiceClient
+type BridgeServiceServer interface{ ... }
+type CheckAPIRequest struct{ ... }
+type CheckAPIResponse struct{ ... }
+type Claim struct{ ... }
+type Deposit struct{ ... }
+type GetBridgeRequest struct{ ... }
+type GetBridgeResponse struct{ ... }
+type GetBridgesRequest struct{ ... }
+type GetBridgesResponse struct{ ... }
+type GetClaimsRequest struct{ ... }
+type GetClaimsResponse struct{ ... }
+type GetPendingBridgesRequest struct{ ... }
+type GetProofByGERRequest struct{ ... }
+type GetProofRequest struct{ ... }
+type GetProofResponse struct{ ... }
+type GetProofV2Request struct{ ... }
+type GetTokenWrappedRequest struct{ ... }
+type GetTokenWrappedResponse struct{ ... }
+type Proof struct{ ... }
+type TokenWrapped struct{ ... }
+type UnimplementedBridgeServiceServer struct{}
+type UnsafeBridgeServiceServer interface{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/claimtxman
+==============================
+package claimtxman // import "github.com/0xPolygon/zkevm-bridge-service/claimtxman"
+
+const LeafTypeMessage ...
+const MinTxPerGroup = 2
+var ErrNotImplemented = errors.New("not implemented") ...
+var ErrExecutionReverted = errors.New("execution reverted")
+type ClaimTxManager struct{ ... }
+    func NewClaimTxManager(parentCtx context.Context, cfg Config, ...) (*ClaimTxManager, error)
+type ComposeCompressClaim struct{ ... }
+    func NewComposeCompressClaim() (*ComposeCompressClaim, error)
+type CompressClaimParameters struct{ ... }
+type Config struct{ ... }
+type ConfigGroupingClaims struct{ ... }
+type EthermanI interface{ ... }
+type GroupsTrigger struct{ ... }
+    func NewGroupsTrigger(cfg ConfigGroupingClaims) *GroupsTrigger
+type GrupedTxs struct{ ... }
+type MonitorCompressedTxs struct{ ... }
+    func NewMonitorCompressedTxs(ctx context.Context, storage StorageCompressedInterface, l2Node *utils.Client, ...) *MonitorCompressedTxs
+type MonitorTxs struct{ ... }
+    func NewMonitorTxs(ctx context.Context, storage StorageInterface, l2Node *utils.Client, ...) *MonitorTxs
+type NonceCache struct{ ... }
+    func NewNonceCache(ctx context.Context, l2Node *utils.Client) (*NonceCache, error)
+type PendingTxs struct{ ... }
+    func NewPendingTxs(mTxs []ctmtypes.MonitoredTx, ...) (PendingTxs, error)
+type StorageCompressedInterface interface{ ... }
+type StorageInterface interface{ ... }
+type StoreChanges struct{ ... }
+    func GenerateStoreUpdate(oldState, newState PendingTxs, timeProvider utils.TimeProvider) (*StoreChanges, error)
+    func NewStoreChanges() *StoreChanges
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/claimtxman/types
+==============================
+package types // import "github.com/0xPolygon/zkevm-bridge-service/claimtxman/types"
+
+const MonitoredTxStatusCreated = MonitoredTxStatus("created") ...
+const MonitoredTxGroupStatusCreated = MonitoredTxGroupStatus("created") ...
+const ReceiptStatusFailed = 0 ...
+var ErrAlreadyExists = errors.New("already exists")
+type MonitoredTx struct{ ... }
+type MonitoredTxGroup struct{ ... }
+    func NewMonitoredTxGroup(entry MonitoredTxGroupDBEntry, txs []MonitoredTx) MonitoredTxGroup
+type MonitoredTxGroupDBEntry struct{ ... }
+type MonitoredTxGroupStatus string
+type MonitoredTxStatus string
+type TxHashHistoryEntry struct{ ... }
+type TxHistoryV2 struct{ ... }
+    func NewTxHistoryV2FromJson(jsonStr string) (*TxHistoryV2, error)
+type TxMonitorer interface{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/cmd
+==============================
+
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/config
+==============================
+package config // import "github.com/0xPolygon/zkevm-bridge-service/config"
+
+const DefaultValues = ...
+type Config struct{ ... }
+    func Default() (*Config, error)
+    func Load(configFilePath string, network string) (*Config, error)
+type NetworkConfig struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/config/types
+==============================
+package types // import "github.com/0xPolygon/zkevm-bridge-service/config/types"
+
+type Duration struct{ ... }
+    func NewDuration(duration time.Duration) Duration
+type KeystoreFileConfig struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/db
+==============================
+package db // import "github.com/0xPolygon/zkevm-bridge-service/db"
+
+func RunMigrations(cfg Config) error
+type Config struct{ ... }
+type Storage interface{}
+    func NewStorage(ctx context.Context, cfg Config) (Storage, error)
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/db/pgstorage
+==============================
+package pgstorage // import "github.com/0xPolygon/zkevm-bridge-service/db/pgstorage"
+
+var String = abi.NewType("string", "", nil) ...
+func InitOrReset(ctx context.Context, cfg Config) error
+func ResetDB(cfg Config) error
+func RunMigrationsDown(cfg Config) error
+func RunMigrationsUp(cfg Config) error
+type Config struct{ ... }
+    func NewConfigFromEnv() Config
+type PostgresStorage struct{ ... }
+    func NewPostgresStorage(ctx context.Context, cfg Config) (*PostgresStorage, error)
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman
+==============================
+package etherman // import "github.com/0xPolygon/zkevm-bridge-service/etherman"
+
+var ErrNotFound ...
+func DecodeGlobalIndex(globalIndex *big.Int) (bool, uint32, uint32, error)
+func GenerateGlobalIndex(mainnetFlag bool, rollupIndex uint32, localExitRootIndex uint32) *big.Int
+type Block struct{ ... }
+type Claim struct{ ... }
+type Client struct{ ... }
+    func NewClient(cfg Config, ...) (*Client, error)
+    func NewL2Client(url string, polygonBridgeAddress, claimCompressorAddress, ... common.Address, ...) (*Client, error)
+    func NewSimulatedEtherman(ctx context.Context, cfg Config, auth *bind.TransactOpts) (*Client, *simulated.Backend, common.Address, ...)
+type Config struct{ ... }
+type Deposit struct{ ... }
+type EventOrder string
+    const GlobalExitRootsOrder EventOrder = "GlobalExitRoot" ...
+type GlobalExitRoot struct{ ... }
+type Order struct{ ... }
+type RollupExitLeaf struct{ ... }
+type TokenMetadata struct{ ... }
+type TokenWrapped struct{ ... }
+type VerifiedBatch struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/metrics
+==============================
+package metrics // import "github.com/0xPolygon/zkevm-bridge-service/etherman/metrics"
+
+const ReadAndProcessAllEventsTimeName = "read_and_process_all_event_time" ...
+var Prefix string
+func EventCounter()
+func GetEventsTime(lastProcessTime time.Duration)
+func ProcessAllEventTime(lastProcessTime time.Duration)
+func ProcessSingleEventTime(lastProcessTime time.Duration)
+func ReadAndProcessAllEventsTime(lastProcessTime time.Duration)
+func Register(networkID uint32)
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/ERC20
+==============================
+package ERC20 // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/ERC20"
+
+var ERC20ABI = ERC20MetaData.ABI
+var ERC20Bin = ERC20MetaData.Bin
+var ERC20MetaData = &bind.MetaData{ ... }
+type ERC20 struct{ ... }
+    func DeployERC20(auth *bind.TransactOpts, backend bind.ContractBackend, n string, s string) (common.Address, *types.Transaction, *ERC20, error)
+    func NewERC20(address common.Address, backend bind.ContractBackend) (*ERC20, error)
+type ERC20Approval struct{ ... }
+type ERC20ApprovalIterator struct{ ... }
+type ERC20Caller struct{ ... }
+    func NewERC20Caller(address common.Address, caller bind.ContractCaller) (*ERC20Caller, error)
+type ERC20CallerRaw struct{ ... }
+type ERC20CallerSession struct{ ... }
+type ERC20Filterer struct{ ... }
+    func NewERC20Filterer(address common.Address, filterer bind.ContractFilterer) (*ERC20Filterer, error)
+type ERC20Raw struct{ ... }
+type ERC20Session struct{ ... }
+type ERC20Transactor struct{ ... }
+    func NewERC20Transactor(address common.Address, transactor bind.ContractTransactor) (*ERC20Transactor, error)
+type ERC20TransactorRaw struct{ ... }
+type ERC20TransactorSession struct{ ... }
+type ERC20Transfer struct{ ... }
+type ERC20TransferIterator struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/bridgel2sovereignchain
+==============================
+package bridgel2sovereignchain // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/bridgel2sovereignchain"
+
+var Bridgel2sovereignchainABI = Bridgel2sovereignchainMetaData.ABI
+var Bridgel2sovereignchainBin = Bridgel2sovereignchainMetaData.Bin
+var Bridgel2sovereignchainMetaData = &bind.MetaData{ ... }
+type Bridgel2sovereignchain struct{ ... }
+    func DeployBridgel2sovereignchain(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Bridgel2sovereignchain, error)
+    func NewBridgel2sovereignchain(address common.Address, backend bind.ContractBackend) (*Bridgel2sovereignchain, error)
+type Bridgel2sovereignchainBridgeEvent struct{ ... }
+type Bridgel2sovereignchainBridgeEventIterator struct{ ... }
+type Bridgel2sovereignchainCaller struct{ ... }
+    func NewBridgel2sovereignchainCaller(address common.Address, caller bind.ContractCaller) (*Bridgel2sovereignchainCaller, error)
+type Bridgel2sovereignchainCallerRaw struct{ ... }
+type Bridgel2sovereignchainCallerSession struct{ ... }
+type Bridgel2sovereignchainClaimEvent struct{ ... }
+type Bridgel2sovereignchainClaimEventIterator struct{ ... }
+type Bridgel2sovereignchainEmergencyStateActivated struct{ ... }
+type Bridgel2sovereignchainEmergencyStateActivatedIterator struct{ ... }
+type Bridgel2sovereignchainEmergencyStateDeactivated struct{ ... }
+type Bridgel2sovereignchainEmergencyStateDeactivatedIterator struct{ ... }
+type Bridgel2sovereignchainFilterer struct{ ... }
+    func NewBridgel2sovereignchainFilterer(address common.Address, filterer bind.ContractFilterer) (*Bridgel2sovereignchainFilterer, error)
+type Bridgel2sovereignchainInitialized struct{ ... }
+type Bridgel2sovereignchainInitializedIterator struct{ ... }
+type Bridgel2sovereignchainMigrateLegacyToken struct{ ... }
+type Bridgel2sovereignchainMigrateLegacyTokenIterator struct{ ... }
+type Bridgel2sovereignchainNewWrappedToken struct{ ... }
+type Bridgel2sovereignchainNewWrappedTokenIterator struct{ ... }
+type Bridgel2sovereignchainRaw struct{ ... }
+type Bridgel2sovereignchainRemoveLegacySovereignTokenAddress struct{ ... }
+type Bridgel2sovereignchainRemoveLegacySovereignTokenAddressIterator struct{ ... }
+type Bridgel2sovereignchainSession struct{ ... }
+type Bridgel2sovereignchainSetBridgeManager struct{ ... }
+type Bridgel2sovereignchainSetBridgeManagerIterator struct{ ... }
+type Bridgel2sovereignchainSetSovereignTokenAddress struct{ ... }
+type Bridgel2sovereignchainSetSovereignTokenAddressIterator struct{ ... }
+type Bridgel2sovereignchainSetSovereignWETHAddress struct{ ... }
+type Bridgel2sovereignchainSetSovereignWETHAddressIterator struct{ ... }
+type Bridgel2sovereignchainTransactor struct{ ... }
+    func NewBridgel2sovereignchainTransactor(address common.Address, transactor bind.ContractTransactor) (*Bridgel2sovereignchainTransactor, error)
+type Bridgel2sovereignchainTransactorRaw struct{ ... }
+type Bridgel2sovereignchainTransactorSession struct{ ... }
+type Bridgel2sovereignchainUnsetClaim struct{ ... }
+type Bridgel2sovereignchainUnsetClaimIterator struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/claimcompressor
+==============================
+package claimcompressor // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/claimcompressor"
+
+var ClaimcompressorABI = ClaimcompressorMetaData.ABI
+var ClaimcompressorBin = ClaimcompressorMetaData.Bin
+var ClaimcompressorMetaData = &bind.MetaData{ ... }
+type ClaimCompressorCompressClaimCallData struct{ ... }
+type Claimcompressor struct{ ... }
+    func DeployClaimcompressor(auth *bind.TransactOpts, backend bind.ContractBackend, ...) (common.Address, *types.Transaction, *Claimcompressor, error)
+    func NewClaimcompressor(address common.Address, backend bind.ContractBackend) (*Claimcompressor, error)
+type ClaimcompressorCaller struct{ ... }
+    func NewClaimcompressorCaller(address common.Address, caller bind.ContractCaller) (*ClaimcompressorCaller, error)
+type ClaimcompressorCallerRaw struct{ ... }
+type ClaimcompressorCallerSession struct{ ... }
+type ClaimcompressorFilterer struct{ ... }
+    func NewClaimcompressorFilterer(address common.Address, filterer bind.ContractFilterer) (*ClaimcompressorFilterer, error)
+type ClaimcompressorRaw struct{ ... }
+type ClaimcompressorSession struct{ ... }
+type ClaimcompressorTransactor struct{ ... }
+    func NewClaimcompressorTransactor(address common.Address, transactor bind.ContractTransactor) (*ClaimcompressorTransactor, error)
+type ClaimcompressorTransactorRaw struct{ ... }
+type ClaimcompressorTransactorSession struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/globalexitrootmanagerl2sovereignchain
+==============================
+package globalexitrootmanagerl2sovereignchain // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/globalexitrootmanagerl2sovereignchain"
+
+var Globalexitrootmanagerl2sovereignchainABI = Globalexitrootmanagerl2sovereignchainMetaData.ABI
+var Globalexitrootmanagerl2sovereignchainBin = Globalexitrootmanagerl2sovereignchainMetaData.Bin
+var Globalexitrootmanagerl2sovereignchainMetaData = &bind.MetaData{ ... }
+type Globalexitrootmanagerl2sovereignchain struct{ ... }
+    func DeployGlobalexitrootmanagerl2sovereignchain(auth *bind.TransactOpts, backend bind.ContractBackend, ...) (common.Address, *types.Transaction, *Globalexitrootmanagerl2sovereignchain, ...)
+    func NewGlobalexitrootmanagerl2sovereignchain(address common.Address, backend bind.ContractBackend) (*Globalexitrootmanagerl2sovereignchain, error)
+type Globalexitrootmanagerl2sovereignchainCaller struct{ ... }
+    func NewGlobalexitrootmanagerl2sovereignchainCaller(address common.Address, caller bind.ContractCaller) (*Globalexitrootmanagerl2sovereignchainCaller, error)
+type Globalexitrootmanagerl2sovereignchainCallerRaw struct{ ... }
+type Globalexitrootmanagerl2sovereignchainCallerSession struct{ ... }
+type Globalexitrootmanagerl2sovereignchainFilterer struct{ ... }
+    func NewGlobalexitrootmanagerl2sovereignchainFilterer(address common.Address, filterer bind.ContractFilterer) (*Globalexitrootmanagerl2sovereignchainFilterer, error)
+type Globalexitrootmanagerl2sovereignchainInitialized struct{ ... }
+type Globalexitrootmanagerl2sovereignchainInitializedIterator struct{ ... }
+type Globalexitrootmanagerl2sovereignchainRaw struct{ ... }
+type Globalexitrootmanagerl2sovereignchainSession struct{ ... }
+type Globalexitrootmanagerl2sovereignchainSetGlobalExitRootRemover struct{ ... }
+type Globalexitrootmanagerl2sovereignchainSetGlobalExitRootRemoverIterator struct{ ... }
+type Globalexitrootmanagerl2sovereignchainSetGlobalExitRootUpdater struct{ ... }
+type Globalexitrootmanagerl2sovereignchainSetGlobalExitRootUpdaterIterator struct{ ... }
+type Globalexitrootmanagerl2sovereignchainTransactor struct{ ... }
+    func NewGlobalexitrootmanagerl2sovereignchainTransactor(address common.Address, transactor bind.ContractTransactor) (*Globalexitrootmanagerl2sovereignchainTransactor, error)
+type Globalexitrootmanagerl2sovereignchainTransactorRaw struct{ ... }
+type Globalexitrootmanagerl2sovereignchainTransactorSession struct{ ... }
+type Globalexitrootmanagerl2sovereignchainUpdateHashChainValue struct{ ... }
+type Globalexitrootmanagerl2sovereignchainUpdateHashChainValueIterator struct{ ... }
+type Globalexitrootmanagerl2sovereignchainUpdateRemovalHashChainValue struct{ ... }
+type Globalexitrootmanagerl2sovereignchainUpdateRemovalHashChainValueIterator struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/mockpolygonrollupmanager
+==============================
+package mockpolygonrollupmanager // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/mockpolygonrollupmanager"
+
+var MockpolygonrollupmanagerABI = MockpolygonrollupmanagerMetaData.ABI
+var MockpolygonrollupmanagerBin = MockpolygonrollupmanagerMetaData.Bin
+var MockpolygonrollupmanagerMetaData = &bind.MetaData{ ... }
+type LegacyZKEVMStateVariablesPendingState struct{ ... }
+type LegacyZKEVMStateVariablesSequencedBatchData struct{ ... }
+type Mockpolygonrollupmanager struct{ ... }
+    func DeployMockpolygonrollupmanager(auth *bind.TransactOpts, backend bind.ContractBackend, ...) (common.Address, *types.Transaction, *Mockpolygonrollupmanager, error)
+    func NewMockpolygonrollupmanager(address common.Address, backend bind.ContractBackend) (*Mockpolygonrollupmanager, error)
+type MockpolygonrollupmanagerAddExistingRollup struct{ ... }
+type MockpolygonrollupmanagerAddExistingRollupIterator struct{ ... }
+type MockpolygonrollupmanagerAddNewRollupType struct{ ... }
+type MockpolygonrollupmanagerAddNewRollupTypeIterator struct{ ... }
+type MockpolygonrollupmanagerCaller struct{ ... }
+    func NewMockpolygonrollupmanagerCaller(address common.Address, caller bind.ContractCaller) (*MockpolygonrollupmanagerCaller, error)
+type MockpolygonrollupmanagerCallerRaw struct{ ... }
+type MockpolygonrollupmanagerCallerSession struct{ ... }
+type MockpolygonrollupmanagerConsolidatePendingState struct{ ... }
+type MockpolygonrollupmanagerConsolidatePendingStateIterator struct{ ... }
+type MockpolygonrollupmanagerCreateNewRollup struct{ ... }
+type MockpolygonrollupmanagerCreateNewRollupIterator struct{ ... }
+type MockpolygonrollupmanagerEmergencyStateActivated struct{ ... }
+type MockpolygonrollupmanagerEmergencyStateActivatedIterator struct{ ... }
+type MockpolygonrollupmanagerEmergencyStateDeactivated struct{ ... }
+type MockpolygonrollupmanagerEmergencyStateDeactivatedIterator struct{ ... }
+type MockpolygonrollupmanagerFilterer struct{ ... }
+    func NewMockpolygonrollupmanagerFilterer(address common.Address, filterer bind.ContractFilterer) (*MockpolygonrollupmanagerFilterer, error)
+type MockpolygonrollupmanagerInitialized struct{ ... }
+type MockpolygonrollupmanagerInitializedIterator struct{ ... }
+type MockpolygonrollupmanagerObsoleteRollupType struct{ ... }
+type MockpolygonrollupmanagerObsoleteRollupTypeIterator struct{ ... }
+type MockpolygonrollupmanagerOnSequenceBatches struct{ ... }
+type MockpolygonrollupmanagerOnSequenceBatchesIterator struct{ ... }
+type MockpolygonrollupmanagerOverridePendingState struct{ ... }
+type MockpolygonrollupmanagerOverridePendingStateIterator struct{ ... }
+type MockpolygonrollupmanagerProveNonDeterministicPendingState struct{ ... }
+type MockpolygonrollupmanagerProveNonDeterministicPendingStateIterator struct{ ... }
+type MockpolygonrollupmanagerRaw struct{ ... }
+type MockpolygonrollupmanagerRoleAdminChanged struct{ ... }
+type MockpolygonrollupmanagerRoleAdminChangedIterator struct{ ... }
+type MockpolygonrollupmanagerRoleGranted struct{ ... }
+type MockpolygonrollupmanagerRoleGrantedIterator struct{ ... }
+type MockpolygonrollupmanagerRoleRevoked struct{ ... }
+type MockpolygonrollupmanagerRoleRevokedIterator struct{ ... }
+type MockpolygonrollupmanagerSession struct{ ... }
+type MockpolygonrollupmanagerSetBatchFee struct{ ... }
+type MockpolygonrollupmanagerSetBatchFeeIterator struct{ ... }
+type MockpolygonrollupmanagerSetMultiplierBatchFee struct{ ... }
+type MockpolygonrollupmanagerSetMultiplierBatchFeeIterator struct{ ... }
+type MockpolygonrollupmanagerSetPendingStateTimeout struct{ ... }
+type MockpolygonrollupmanagerSetPendingStateTimeoutIterator struct{ ... }
+type MockpolygonrollupmanagerSetTrustedAggregator struct{ ... }
+type MockpolygonrollupmanagerSetTrustedAggregatorIterator struct{ ... }
+type MockpolygonrollupmanagerSetTrustedAggregatorTimeout struct{ ... }
+type MockpolygonrollupmanagerSetTrustedAggregatorTimeoutIterator struct{ ... }
+type MockpolygonrollupmanagerSetVerifyBatchTimeTarget struct{ ... }
+type MockpolygonrollupmanagerSetVerifyBatchTimeTargetIterator struct{ ... }
+type MockpolygonrollupmanagerTransactor struct{ ... }
+    func NewMockpolygonrollupmanagerTransactor(address common.Address, transactor bind.ContractTransactor) (*MockpolygonrollupmanagerTransactor, error)
+type MockpolygonrollupmanagerTransactorRaw struct{ ... }
+type MockpolygonrollupmanagerTransactorSession struct{ ... }
+type MockpolygonrollupmanagerUpdateRollup struct{ ... }
+type MockpolygonrollupmanagerUpdateRollupIterator struct{ ... }
+type MockpolygonrollupmanagerVerifyBatches struct{ ... }
+type MockpolygonrollupmanagerVerifyBatchesIterator struct{ ... }
+type MockpolygonrollupmanagerVerifyBatchesTrustedAggregator struct{ ... }
+type MockpolygonrollupmanagerVerifyBatchesTrustedAggregatorIterator struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/mockverifier
+==============================
+package mockverifier // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/mockverifier"
+
+var MockverifierABI = MockverifierMetaData.ABI
+var MockverifierBin = MockverifierMetaData.Bin
+var MockverifierMetaData = &bind.MetaData{ ... }
+type Mockverifier struct{ ... }
+    func DeployMockverifier(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Mockverifier, error)
+    func NewMockverifier(address common.Address, backend bind.ContractBackend) (*Mockverifier, error)
+type MockverifierCaller struct{ ... }
+    func NewMockverifierCaller(address common.Address, caller bind.ContractCaller) (*MockverifierCaller, error)
+type MockverifierCallerRaw struct{ ... }
+type MockverifierCallerSession struct{ ... }
+type MockverifierFilterer struct{ ... }
+    func NewMockverifierFilterer(address common.Address, filterer bind.ContractFilterer) (*MockverifierFilterer, error)
+type MockverifierRaw struct{ ... }
+type MockverifierSession struct{ ... }
+type MockverifierTransactor struct{ ... }
+    func NewMockverifierTransactor(address common.Address, transactor bind.ContractTransactor) (*MockverifierTransactor, error)
+type MockverifierTransactorRaw struct{ ... }
+type MockverifierTransactorSession struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/oldglobalexitrootmanagerl2sovereignchain
+==============================
+package oldglobalexitrootmanagerl2sovereignchain // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/oldglobalexitrootmanagerl2sovereignchain"
+
+var Oldglobalexitrootmanagerl2sovereignchainABI = Oldglobalexitrootmanagerl2sovereignchainMetaData.ABI
+var Oldglobalexitrootmanagerl2sovereignchainBin = Oldglobalexitrootmanagerl2sovereignchainMetaData.Bin
+var Oldglobalexitrootmanagerl2sovereignchainMetaData = &bind.MetaData{ ... }
+type Oldglobalexitrootmanagerl2sovereignchain struct{ ... }
+    func DeployOldglobalexitrootmanagerl2sovereignchain(auth *bind.TransactOpts, backend bind.ContractBackend, ...) (common.Address, *types.Transaction, *Oldglobalexitrootmanagerl2sovereignchain, ...)
+    func NewOldglobalexitrootmanagerl2sovereignchain(address common.Address, backend bind.ContractBackend) (*Oldglobalexitrootmanagerl2sovereignchain, error)
+type Oldglobalexitrootmanagerl2sovereignchainCaller struct{ ... }
+    func NewOldglobalexitrootmanagerl2sovereignchainCaller(address common.Address, caller bind.ContractCaller) (*Oldglobalexitrootmanagerl2sovereignchainCaller, error)
+type Oldglobalexitrootmanagerl2sovereignchainCallerRaw struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainCallerSession struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainFilterer struct{ ... }
+    func NewOldglobalexitrootmanagerl2sovereignchainFilterer(address common.Address, filterer bind.ContractFilterer) (*Oldglobalexitrootmanagerl2sovereignchainFilterer, error)
+type Oldglobalexitrootmanagerl2sovereignchainInitialized struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainInitializedIterator struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainInsertGlobalExitRoot struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainInsertGlobalExitRootIterator struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainRaw struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainRemoveLastGlobalExitRoot struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainRemoveLastGlobalExitRootIterator struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainSession struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainSetGlobalExitRootRemover struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainSetGlobalExitRootRemoverIterator struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainSetGlobalExitRootUpdater struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainSetGlobalExitRootUpdaterIterator struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainTransactor struct{ ... }
+    func NewOldglobalexitrootmanagerl2sovereignchainTransactor(address common.Address, transactor bind.ContractTransactor) (*Oldglobalexitrootmanagerl2sovereignchainTransactor, error)
+type Oldglobalexitrootmanagerl2sovereignchainTransactorRaw struct{ ... }
+type Oldglobalexitrootmanagerl2sovereignchainTransactorSession struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/oldpolygonzkevmbridge
+==============================
+package oldpolygonzkevmbridge // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/oldpolygonzkevmbridge"
+
+var OldpolygonzkevmbridgeABI = OldpolygonzkevmbridgeMetaData.ABI
+var OldpolygonzkevmbridgeBin = OldpolygonzkevmbridgeMetaData.Bin
+var OldpolygonzkevmbridgeMetaData = &bind.MetaData{ ... }
+type Oldpolygonzkevmbridge struct{ ... }
+    func DeployOldpolygonzkevmbridge(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Oldpolygonzkevmbridge, error)
+    func NewOldpolygonzkevmbridge(address common.Address, backend bind.ContractBackend) (*Oldpolygonzkevmbridge, error)
+type OldpolygonzkevmbridgeBridgeEvent struct{ ... }
+type OldpolygonzkevmbridgeBridgeEventIterator struct{ ... }
+type OldpolygonzkevmbridgeCaller struct{ ... }
+    func NewOldpolygonzkevmbridgeCaller(address common.Address, caller bind.ContractCaller) (*OldpolygonzkevmbridgeCaller, error)
+type OldpolygonzkevmbridgeCallerRaw struct{ ... }
+type OldpolygonzkevmbridgeCallerSession struct{ ... }
+type OldpolygonzkevmbridgeClaimEvent struct{ ... }
+type OldpolygonzkevmbridgeClaimEventIterator struct{ ... }
+type OldpolygonzkevmbridgeEmergencyStateActivated struct{ ... }
+type OldpolygonzkevmbridgeEmergencyStateActivatedIterator struct{ ... }
+type OldpolygonzkevmbridgeEmergencyStateDeactivated struct{ ... }
+type OldpolygonzkevmbridgeEmergencyStateDeactivatedIterator struct{ ... }
+type OldpolygonzkevmbridgeFilterer struct{ ... }
+    func NewOldpolygonzkevmbridgeFilterer(address common.Address, filterer bind.ContractFilterer) (*OldpolygonzkevmbridgeFilterer, error)
+type OldpolygonzkevmbridgeInitialized struct{ ... }
+type OldpolygonzkevmbridgeInitializedIterator struct{ ... }
+type OldpolygonzkevmbridgeNewWrappedToken struct{ ... }
+type OldpolygonzkevmbridgeNewWrappedTokenIterator struct{ ... }
+type OldpolygonzkevmbridgeRaw struct{ ... }
+type OldpolygonzkevmbridgeSession struct{ ... }
+type OldpolygonzkevmbridgeTransactor struct{ ... }
+    func NewOldpolygonzkevmbridgeTransactor(address common.Address, transactor bind.ContractTransactor) (*OldpolygonzkevmbridgeTransactor, error)
+type OldpolygonzkevmbridgeTransactorRaw struct{ ... }
+type OldpolygonzkevmbridgeTransactorSession struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/pol
+==============================
+package pol // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/pol"
+
+var PolABI = PolMetaData.ABI
+var PolBin = PolMetaData.Bin
+var PolMetaData = &bind.MetaData{ ... }
+type Pol struct{ ... }
+    func DeployPol(auth *bind.TransactOpts, backend bind.ContractBackend, name string, ...) (common.Address, *types.Transaction, *Pol, error)
+    func NewPol(address common.Address, backend bind.ContractBackend) (*Pol, error)
+type PolApproval struct{ ... }
+type PolApprovalIterator struct{ ... }
+type PolCaller struct{ ... }
+    func NewPolCaller(address common.Address, caller bind.ContractCaller) (*PolCaller, error)
+type PolCallerRaw struct{ ... }
+type PolCallerSession struct{ ... }
+type PolFilterer struct{ ... }
+    func NewPolFilterer(address common.Address, filterer bind.ContractFilterer) (*PolFilterer, error)
+type PolPaused struct{ ... }
+type PolPausedIterator struct{ ... }
+type PolPauserAdded struct{ ... }
+type PolPauserAddedIterator struct{ ... }
+type PolPauserRemoved struct{ ... }
+type PolPauserRemovedIterator struct{ ... }
+type PolRaw struct{ ... }
+type PolSession struct{ ... }
+type PolTransactor struct{ ... }
+    func NewPolTransactor(address common.Address, transactor bind.ContractTransactor) (*PolTransactor, error)
+type PolTransactorRaw struct{ ... }
+type PolTransactorSession struct{ ... }
+type PolTransfer struct{ ... }
+type PolTransferIterator struct{ ... }
+type PolUnpaused struct{ ... }
+type PolUnpausedIterator struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonrollupmanager
+==============================
+package polygonrollupmanager // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonrollupmanager"
+
+var PolygonrollupmanagerABI = PolygonrollupmanagerMetaData.ABI
+var PolygonrollupmanagerBin = PolygonrollupmanagerMetaData.Bin
+var PolygonrollupmanagerMetaData = &bind.MetaData{ ... }
+type LegacyZKEVMStateVariablesPendingState struct{ ... }
+type LegacyZKEVMStateVariablesSequencedBatchData struct{ ... }
+type Polygonrollupmanager struct{ ... }
+    func DeployPolygonrollupmanager(auth *bind.TransactOpts, backend bind.ContractBackend, ...) (common.Address, *types.Transaction, *Polygonrollupmanager, error)
+    func NewPolygonrollupmanager(address common.Address, backend bind.ContractBackend) (*Polygonrollupmanager, error)
+type PolygonrollupmanagerAddExistingRollup struct{ ... }
+type PolygonrollupmanagerAddExistingRollupIterator struct{ ... }
+type PolygonrollupmanagerAddNewRollupType struct{ ... }
+type PolygonrollupmanagerAddNewRollupTypeIterator struct{ ... }
+type PolygonrollupmanagerCaller struct{ ... }
+    func NewPolygonrollupmanagerCaller(address common.Address, caller bind.ContractCaller) (*PolygonrollupmanagerCaller, error)
+type PolygonrollupmanagerCallerRaw struct{ ... }
+type PolygonrollupmanagerCallerSession struct{ ... }
+type PolygonrollupmanagerConsolidatePendingState struct{ ... }
+type PolygonrollupmanagerConsolidatePendingStateIterator struct{ ... }
+type PolygonrollupmanagerCreateNewRollup struct{ ... }
+type PolygonrollupmanagerCreateNewRollupIterator struct{ ... }
+type PolygonrollupmanagerEmergencyStateActivated struct{ ... }
+type PolygonrollupmanagerEmergencyStateActivatedIterator struct{ ... }
+type PolygonrollupmanagerEmergencyStateDeactivated struct{ ... }
+type PolygonrollupmanagerEmergencyStateDeactivatedIterator struct{ ... }
+type PolygonrollupmanagerFilterer struct{ ... }
+    func NewPolygonrollupmanagerFilterer(address common.Address, filterer bind.ContractFilterer) (*PolygonrollupmanagerFilterer, error)
+type PolygonrollupmanagerInitialized struct{ ... }
+type PolygonrollupmanagerInitializedIterator struct{ ... }
+type PolygonrollupmanagerObsoleteRollupType struct{ ... }
+type PolygonrollupmanagerObsoleteRollupTypeIterator struct{ ... }
+type PolygonrollupmanagerOnSequenceBatches struct{ ... }
+type PolygonrollupmanagerOnSequenceBatchesIterator struct{ ... }
+type PolygonrollupmanagerOverridePendingState struct{ ... }
+type PolygonrollupmanagerOverridePendingStateIterator struct{ ... }
+type PolygonrollupmanagerProveNonDeterministicPendingState struct{ ... }
+type PolygonrollupmanagerProveNonDeterministicPendingStateIterator struct{ ... }
+type PolygonrollupmanagerRaw struct{ ... }
+type PolygonrollupmanagerRoleAdminChanged struct{ ... }
+type PolygonrollupmanagerRoleAdminChangedIterator struct{ ... }
+type PolygonrollupmanagerRoleGranted struct{ ... }
+type PolygonrollupmanagerRoleGrantedIterator struct{ ... }
+type PolygonrollupmanagerRoleRevoked struct{ ... }
+type PolygonrollupmanagerRoleRevokedIterator struct{ ... }
+type PolygonrollupmanagerSession struct{ ... }
+type PolygonrollupmanagerSetBatchFee struct{ ... }
+type PolygonrollupmanagerSetBatchFeeIterator struct{ ... }
+type PolygonrollupmanagerSetMultiplierBatchFee struct{ ... }
+type PolygonrollupmanagerSetMultiplierBatchFeeIterator struct{ ... }
+type PolygonrollupmanagerSetPendingStateTimeout struct{ ... }
+type PolygonrollupmanagerSetPendingStateTimeoutIterator struct{ ... }
+type PolygonrollupmanagerSetTrustedAggregator struct{ ... }
+type PolygonrollupmanagerSetTrustedAggregatorIterator struct{ ... }
+type PolygonrollupmanagerSetTrustedAggregatorTimeout struct{ ... }
+type PolygonrollupmanagerSetTrustedAggregatorTimeoutIterator struct{ ... }
+type PolygonrollupmanagerSetVerifyBatchTimeTarget struct{ ... }
+type PolygonrollupmanagerSetVerifyBatchTimeTargetIterator struct{ ... }
+type PolygonrollupmanagerTransactor struct{ ... }
+    func NewPolygonrollupmanagerTransactor(address common.Address, transactor bind.ContractTransactor) (*PolygonrollupmanagerTransactor, error)
+type PolygonrollupmanagerTransactorRaw struct{ ... }
+type PolygonrollupmanagerTransactorSession struct{ ... }
+type PolygonrollupmanagerUpdateRollup struct{ ... }
+type PolygonrollupmanagerUpdateRollupIterator struct{ ... }
+type PolygonrollupmanagerVerifyBatches struct{ ... }
+type PolygonrollupmanagerVerifyBatchesIterator struct{ ... }
+type PolygonrollupmanagerVerifyBatchesTrustedAggregator struct{ ... }
+type PolygonrollupmanagerVerifyBatchesTrustedAggregatorIterator struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonzkevm
+==============================
+package polygonzkevm // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonzkevm"
+
+var PolygonzkevmABI = PolygonzkevmMetaData.ABI
+var PolygonzkevmBin = PolygonzkevmMetaData.Bin
+var PolygonzkevmMetaData = &bind.MetaData{ ... }
+type PolygonRollupBaseEtrogBatchData struct{ ... }
+type Polygonzkevm struct{ ... }
+    func DeployPolygonzkevm(auth *bind.TransactOpts, backend bind.ContractBackend, ...) (common.Address, *types.Transaction, *Polygonzkevm, error)
+    func NewPolygonzkevm(address common.Address, backend bind.ContractBackend) (*Polygonzkevm, error)
+type PolygonzkevmAcceptAdminRole struct{ ... }
+type PolygonzkevmAcceptAdminRoleIterator struct{ ... }
+type PolygonzkevmCaller struct{ ... }
+    func NewPolygonzkevmCaller(address common.Address, caller bind.ContractCaller) (*PolygonzkevmCaller, error)
+type PolygonzkevmCallerRaw struct{ ... }
+type PolygonzkevmCallerSession struct{ ... }
+type PolygonzkevmFilterer struct{ ... }
+    func NewPolygonzkevmFilterer(address common.Address, filterer bind.ContractFilterer) (*PolygonzkevmFilterer, error)
+type PolygonzkevmForceBatch struct{ ... }
+type PolygonzkevmForceBatchIterator struct{ ... }
+type PolygonzkevmInitialSequenceBatches struct{ ... }
+type PolygonzkevmInitialSequenceBatchesIterator struct{ ... }
+type PolygonzkevmInitialized struct{ ... }
+type PolygonzkevmInitializedIterator struct{ ... }
+type PolygonzkevmRaw struct{ ... }
+type PolygonzkevmSequenceBatches struct{ ... }
+type PolygonzkevmSequenceBatchesIterator struct{ ... }
+type PolygonzkevmSequenceForceBatches struct{ ... }
+type PolygonzkevmSequenceForceBatchesIterator struct{ ... }
+type PolygonzkevmSession struct{ ... }
+type PolygonzkevmSetForceBatchAddress struct{ ... }
+type PolygonzkevmSetForceBatchAddressIterator struct{ ... }
+type PolygonzkevmSetForceBatchTimeout struct{ ... }
+type PolygonzkevmSetForceBatchTimeoutIterator struct{ ... }
+type PolygonzkevmSetTrustedSequencer struct{ ... }
+type PolygonzkevmSetTrustedSequencerIterator struct{ ... }
+type PolygonzkevmSetTrustedSequencerURL struct{ ... }
+type PolygonzkevmSetTrustedSequencerURLIterator struct{ ... }
+type PolygonzkevmTransactor struct{ ... }
+    func NewPolygonzkevmTransactor(address common.Address, transactor bind.ContractTransactor) (*PolygonzkevmTransactor, error)
+type PolygonzkevmTransactorRaw struct{ ... }
+type PolygonzkevmTransactorSession struct{ ... }
+type PolygonzkevmTransferAdminRole struct{ ... }
+type PolygonzkevmTransferAdminRoleIterator struct{ ... }
+type PolygonzkevmVerifyBatches struct{ ... }
+type PolygonzkevmVerifyBatchesIterator struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2
+==============================
+package polygonzkevmbridgev2 // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
+
+var Polygonzkevmbridgev2ABI = Polygonzkevmbridgev2MetaData.ABI
+var Polygonzkevmbridgev2Bin = Polygonzkevmbridgev2MetaData.Bin
+var Polygonzkevmbridgev2MetaData = &bind.MetaData{ ... }
+type Polygonzkevmbridgev2 struct{ ... }
+    func DeployPolygonzkevmbridgev2(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Polygonzkevmbridgev2, error)
+    func NewPolygonzkevmbridgev2(address common.Address, backend bind.ContractBackend) (*Polygonzkevmbridgev2, error)
+type Polygonzkevmbridgev2BridgeEvent struct{ ... }
+type Polygonzkevmbridgev2BridgeEventIterator struct{ ... }
+type Polygonzkevmbridgev2Caller struct{ ... }
+    func NewPolygonzkevmbridgev2Caller(address common.Address, caller bind.ContractCaller) (*Polygonzkevmbridgev2Caller, error)
+type Polygonzkevmbridgev2CallerRaw struct{ ... }
+type Polygonzkevmbridgev2CallerSession struct{ ... }
+type Polygonzkevmbridgev2ClaimEvent struct{ ... }
+type Polygonzkevmbridgev2ClaimEventIterator struct{ ... }
+type Polygonzkevmbridgev2EmergencyStateActivated struct{ ... }
+type Polygonzkevmbridgev2EmergencyStateActivatedIterator struct{ ... }
+type Polygonzkevmbridgev2EmergencyStateDeactivated struct{ ... }
+type Polygonzkevmbridgev2EmergencyStateDeactivatedIterator struct{ ... }
+type Polygonzkevmbridgev2Filterer struct{ ... }
+    func NewPolygonzkevmbridgev2Filterer(address common.Address, filterer bind.ContractFilterer) (*Polygonzkevmbridgev2Filterer, error)
+type Polygonzkevmbridgev2Initialized struct{ ... }
+type Polygonzkevmbridgev2InitializedIterator struct{ ... }
+type Polygonzkevmbridgev2NewWrappedToken struct{ ... }
+type Polygonzkevmbridgev2NewWrappedTokenIterator struct{ ... }
+type Polygonzkevmbridgev2Raw struct{ ... }
+type Polygonzkevmbridgev2Session struct{ ... }
+type Polygonzkevmbridgev2Transactor struct{ ... }
+    func NewPolygonzkevmbridgev2Transactor(address common.Address, transactor bind.ContractTransactor) (*Polygonzkevmbridgev2Transactor, error)
+type Polygonzkevmbridgev2TransactorRaw struct{ ... }
+type Polygonzkevmbridgev2TransactorSession struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmglobalexitroot
+==============================
+package polygonzkevmglobalexitroot // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmglobalexitroot"
+
+var PolygonzkevmglobalexitrootABI = PolygonzkevmglobalexitrootMetaData.ABI
+var PolygonzkevmglobalexitrootBin = PolygonzkevmglobalexitrootMetaData.Bin
+var PolygonzkevmglobalexitrootMetaData = &bind.MetaData{ ... }
+type Polygonzkevmglobalexitroot struct{ ... }
+    func DeployPolygonzkevmglobalexitroot(auth *bind.TransactOpts, backend bind.ContractBackend, ...) (common.Address, *types.Transaction, *Polygonzkevmglobalexitroot, error)
+    func NewPolygonzkevmglobalexitroot(address common.Address, backend bind.ContractBackend) (*Polygonzkevmglobalexitroot, error)
+type PolygonzkevmglobalexitrootCaller struct{ ... }
+    func NewPolygonzkevmglobalexitrootCaller(address common.Address, caller bind.ContractCaller) (*PolygonzkevmglobalexitrootCaller, error)
+type PolygonzkevmglobalexitrootCallerRaw struct{ ... }
+type PolygonzkevmglobalexitrootCallerSession struct{ ... }
+type PolygonzkevmglobalexitrootFilterer struct{ ... }
+    func NewPolygonzkevmglobalexitrootFilterer(address common.Address, filterer bind.ContractFilterer) (*PolygonzkevmglobalexitrootFilterer, error)
+type PolygonzkevmglobalexitrootRaw struct{ ... }
+type PolygonzkevmglobalexitrootSession struct{ ... }
+type PolygonzkevmglobalexitrootTransactor struct{ ... }
+    func NewPolygonzkevmglobalexitrootTransactor(address common.Address, transactor bind.ContractTransactor) (*PolygonzkevmglobalexitrootTransactor, error)
+type PolygonzkevmglobalexitrootTransactorRaw struct{ ... }
+type PolygonzkevmglobalexitrootTransactorSession struct{ ... }
+type PolygonzkevmglobalexitrootUpdateL1InfoTree struct{ ... }
+type PolygonzkevmglobalexitrootUpdateL1InfoTreeIterator struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/proxy
+==============================
+package proxy // import "github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/proxy"
+
+var ProxyABI = ProxyMetaData.ABI
+var ProxyBin = ProxyMetaData.Bin
+var ProxyMetaData = &bind.MetaData{ ... }
+type Proxy struct{ ... }
+    func DeployProxy(auth *bind.TransactOpts, backend bind.ContractBackend, _logic common.Address, ...) (common.Address, *types.Transaction, *Proxy, error)
+    func NewProxy(address common.Address, backend bind.ContractBackend) (*Proxy, error)
+type ProxyAdminChanged struct{ ... }
+type ProxyAdminChangedIterator struct{ ... }
+type ProxyBeaconUpgraded struct{ ... }
+type ProxyBeaconUpgradedIterator struct{ ... }
+type ProxyCaller struct{ ... }
+    func NewProxyCaller(address common.Address, caller bind.ContractCaller) (*ProxyCaller, error)
+type ProxyCallerRaw struct{ ... }
+type ProxyCallerSession struct{ ... }
+type ProxyFilterer struct{ ... }
+    func NewProxyFilterer(address common.Address, filterer bind.ContractFilterer) (*ProxyFilterer, error)
+type ProxyRaw struct{ ... }
+type ProxySession struct{ ... }
+type ProxyTransactor struct{ ... }
+    func NewProxyTransactor(address common.Address, transactor bind.ContractTransactor) (*ProxyTransactor, error)
+type ProxyTransactorRaw struct{ ... }
+type ProxyTransactorSession struct{ ... }
+type ProxyUpgraded struct{ ... }
+type ProxyUpgradedIterator struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/hex
+==============================
+package hex // import "github.com/0xPolygon/zkevm-bridge-service/hex"
+
+const Base = 16 ...
+const BadNibble = ^uint64(0)
+func DecodeBig(hexNum string) *big.Int
+func DecodeHex(str string) ([]byte, error)
+func DecodeNibble(in byte) uint64
+func DecodeString(str string) ([]byte, error)
+func DecodeUint64(str string) uint64
+func EncodeBig(bigint *big.Int) string
+func EncodeToHex(str []byte) string
+func EncodeToString(str []byte) string
+func EncodeUint64(i uint64) string
+func MustDecodeHex(str string) []byte
+type DecError struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/jsonrpcclient
+==============================
+package client // import "github.com/0xPolygon/zkevm-bridge-service/jsonrpcclient"
+
+func JSONRPCCall(url, method string, parameters ...interface{}) (types.Response, error)
+type BatchCall struct{ ... }
+type Client struct{ ... }
+    func NewClient(url string) *Client
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/jsonrpcclient/types
+==============================
+package types // import "github.com/0xPolygon/zkevm-bridge-service/jsonrpcclient/types"
+
+const Earliest = "earliest" ...
+const DefaultErrorCode = -32000 ...
+var ErrBatchRequestsDisabled = fmt.Errorf("batch requests are disabled") ...
+type ArgBig big.Int
+type ArgBytes []byte
+    func ArgBytesPtr(b []byte) *ArgBytes
+type ArgUint64 uint64
+    func ArgUint64Ptr(a ArgUint64) *ArgUint64
+type Error interface{ ... }
+type ErrorObject struct{ ... }
+type ExitRoots struct{ ... }
+type RPCError struct{ ... }
+    func NewRPCError(code int, err string, args ...interface{}) *RPCError
+    func NewRPCErrorWithData(code int, err string, data []byte, args ...interface{}) *RPCError
+type Request struct{ ... }
+type Response struct{ ... }
+    func NewResponse(req Request, reply []byte, err Error) Response
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/log
+==============================
+package log // import "github.com/0xPolygon/zkevm-bridge-service/log"
+
+const EnvironmentProduction = LogEnvironment("production") ...
+func Debug(args ...interface{})
+func Debugf(template string, args ...interface{})
+func Debugw(msg string, kv ...interface{})
+func Error(args ...interface{})
+func Errorf(template string, args ...interface{})
+func Errorw(msg string, kv ...interface{})
+func Fatal(args ...interface{})
+func Fatalf(template string, args ...interface{})
+func Fatalw(msg string, kv ...interface{})
+func Info(args ...interface{})
+func Infof(template string, args ...interface{})
+func Infow(msg string, kv ...interface{})
+func Init(cfg Config)
+func NewLogger(cfg Config) (*zap.SugaredLogger, *zap.AtomicLevel, error)
+func Warn(args ...interface{})
+func Warnf(template string, args ...interface{})
+func Warnw(msg string, kv ...interface{})
+type Config struct{ ... }
+type LogEnvironment string
+type Logger struct{ ... }
+    func WithFields(keyValuePairs ...interface{}) *Logger
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/metrics
+==============================
+package metrics // import "github.com/0xPolygon/zkevm-bridge-service/metrics"
+
+const Endpoint = "/metrics"
+func Counter(name string) (counter prometheus.Counter, exist bool)
+func CounterAdd(name string, value float64)
+func CounterInc(name string)
+func CounterVec(name string) (counterVec *prometheus.CounterVec, exist bool)
+func CounterVecAdd(name string, label string, value float64)
+func CounterVecInc(name string, label string)
+func Gauge(name string) (gauge prometheus.Gauge, exist bool)
+func GaugeDec(name string)
+func GaugeInc(name string)
+func GaugeSet(name string, value float64)
+func Handler() http.Handler
+func Histogram(name string) (histogram prometheus.Histogram, exist bool)
+func HistogramObserve(name string, value float64)
+func HistogramVec(name string) (histgramVec *prometheus.HistogramVec, exist bool)
+func HistogramVecObserve(name string, label string, value float64)
+func Init()
+func RegisterCounterVecs(opts ...CounterVecOpts)
+func RegisterCounters(opts ...prometheus.CounterOpts)
+func RegisterGauges(opts ...prometheus.GaugeOpts)
+func RegisterHistogramVecs(opts ...HistogramVecOpts)
+func RegisterHistograms(opts ...prometheus.HistogramOpts)
+func RegisterSummaries(opts ...prometheus.SummaryOpts)
+func Summary(name string) (summary prometheus.Summary, exist bool)
+func UnregisterCounterVecs(names ...string)
+func UnregisterCounters(names ...string)
+func UnregisterGauges(names ...string)
+func UnregisterHistogram(names ...string)
+func UnregisterHistogramVecs(names ...string)
+func UnregisterSummaries(names ...string)
+type Config struct{ ... }
+type CounterVecOpts struct{ ... }
+type HistogramVecOpts struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/scripts/cmd
+==============================
+
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/scripts/cmd/dependencies
+==============================
+package dependencies // import "github.com/0xPolygon/zkevm-bridge-service/scripts/cmd/dependencies"
+
+type AdapterFs struct{ ... }
+type Config struct{ ... }
+type ImagesConfig struct{ ... }
+type Manager struct{ ... }
+    func NewManager(cfg *Config) *Manager
+type PBConfig struct{ ... }
+type TVConfig struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/server
+==============================
+package server // import "github.com/0xPolygon/zkevm-bridge-service/server"
+
+func RunServer(ctx context.Context, cfg Config, bridgeService pb.BridgeServiceServer) error
+func NewBridgeService(cfg Config, height uint8, networks []uint32, storage interface{}) *bridgeService
+type Config struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/server/metrics
+==============================
+package metrics // import "github.com/0xPolygon/zkevm-bridge-service/server/metrics"
+
+const Prefix = "api_" ...
+func CheckAPICounter()
+func CheckAPILatency(lastProcessTime time.Duration)
+func GetBridgeCounter()
+func GetBridgeLatency(lastProcessTime time.Duration)
+func GetBridgesCounter()
+func GetBridgesLatency(lastProcessTime time.Duration)
+func GetClaimsCounter()
+func GetClaimsLatency(lastProcessTime time.Duration)
+func GetPendingBridgesToClaimCounter()
+func GetPendingBridgesToClaimLatency(lastProcessTime time.Duration)
+func GetProofByGERCounter()
+func GetProofByGERLatency(lastProcessTime time.Duration)
+func GetProofCounter()
+func GetProofLatency(lastProcessTime time.Duration)
+func GetTokenWrappedCounter()
+func GetTokenWrappedLatency(lastProcessTime time.Duration)
+func Register(networkID uint32)
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/synchronizer
+==============================
+package synchronizer // import "github.com/0xPolygon/zkevm-bridge-service/synchronizer"
+
+type ClientSynchronizer struct{ ... }
+type Config struct{ ... }
+type Synchronizer interface{ ... }
+    func NewSynchronizer(parentCtx context.Context, storage interface{}, bridge bridgectrlInterface, ...) (Synchronizer, error)
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/synchronizer/metrics
+==============================
+package metrics // import "github.com/0xPolygon/zkevm-bridge-service/synchronizer/metrics"
+
+const InitializationTimeName = "initialization_time" ...
+type Metrics struct{ ... }
+type MetricsInterface interface{ ... }
+    func Register(networkID uint32) MetricsInterface
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/client
+==============================
+package client // import "github.com/0xPolygon/zkevm-bridge-service/test/client"
+
+type Client struct{ ... }
+    func NewClient(ctx context.Context, cfg Config) (*Client, error)
+type Config struct{ ... }
+type NetworkSID string
+type NodeClient struct{ ... }
+type RestClient struct{ ... }
+    func NewRestClient(url string) *RestClient
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/mocksmartcontracts/BridgeMessageReceiver
+==============================
+package BridgeMessageReceiver // import "github.com/0xPolygon/zkevm-bridge-service/test/mocksmartcontracts/BridgeMessageReceiver"
+
+var BridgeMessageReceiverABI = BridgeMessageReceiverMetaData.ABI
+var BridgeMessageReceiverBin = BridgeMessageReceiverMetaData.Bin
+var BridgeMessageReceiverMetaData = &bind.MetaData{ ... }
+type BridgeMessageReceiver struct{ ... }
+    func DeployBridgeMessageReceiver(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *BridgeMessageReceiver, error)
+    func NewBridgeMessageReceiver(address common.Address, backend bind.ContractBackend) (*BridgeMessageReceiver, error)
+type BridgeMessageReceiverCaller struct{ ... }
+    func NewBridgeMessageReceiverCaller(address common.Address, caller bind.ContractCaller) (*BridgeMessageReceiverCaller, error)
+type BridgeMessageReceiverCallerRaw struct{ ... }
+type BridgeMessageReceiverCallerSession struct{ ... }
+type BridgeMessageReceiverFilterer struct{ ... }
+    func NewBridgeMessageReceiverFilterer(address common.Address, filterer bind.ContractFilterer) (*BridgeMessageReceiverFilterer, error)
+type BridgeMessageReceiverRaw struct{ ... }
+type BridgeMessageReceiverSession struct{ ... }
+type BridgeMessageReceiverTransactor struct{ ... }
+    func NewBridgeMessageReceiverTransactor(address common.Address, transactor bind.ContractTransactor) (*BridgeMessageReceiverTransactor, error)
+type BridgeMessageReceiverTransactorRaw struct{ ... }
+type BridgeMessageReceiverTransactorSession struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/mocksmartcontracts/PingReceiver
+==============================
+package PingReceiver // import "github.com/0xPolygon/zkevm-bridge-service/test/mocksmartcontracts/PingReceiver"
+
+var PingReceiverABI = PingReceiverMetaData.ABI
+var PingReceiverBin = PingReceiverMetaData.Bin
+var PingReceiverMetaData = &bind.MetaData{ ... }
+type PingReceiver struct{ ... }
+    func DeployPingReceiver(auth *bind.TransactOpts, backend bind.ContractBackend, ...) (common.Address, *types.Transaction, *PingReceiver, error)
+    func NewPingReceiver(address common.Address, backend bind.ContractBackend) (*PingReceiver, error)
+type PingReceiverCaller struct{ ... }
+    func NewPingReceiverCaller(address common.Address, caller bind.ContractCaller) (*PingReceiverCaller, error)
+type PingReceiverCallerRaw struct{ ... }
+type PingReceiverCallerSession struct{ ... }
+type PingReceiverFilterer struct{ ... }
+    func NewPingReceiverFilterer(address common.Address, filterer bind.ContractFilterer) (*PingReceiverFilterer, error)
+type PingReceiverOwnershipTransferred struct{ ... }
+type PingReceiverOwnershipTransferredIterator struct{ ... }
+type PingReceiverPingReceived struct{ ... }
+type PingReceiverPingReceivedIterator struct{ ... }
+type PingReceiverRaw struct{ ... }
+type PingReceiverSession struct{ ... }
+type PingReceiverSetSender struct{ ... }
+type PingReceiverSetSenderIterator struct{ ... }
+type PingReceiverTransactor struct{ ... }
+    func NewPingReceiverTransactor(address common.Address, transactor bind.ContractTransactor) (*PingReceiverTransactor, error)
+type PingReceiverTransactorRaw struct{ ... }
+type PingReceiverTransactorSession struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/mocksmartcontracts/erc20permitmock
+==============================
+package erc20permitmock // import "github.com/0xPolygon/zkevm-bridge-service/test/mocksmartcontracts/erc20permitmock"
+
+var Erc20permitmockABI = Erc20permitmockMetaData.ABI
+var Erc20permitmockBin = Erc20permitmockMetaData.Bin
+var Erc20permitmockMetaData = &bind.MetaData{ ... }
+type Erc20permitmock struct{ ... }
+    func DeployErc20permitmock(auth *bind.TransactOpts, backend bind.ContractBackend, name string, ...) (common.Address, *types.Transaction, *Erc20permitmock, error)
+    func NewErc20permitmock(address common.Address, backend bind.ContractBackend) (*Erc20permitmock, error)
+type Erc20permitmockApproval struct{ ... }
+type Erc20permitmockApprovalIterator struct{ ... }
+type Erc20permitmockCaller struct{ ... }
+    func NewErc20permitmockCaller(address common.Address, caller bind.ContractCaller) (*Erc20permitmockCaller, error)
+type Erc20permitmockCallerRaw struct{ ... }
+type Erc20permitmockCallerSession struct{ ... }
+type Erc20permitmockFilterer struct{ ... }
+    func NewErc20permitmockFilterer(address common.Address, filterer bind.ContractFilterer) (*Erc20permitmockFilterer, error)
+type Erc20permitmockRaw struct{ ... }
+type Erc20permitmockSession struct{ ... }
+type Erc20permitmockTransactor struct{ ... }
+    func NewErc20permitmockTransactor(address common.Address, transactor bind.ContractTransactor) (*Erc20permitmockTransactor, error)
+type Erc20permitmockTransactorRaw struct{ ... }
+type Erc20permitmockTransactorSession struct{ ... }
+type Erc20permitmockTransfer struct{ ... }
+type Erc20permitmockTransferIterator struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/mocksmartcontracts/polygonzkevmbridge
+==============================
+package polygonzkevmbridge // import "github.com/0xPolygon/zkevm-bridge-service/test/mocksmartcontracts/polygonzkevmbridge"
+
+var PolygonzkevmbridgeABI = PolygonzkevmbridgeMetaData.ABI
+var PolygonzkevmbridgeBin = PolygonzkevmbridgeMetaData.Bin
+var PolygonzkevmbridgeMetaData = &bind.MetaData{ ... }
+type Polygonzkevmbridge struct{ ... }
+    func DeployPolygonzkevmbridge(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Polygonzkevmbridge, error)
+    func NewPolygonzkevmbridge(address common.Address, backend bind.ContractBackend) (*Polygonzkevmbridge, error)
+type PolygonzkevmbridgeBridgeEvent struct{ ... }
+type PolygonzkevmbridgeBridgeEventIterator struct{ ... }
+type PolygonzkevmbridgeCaller struct{ ... }
+    func NewPolygonzkevmbridgeCaller(address common.Address, caller bind.ContractCaller) (*PolygonzkevmbridgeCaller, error)
+type PolygonzkevmbridgeCallerRaw struct{ ... }
+type PolygonzkevmbridgeCallerSession struct{ ... }
+type PolygonzkevmbridgeClaimEvent struct{ ... }
+type PolygonzkevmbridgeClaimEventIterator struct{ ... }
+type PolygonzkevmbridgeEmergencyStateActivated struct{ ... }
+type PolygonzkevmbridgeEmergencyStateActivatedIterator struct{ ... }
+type PolygonzkevmbridgeEmergencyStateDeactivated struct{ ... }
+type PolygonzkevmbridgeEmergencyStateDeactivatedIterator struct{ ... }
+type PolygonzkevmbridgeFilterer struct{ ... }
+    func NewPolygonzkevmbridgeFilterer(address common.Address, filterer bind.ContractFilterer) (*PolygonzkevmbridgeFilterer, error)
+type PolygonzkevmbridgeInitialized struct{ ... }
+type PolygonzkevmbridgeInitializedIterator struct{ ... }
+type PolygonzkevmbridgeNewWrappedToken struct{ ... }
+type PolygonzkevmbridgeNewWrappedTokenIterator struct{ ... }
+type PolygonzkevmbridgeRaw struct{ ... }
+type PolygonzkevmbridgeSession struct{ ... }
+type PolygonzkevmbridgeTransactor struct{ ... }
+    func NewPolygonzkevmbridgeTransactor(address common.Address, transactor bind.ContractTransactor) (*PolygonzkevmbridgeTransactor, error)
+type PolygonzkevmbridgeTransactorRaw struct{ ... }
+type PolygonzkevmbridgeTransactorSession struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/operations
+==============================
+package operations // import "github.com/0xPolygon/zkevm-bridge-service/test/operations"
+
+Code generated - DO NOT EDIT. This file is a generated binding and any manual
+changes will be lost.
+
+const PolTokenAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3" ...
+const DefaultInterval ...
+const IERC20ABI = "[{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"recipient\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+const SafeMathABI = "[]"
+const TokenABI = "[{\"inputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"owner\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Approval\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"value\",\"type\":\"uint256\"}],\"name\":\"Transfer\",\"type\":\"event\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenOwner\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"}],\"name\":\"allowance\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"remaining\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"spender\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokens\",\"type\":\"uint256\"}],\"name\":\"approve\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"success\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"tokenOwner\",\"type\":\"address\"}],\"name\":\"balanceOf\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"balance\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"decimals\",\"outputs\":[{\"internalType\":\"uint8\",\"name\":\"\",\"type\":\"uint8\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"name\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"owner\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"symbol\",\"outputs\":[{\"internalType\":\"string\",\"name\":\"\",\"type\":\"string\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"totalSupply\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokens\",\"type\":\"uint256\"}],\"name\":\"transfer\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"success\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"from\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"to\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"tokens\",\"type\":\"uint256\"}],\"name\":\"transferFrom\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"success\",\"type\":\"bool\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}]"
+var ErrTimeoutReached = fmt.Errorf("timeout has been reached")
+var IERC20FuncSigs = map[string]string{ ... }
+var SafeMathBin = "0x6080604052348015600f57600080fd5b50603f80601d6000396000f3fe6080604052600080fdfea26469706673582212201282718f570db149dfb48d08e0555fe1d3355b171753b48e6ba5d4a8c6e2d80e64736f6c63430008030033"
+var TokenBin = "0x608060405234801561001057600080fd5b506040805180820190915260088082526723a3902a37b5b2b760c11b602090920191825261004091600091610099565b5060408051808201909152600280825261474760f01b602090920191825261006a91600191610099565b506002805460ff191660041790556509184e72a000600355600680546001600160a01b0319163317905561016d565b8280546100a590610132565b90600052602060002090601f0160209004810192826100c7576000855561010d565b82601f106100e057805160ff191683800117855561010d565b8280016001018555821561010d579182015b8281111561010d5782518255916020019190600101906100f2565b5061011992915061011d565b5090565b5b80821115610119576000815560010161011e565b600181811c9082168061014657607f821691505b6020821081141561016757634e487b7160e01b600052602260045260246000fd5b50919050565b6106ce8061017c6000396000f3fe608060405234801561001057600080fd5b506004361061009e5760003560e01c806370a082311161006657806370a082311461011e5780638da5cb5b1461013157806395d89b411461015c578063a9059cbb14610164578063dd62ed3e146101775761009e565b806306fdde03146100a3578063095ea7b3146100c157806318160ddd146100e457806323b872dd146100f6578063313ce56714610109575b600080fd5b6100ab6101b0565b6040516100b891906105c5565b60405180910390f35b6100d46100cf36600461059c565b610242565b60405190151581526020016100b8565b6003545b6040519081526020016100b8565b6100d4610104366004610561565b6102bc565b60025460405160ff90911681526020016100b8565b6100e861012c366004610515565b6103ba565b600654610144906001600160a01b031681565b6040516001600160a01b0390911681526020016100b8565b6100ab6103d9565b6100d461017236600461059c565b6103e8565b6100e861018536600461052f565b6001600160a01b03918216600090815260056020908152604080832093909416825291909152205490565b6060600080546101bf90610647565b80601f01602080910402602001604051908101604052809291908181526020018280546101eb90610647565b80156102385780601f1061020d57610100808354040283529160200191610238565b820191906000526020600020905b81548152906001019060200180831161021b57829003601f168201915b5050505050905090565b60006001600160a01b03831661025757600080fd5b3360008181526005602090815260408083206001600160a01b03881680855290835292819020869055518581529192917f8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b92591015b60405180910390a350600192915050565b6001600160a01b0383166000908152600460205260408120546102df9083610494565b6001600160a01b03851660009081526004602090815260408083209390935560058152828220338352905220546103169083610494565b6001600160a01b03808616600090815260056020908152604080832033845282528083209490945591861681526004909152205461035490836104c5565b6001600160a01b0380851660008181526004602052604090819020939093559151908616907fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef906103a89086815260200190565b60405180910390a35060019392505050565b6001600160a01b0381166000908152600460205260409020545b919050565b6060600180546101bf90610647565b60006001600160a01b0383166103fd57600080fd5b336000908152600460205260409020546104179083610494565b33600090815260046020526040808220929092556001600160a01b0385168152205461044390836104c5565b6001600160a01b0384166000818152600460205260409081902092909255905133907fddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef906102ab9086815260200190565b6000828211156104b457634e487b7160e01b600052600160045260246000fd5b6104be8284610630565b9392505050565b6000806104d28385610618565b90508381101580156104e45750828110155b6104be57634e487b7160e01b600052600160045260246000fd5b80356001600160a01b03811681146103d457600080fd5b600060208284031215610526578081fd5b6104be826104fe565b60008060408385031215610541578081fd5b61054a836104fe565b9150610558602084016104fe565b90509250929050565b600080600060608486031215610575578081fd5b61057e846104fe565b925061058c602085016104fe565b9150604084013590509250925092565b600080604083850312156105ae578182fd5b6105b7836104fe565b946020939093013593505050565b6000602080835283518082850152825b818110156105f1578581018301518582016040015282016105d5565b818111156106025783604083870101525b50601f01601f1916929092016040019392505050565b6000821982111561062b5761062b610682565b500190565b60008282101561064257610642610682565b500390565b600181811c9082168061065b57607f821691505b6020821081141561067c57634e487b7160e01b600052602260045260246000fd5b50919050565b634e487b7160e01b600052601160045260246000fdfea2646970667358221220ff69242f787e1347db384790ace3139e056e947b2ff1b360282e654fbdbc9f0464736f6c63430008030033"
+var TokenFuncSigs = map[string]string{ ... }
+func NodeUpCondition(target string) (bool, error)
+func Poll(interval, deadline time.Duration, condition ConditionFunc) error
+func StartBridge() error
+func StartBridge3() error
+func StopBridge() error
+func StopBridge3() error
+func WaitGRPCHealthy(ctx context.Context, address string) error
+func WaitRestHealthy(address string) error
+func WaitTxToBeMined(ctx context.Context, client *ethclient.Client, tx *types.Transaction, ...) error
+type BridgeServiceInterface interface{ ... }
+type ConditionFunc func() (done bool, err error)
+type Config struct{ ... }
+type IERC20 struct{ ... }
+    func NewIERC20(address common.Address, backend bind.ContractBackend) (*IERC20, error)
+type IERC20Approval struct{ ... }
+type IERC20ApprovalIterator struct{ ... }
+type IERC20Caller struct{ ... }
+    func NewIERC20Caller(address common.Address, caller bind.ContractCaller) (*IERC20Caller, error)
+type IERC20CallerRaw struct{ ... }
+type IERC20CallerSession struct{ ... }
+type IERC20Filterer struct{ ... }
+    func NewIERC20Filterer(address common.Address, filterer bind.ContractFilterer) (*IERC20Filterer, error)
+type IERC20Raw struct{ ... }
+type IERC20Session struct{ ... }
+type IERC20Transactor struct{ ... }
+    func NewIERC20Transactor(address common.Address, transactor bind.ContractTransactor) (*IERC20Transactor, error)
+type IERC20TransactorRaw struct{ ... }
+type IERC20TransactorSession struct{ ... }
+type IERC20Transfer struct{ ... }
+type IERC20TransferIterator struct{ ... }
+type Manager struct{ ... }
+    func GetOpsman(ctx context.Context, ...) (*Manager, error)
+    func NewManager(ctx context.Context, cfg *Config) (*Manager, error)
+type NetworkSID string
+    const L1 NetworkSID = "l1" ...
+type SafeMath struct{ ... }
+    func DeploySafeMath(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *SafeMath, error)
+    func NewSafeMath(address common.Address, backend bind.ContractBackend) (*SafeMath, error)
+type SafeMathCaller struct{ ... }
+    func NewSafeMathCaller(address common.Address, caller bind.ContractCaller) (*SafeMathCaller, error)
+type SafeMathCallerRaw struct{ ... }
+type SafeMathCallerSession struct{ ... }
+type SafeMathFilterer struct{ ... }
+    func NewSafeMathFilterer(address common.Address, filterer bind.ContractFilterer) (*SafeMathFilterer, error)
+type SafeMathRaw struct{ ... }
+type SafeMathSession struct{ ... }
+type SafeMathTransactor struct{ ... }
+    func NewSafeMathTransactor(address common.Address, transactor bind.ContractTransactor) (*SafeMathTransactor, error)
+type SafeMathTransactorRaw struct{ ... }
+type SafeMathTransactorSession struct{ ... }
+type StorageInterface interface{ ... }
+    func RunMockServer(ctx context.Context, dbType string, height uint8, networks []uint32) (*bridgectrl.BridgeController, StorageInterface, error)
+type Token struct{ ... }
+    func DeployToken(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *Token, error)
+    func NewToken(address common.Address, backend bind.ContractBackend) (*Token, error)
+type TokenApproval struct{ ... }
+type TokenApprovalIterator struct{ ... }
+type TokenCaller struct{ ... }
+    func NewTokenCaller(address common.Address, caller bind.ContractCaller) (*TokenCaller, error)
+type TokenCallerRaw struct{ ... }
+type TokenCallerSession struct{ ... }
+type TokenFilterer struct{ ... }
+    func NewTokenFilterer(address common.Address, filterer bind.ContractFilterer) (*TokenFilterer, error)
+type TokenRaw struct{ ... }
+type TokenSession struct{ ... }
+type TokenTransactor struct{ ... }
+    func NewTokenTransactor(address common.Address, transactor bind.ContractTransactor) (*TokenTransactor, error)
+type TokenTransactorRaw struct{ ... }
+type TokenTransactorSession struct{ ... }
+type TokenTransfer struct{ ... }
+type TokenTransferIterator struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/scripts/claim
+==============================
+
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/scripts/deploytool
+==============================
+
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/scripts/deposit
+==============================
+
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/scripts/forcebatchproposal
+==============================
+
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/scripts/initialClaim
+==============================
+
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/scripts/isClaimed
+==============================
+
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/scripts/readLatestLER
+==============================
+
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/test/vectors
+==============================
+package vectors // import "github.com/0xPolygon/zkevm-bridge-service/test/vectors"
+
+type BlockVectorRaw struct{ ... }
+type ClaimVectorRaw struct{ ... }
+type DepositVectorRaw struct{ ... }
+type MTClaimVectorRaw struct{ ... }
+type MTRootVectorRaw struct{ ... }
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/utils
+==============================
+package utils // import "github.com/0xPolygon/zkevm-bridge-service/utils"
+
+const LeafTypeAsset uint8 = 0 ...
+func GenerateRandomHash() [sha256.Size]byte
+func RevertReason(ctx context.Context, c EthClienter, tx *types.Transaction, ...) (string, error)
+func WaitTxToBeMined(parentCtx context.Context, client EthClienter, tx *types.Transaction, ...) error
+type Client struct{ ... }
+    func NewClient(ctx context.Context, nodeURL string, bridgeSCAddr common.Address) (*Client, error)
+type EthClienter interface{ ... }
+type TimeProvider interface{ ... }
+type TimeProviderFixedTime struct{ ... }
+type TimeProviderSystemLocalTime struct{}
+    func NewTimeProviderSystemLocalTime() *TimeProviderSystemLocalTime
+
+==============================
+PACKAGE: github.com/0xPolygon/zkevm-bridge-service/utils/gerror
+==============================
+package gerror // import "github.com/0xPolygon/zkevm-bridge-service/utils/gerror"
+
+var ErrStorageNotFound = errors.New("not found in the Storage") ...
+

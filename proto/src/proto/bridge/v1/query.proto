@@ -7,7 +7,7 @@ package bridge.v1;
 
 import "google/api/annotations.proto";
 
-option go_package = "github.com/0xPolygonHermez/zkevm-bridge-service/bridgetree/pb";
+option go_package = "github.com/0xPolygon/zkevm-bridge-service/bridgetree/pb";
 
 service BridgeService {
     // Getters
@@ -15,6 +15,13 @@ service BridgeService {
     rpc CheckAPI(CheckAPIRequest) returns (CheckAPIResponse) {
         option (google.api.http) = {
             get: "/api"
+        };
+    }
+
+    /// Get sync status
+    rpc GetSyncStatus(GetSyncStatusRequest) returns (GetSyncStatusResponse) {
+        option (google.api.http) = {
+            get: "/sync"
         };
     }
 
@@ -74,6 +81,14 @@ service BridgeService {
     }
 }
 
+// SyncStatus message
+message SyncStatus {
+    uint32 network_id = 1;
+    uint32 percentage = 2;
+    uint64 remaining_blocks = 3;
+    bool synced = 4;
+}
+
 // TokenWrapped message
 message TokenWrapped {
     uint32 orig_net = 1;
@@ -130,6 +145,8 @@ message Proof {
 
 message CheckAPIRequest {}
 
+message GetSyncStatusRequest {}
+
 message GetBridgesRequest {
     string dest_addr = 1;
     uint32 offset = 2;
@@ -180,6 +197,10 @@ message GetClaimsRequest {
 
 message CheckAPIResponse {
     string api = 1;
+}
+
+message GetSyncStatusResponse {
+    repeated SyncStatus sync = 1;
 }
 
 message GetBridgesResponse {

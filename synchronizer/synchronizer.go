@@ -7,10 +7,10 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer/metrics"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/synchronizer/metrics"
+	"github.com/0xPolygon/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -22,25 +22,26 @@ type Synchronizer interface {
 
 // ClientSynchronizer connects L1 and L2
 type ClientSynchronizer struct {
-	etherMan          ethermanInterface
-	bridgeCtrl        bridgectrlInterface
-	storage           storageInterface
-	ctx               context.Context
-	cancelCtx         context.CancelFunc
-	genBlockNumber    uint64
-	cfg               Config
-	networkID         uint32
-	chExitRootEventL2 chan *etherman.GlobalExitRoot
-	chsExitRootEvent  []chan *etherman.GlobalExitRoot
-	chSynced          chan uint32
-	zkEVMClient       zkEVMClientInterface
-	synced            bool
-	l1RollupExitRoot  common.Hash
-	allNetworkIDs     []uint32
-	sovereignChain    bool
-	forceSyncChunk    bool
-	waitDuration      time.Duration
-	metrics           metrics.MetricsInterface
+	etherMan               ethermanInterface
+	bridgeCtrl             bridgectrlInterface
+	storage                storageInterface
+	ctx                    context.Context
+	cancelCtx              context.CancelFunc
+	genBlockNumber         uint64
+	cfg                    Config
+	networkID              uint32
+	chExitRootEventL2      chan *etherman.GlobalExitRoot
+	chsExitRootEvent       []chan *etherman.GlobalExitRoot
+	chSynced               chan uint32
+	zkEVMClient            zkEVMClientInterface
+	synced                 bool
+	l1RollupExitRoot       common.Hash
+	allNetworkIDs          []uint32
+	sovereignChain         bool
+	forceSyncChunk         bool
+	waitDuration           time.Duration
+	metrics                metrics.MetricsInterface
+	initialRemainingBlocks *big.Int
 }
 
 // NewSynchronizer creates and initializes an instance of Synchronizer
@@ -72,39 +73,41 @@ func NewSynchronizer(
 
 	if networkID == 0 {
 		return &ClientSynchronizer{
-			bridgeCtrl:       bridge,
-			storage:          storage.(storageInterface),
-			etherMan:         ethMan,
-			ctx:              ctx,
-			cancelCtx:        cancel,
-			genBlockNumber:   genBlockNumber,
-			cfg:              cfg,
-			networkID:        networkID,
-			chSynced:         chSynced,
-			chsExitRootEvent: chsExitRootEvent,
-			l1RollupExitRoot: ger.ExitRoots[1],
-			allNetworkIDs:    allNetworkIDs,
-			forceSyncChunk:   false,
-			waitDuration:     time.Duration(0),
-			metrics:          metrics.Register(networkID),
+			bridgeCtrl:             bridge,
+			storage:                storage.(storageInterface),
+			etherMan:               ethMan,
+			ctx:                    ctx,
+			cancelCtx:              cancel,
+			genBlockNumber:         genBlockNumber,
+			cfg:                    cfg,
+			networkID:              networkID,
+			chSynced:               chSynced,
+			chsExitRootEvent:       chsExitRootEvent,
+			l1RollupExitRoot:       ger.ExitRoots[1],
+			allNetworkIDs:          allNetworkIDs,
+			forceSyncChunk:         cfg.ForceL1SyncChunk,
+			waitDuration:           time.Duration(0),
+			metrics:                metrics.Register(networkID),
+			initialRemainingBlocks: big.NewInt(0),
 		}, nil
 	}
 	return &ClientSynchronizer{
-		bridgeCtrl:        bridge,
-		storage:           storage.(storageInterface),
-		etherMan:          ethMan,
-		ctx:               ctx,
-		cancelCtx:         cancel,
-		genBlockNumber:    genBlockNumber,
-		cfg:               cfg,
-		chSynced:          chSynced,
-		zkEVMClient:       zkEVMClient,
-		chExitRootEventL2: chExitRootEventL2,
-		networkID:         networkID,
-		sovereignChain:    sovereignChain,
-		forceSyncChunk:    cfg.ForceL2SyncChunk,
-		waitDuration:      time.Duration(0),
-		metrics:           metrics.Register(networkID),
+		bridgeCtrl:             bridge,
+		storage:                storage.(storageInterface),
+		etherMan:               ethMan,
+		ctx:                    ctx,
+		cancelCtx:              cancel,
+		genBlockNumber:         genBlockNumber,
+		cfg:                    cfg,
+		chSynced:               chSynced,
+		zkEVMClient:            zkEVMClient,
+		chExitRootEventL2:      chExitRootEventL2,
+		networkID:              networkID,
+		sovereignChain:         sovereignChain,
+		forceSyncChunk:         cfg.ForceL2SyncChunk,
+		waitDuration:           time.Duration(0),
+		metrics:                metrics.Register(networkID),
+		initialRemainingBlocks: big.NewInt(0),
 	}, nil
 }
 
@@ -130,6 +133,25 @@ func (s *ClientSynchronizer) Sync() error {
 			return err
 		}
 	}
+	header, err := s.etherMan.HeaderByNumber(s.ctx, nil)
+	if err != nil {
+		log.Warnf("networkID: %d, error getting latest block from. Error: %s", s.networkID, err.Error())
+		return err
+	}
+	remainingBlocks := header.Number.Uint64() - lastBlockSynced.BlockNumber
+	syncStatus := etherman.SyncStatus{
+		NetworkID:       s.networkID,
+		Percentage:      0,
+		RemainingBlocks: remainingBlocks,
+		Synced:          false,
+	}
+	err = s.storage.AddSyncStatus(s.ctx, syncStatus, nil)
+	if err != nil {
+		log.Errorf("networkID: %d, error storing sync status. Error: %v", s.networkID, err)
+		return err
+	}
+	s.initialRemainingBlocks = big.NewInt(0).SetUint64(remainingBlocks)
+
 	s.metrics.LatestBlockSynced(lastBlockSynced.BlockNumber)
 	s.metrics.InitializationTime(time.Since(startInitialization))
 	log.Debugf("NetworkID: %d, initial lastBlockSynced: %+v", s.networkID, lastBlockSynced)
@@ -306,6 +328,16 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 					s.waitDuration = s.cfg.SyncInterval.Duration
 					s.synced = true
 					s.chSynced <- s.networkID
+					syncStatus := etherman.SyncStatus{
+						NetworkID:       s.networkID,
+						Percentage:      100, //nolint:mnd
+						RemainingBlocks: 0,
+						Synced:          s.synced,
+					}
+					err = s.storage.AddSyncStatus(s.ctx, syncStatus, nil)
+					if err != nil {
+						log.Errorf("networkID: %d, error storing sync status. Error: %v", s.networkID, err)
+					}
 				}
 			} else {
 				log.Debugf("NetworkID: %d, New lastKnownBlock (%d) has changed and now is higher than toBlock (%d)", s.networkID, lastKnownBlock.Uint64(), toBlock)
@@ -392,7 +424,6 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 		err = s.processBlockRange(blocks, order)
 		s.metrics.ProcessL1DataTime(time.Since(start))
 		if err != nil {
-			log.Error("error processing block range: ", err)
 			return &lastBlockSynced, err
 		}
 		if len(blocks) > 0 && !s.forceSyncChunk {
@@ -415,15 +446,27 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 			log.Debugf("NetworkID: %d, Keeping empty block in memory as lastBlockSynced. BlockNumber: %d. BlockHash: %s", s.networkID, lastBlockSynced.BlockNumber, lastBlockSynced.BlockHash.String())
 		}
 
+		var toBlockBigInt *big.Int
 		if lastKnownBlock.Cmp(new(big.Int).SetUint64(toBlock)) < 1 { // lastKnownBlock <= toBlock
 			if !s.synced {
 				log.Infof("NetworkID %d Synced!", s.networkID)
 				s.waitDuration = s.cfg.SyncInterval.Duration
 				s.synced = true
 				s.chSynced <- s.networkID
+				syncStatus := etherman.SyncStatus{
+					NetworkID:       s.networkID,
+					Percentage:      100, //nolint:mnd
+					RemainingBlocks: 0,
+					Synced:          s.synced,
+				}
+				err = s.storage.AddSyncStatus(s.ctx, syncStatus, nil)
+				if err != nil {
+					log.Errorf("networkID: %d, error storing sync status. Error: %v", s.networkID, err)
+				}
 			}
 			break
 		} else if !s.synced || s.forceSyncChunk {
+			toBlockBigInt = new(big.Int).SetUint64(toBlock)
 			fromBlock = toBlock + 1
 			toBlock = fromBlock + s.cfg.SyncChunkSize
 			if s.forceSyncChunk {
@@ -432,9 +475,25 @@ func (s *ClientSynchronizer) syncBlocks(lastBlockSynced etherman.Block) (*etherm
 				log.Debugf("NetworkID: %d, not synced yet. Avoid check the same interval. New interval: from block %d, to block %d", s.networkID, fromBlock, toBlock)
 			}
 		} else {
+			toBlockBigInt = new(big.Int).SetUint64(toBlock)
 			fromBlock = lastBlockSynced.BlockNumber
 			toBlock = toBlock + s.cfg.SyncChunkSize
 			log.Debugf("NetworkID: %d, synced!. New interval: from block %d, to block %d", s.networkID, fromBlock, toBlock)
+		}
+		if !s.synced {
+			remainingBlocks := new(big.Int).Sub(lastKnownBlock, toBlockBigInt)
+			percentage := big.NewInt(0).Div(big.NewInt(0).Mul(new(big.Int).Sub(s.initialRemainingBlocks, remainingBlocks), big.NewInt(100)), s.initialRemainingBlocks) //nolint:mnd
+			log.Infof("NetworkID %d Syncing, %s blocks remaining (%s%% synced)", s.networkID, remainingBlocks.String(), percentage.String())
+			syncStatus := etherman.SyncStatus{
+				NetworkID:       s.networkID,
+				Percentage:      uint32(percentage.Uint64()), //nolint:gosec,mnd safe to cast, percentage cannot be that high
+				RemainingBlocks: remainingBlocks.Uint64(),
+				Synced:          s.synced,
+			}
+			err = s.storage.AddSyncStatus(s.ctx, syncStatus, nil)
+			if err != nil {
+				log.Errorf("networkID: %d, error storing sync status. Error: %v", s.networkID, err)
+			}
 		}
 	}
 
@@ -479,7 +538,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processGlobalExitRoot(blocks[i].GlobalExitRoots[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing global exit root: ", err)
 					return err
 				}
 				if isNewL1Ger {
@@ -493,7 +551,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processRemoveL2GlobalExitRoot(blocks[i].RemoveL2GER[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing remove L2 GER: ", err)
 					return err
 				}
 				s.metrics.RemoveL2GERCounter()
@@ -503,7 +560,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processDeposit(blocks[i].Deposits[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing deposit: ", err)
 					return err
 				}
 				s.metrics.DepositCounter()
@@ -513,7 +569,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processClaim(blocks[i].Claims[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing claim: ", err)
 					return err
 				}
 				s.metrics.ClaimCounter()
@@ -523,7 +578,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processTokenWrapped(blocks[i].Tokens[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing token wrapped: ", err)
 					return err
 				}
 			case etherman.VerifyBatchOrder:
@@ -532,7 +586,6 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				}
 				err = s.processVerifyBatch(blocks[i].VerifiedBatches[element.Pos], blockID, dbTx)
 				if err != nil {
-					log.Error("error processing verify batch: ", err)
 					return err
 				}
 				s.metrics.VerifyBatchCounter()
@@ -564,6 +617,10 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 		// Send latest GER synced in L2 to claimTxManager
 		ger, err := s.storage.GetLatestTrustedExitRoot(s.ctx, s.networkID, nil)
 		if err != nil {
+			if errors.Is(err, gerror.ErrL1GERNotFound) {
+				log.Infof("networkID: %d, L1GER not found on database yet. Skipping to not provide an incomplete GER to the claimTxManager...", s.networkID)
+				return nil
+			}
 			log.Errorf("networkID: %d, error getting latest GER stored on database. Error: %v", s.networkID, err)
 			return err
 		}
@@ -751,7 +808,7 @@ func (s *ClientSynchronizer) processGlobalExitRoot(globalExitRoot etherman.Globa
 		// First read the mainnetExitRoot and rollupsExitRoot to store all the information in the db.
 		ger, err := s.storage.GetL1ExitRootByGER(s.ctx, globalExitRoot.GlobalExitRoot, nil)
 		if errors.Is(err, gerror.ErrStorageNotFound) {
-			log.Warnf("networkID: %d, L1Ger entry not found in the database. GER: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
+			log.Infof("networkID: %d, L1Ger entry not found in the database. GER: %s", s.networkID, globalExitRoot.GlobalExitRoot.String())
 		} else if err != nil {
 			log.Errorf("networkID: %d, error getting the GlobalExitRoot in processGlobalExitRoot. BlockNumber: %d. Error: %v", s.networkID, globalExitRoot.BlockNumber, err)
 			return s.rollback(globalExitRoot.BlockNumber, err, dbTx)

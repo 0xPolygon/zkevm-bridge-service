@@ -10,18 +10,18 @@ import (
 	"runtime"
 	"time"
 
-	zkevmbridgeservice "github.com/0xPolygonHermez/zkevm-bridge-service"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/config"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
-	client "github.com/0xPolygonHermez/zkevm-bridge-service/jsonrpcclient"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/metrics"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
+	zkevmbridgeservice "github.com/0xPolygon/zkevm-bridge-service"
+	"github.com/0xPolygon/zkevm-bridge-service/bridgectrl"
+	"github.com/0xPolygon/zkevm-bridge-service/claimtxman"
+	"github.com/0xPolygon/zkevm-bridge-service/config"
+	"github.com/0xPolygon/zkevm-bridge-service/db"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
+	client "github.com/0xPolygon/zkevm-bridge-service/jsonrpcclient"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/metrics"
+	"github.com/0xPolygon/zkevm-bridge-service/server"
+	"github.com/0xPolygon/zkevm-bridge-service/synchronizer"
+	"github.com/0xPolygon/zkevm-bridge-service/utils"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	cli "github.com/urfave/cli/v2"
 )
@@ -109,10 +109,10 @@ func start(ctx *cli.Context) error {
 		chSyncedL2 := make(chan uint32)
 		chsExitRootEvent = append(chsExitRootEvent, chExitRootEventL2)
 		chsSyncedL2 = append(chsSyncedL2, chSyncedL2)
-		go runSynchronizer(ctx.Context, 0, bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint32{}, c.RequireSovereignChainSmcs[i])
+		go runSynchronizer(ctx.Context, c.L2GenBlockNumbers[i], bridgeController, l2EthermanClient, c.Synchronizer, storage, zkEVMClient, chExitRootEventL2, nil, chSyncedL2, []uint32{}, c.RequireSovereignChainSmcs[i])
 	}
 	chSynced := make(chan uint32)
-	go runSynchronizer(ctx.Context, c.GenBlockNumber, bridgeController, l1Etherman, c.Synchronizer, storage, nil, nil, chsExitRootEvent, chSynced, networkIDs, false)
+	go runSynchronizer(ctx.Context, c.L1GenBlockNumber, bridgeController, l1Etherman, c.Synchronizer, storage, nil, nil, chsExitRootEvent, chSynced, networkIDs, false)
 	go func() {
 		for {
 			select {
@@ -187,7 +187,9 @@ func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalEx
 						log.Debug("Skipping the ready for claim update until the synchronization is completed")
 						continue
 					}
-					if err := st.UpdateL2DepositsStatus(ctx, ger.ExitRoots[1][:], networkID, networkID, dbTx); err != nil {
+					log.Infof("NetworkId: %d, deposits from this network with destination L1 (networkID = 0) are set to readyForClaim. RollupsExitRoot %v is updated", networkID, ger.ExitRoots[1])
+					// Only deposits with destination L1 (networkID = 0) are set to readyForClaim
+					if err := st.UpdateL2DepositsStatus(ctx, ger.ExitRoots[1][:], networkID, networkID, true, dbTx); err != nil {
 						log.Errorf("networkId: %d, error updating L2DepositsStatus. Error: %v", networkID, err)
 						rollbackErr := st.Rollback(ctx, dbTx)
 						if rollbackErr != nil {
@@ -200,9 +202,22 @@ func monitorChannel(ctx context.Context, chExitRootEvent chan *etherman.GlobalEx
 						log.Debug("Skipping the ready for claim update until the synchronization is completed")
 						continue
 					}
+					log.Infof("NetworkId: %d, updating the status of L1 deposits for mainnetExitRoot: %s", networkID, ger.ExitRoots[0].String())
+					// L1 deposits with destination this L2 networkID are set to readyForClaim
 					err := st.UpdateL1DepositsStatus(ctx, ger.ExitRoots[0][:], networkID, dbTx)
 					if err != nil {
 						log.Errorf("networkId: %d, error getting and updating L1DepositsStatus. Error: %v", networkID, err)
+						rollbackErr := st.Rollback(ctx, dbTx)
+						if rollbackErr != nil {
+							log.Errorf("networkId: %d, error rolling back state. RollbackErr: %s, err: %s", networkID, rollbackErr.Error(), err.Error())
+						}
+						continue
+					}
+					log.Infof("RollupID: %d, updating the status of L2 deposits from this network. The destination network is another L2. rollupsExitRoot: %s", networkID, ger.ExitRoots[1].String())
+					// Deposits with destination another L2 (networkID != 0) are set to readyForClaim
+					err = st.UpdateL2DepositsStatus(ctx, ger.ExitRoots[1][:], networkID, networkID, false, dbTx)
+					if err != nil {
+						log.Errorf("rollupID: %d, error updating L2DepositsStatus. Error: %v", networkID, err)
 						rollbackErr := st.Rollback(ctx, dbTx)
 						if rollbackErr != nil {
 							log.Errorf("networkId: %d, error rolling back state. RollbackErr: %s, err: %s", networkID, rollbackErr.Error(), err.Error())

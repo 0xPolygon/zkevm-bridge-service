@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
 )
 
@@ -371,6 +371,12 @@ func ComputeSiblings(rollupIndex uint32, leaves [][KeyLen]byte, height uint8) ([
 	if len(leaves) == 0 {
 		leaves = append(leaves, zeroHashes[0])
 	}
+	
+	// Validate that the rollupIndex is within bounds
+	if int(rollupIndex) >= len(leaves) {
+		return nil, common.Hash{}, fmt.Errorf("rollupIndex %d is out of bounds for leaves array of length %d", rollupIndex, len(leaves))
+	}
+	
 	var siblings [][KeyLen]byte
 	index := rollupIndex
 	for h := uint8(0); h < height; h++ {
@@ -380,9 +386,10 @@ func ComputeSiblings(rollupIndex uint32, leaves [][KeyLen]byte, height uint8) ([
 		if index%2 == 1 { //If it is odd
 			siblings = append(siblings, leaves[index-1])
 		} else { // It is even
-			if len(leaves) > 1 {
-				siblings = append(siblings, leaves[index+1])
+			if int(index+1) >= len(leaves) {
+				return nil, common.Hash{}, fmt.Errorf("index out of bounds: trying to access leaves[%d] but length is %d", index+1, len(leaves))
 			}
+			siblings = append(siblings, leaves[index+1])
 		}
 		var (
 			nsi    [][][]byte

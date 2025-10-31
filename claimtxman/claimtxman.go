@@ -8,11 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
+	"github.com/0xPolygon/zkevm-bridge-service/claimtxman/types"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/utils"
+	"github.com/0xPolygon/zkevm-bridge-service/utils/gerror"
 	ethereum "github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -150,7 +150,7 @@ func (tm *ClaimTxManager) Start() {
 					}
 				}()
 			} else {
-				log.Infof("Waiting for networkID %d to be synced before processing deposits", tm.l2NetworkID)
+				log.Infof("Waiting for networkID %d and L1 to be synced before processing deposits", tm.l2NetworkID)
 			}
 		case <-compressorTicker.C:
 			if tm.l2Synced && tm.l1Synced && tm.cfg.GroupingClaims.Enabled && ger.GlobalExitRoot != latestProcessedGer {
@@ -187,7 +187,7 @@ func (tm *ClaimTxManager) processPendingDeposits(ger etherman.GlobalExitRoot) er
 		return err
 	}
 	if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
-		log.Infof("RollupID: %d, Rollup exitroot %v is updated. Initializing claim process. Error: %v", tm.rollupID, err)
+		log.Infof("RollupID: %d, Rollup exitroot %v is updated. Initializing claim process", tm.rollupID, ger.ExitRoots[1])
 		// If L2 claims processor is enabled
 		if tm.cfg.AreClaimsBetweenL2sEnabled {
 			log.Debugf("rollupID: %d, getting L2 deposits to autoClaim", tm.rollupID)
@@ -398,17 +398,26 @@ func (tm *ClaimTxManager) updateDepositsStatus(ger etherman.GlobalExitRoot) erro
 		return err
 	}
 	if ger.BlockID != 0 && ger.NetworkID == 0 { // L2 exit root is updated
-		log.Infof("RollupID: %d, Rollup exitroot %v is updated", tm.rollupID, ger.ExitRoots[1])
-		err = tm.storage.UpdateL2DepositsStatus(tm.ctx, ger.ExitRoots[1][:], tm.rollupID, tm.l2NetworkID, dbTx)
+		log.Infof("RollupID: %d, deposits from this network with destination L1 (networkID = 0) are set to readyForClaim. RollupsExitRoot %v is updated", tm.rollupID, ger.ExitRoots[1])
+		// Only deposits with destination L1 (networkID = 0) are set to readyForClaim
+		err = tm.storage.UpdateL2DepositsStatus(tm.ctx, ger.ExitRoots[1][:], tm.rollupID, tm.l2NetworkID, true, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error updating L2DepositsStatus. Error: %v", tm.rollupID, err)
 			return tm.rollbackState(dbTx, err)
 		}
 	} else { // L1 exit root is updated in the trusted state
-		log.Infof("RollupID: %d, Mainnet exitroot %v is updated", tm.rollupID, ger.ExitRoots[0])
+		log.Infof("RollupID: %d, updating the status of L1 deposits for mainnetExitRoot: %s", tm.rollupID, ger.ExitRoots[0].String())
+		// L1 deposits with destination this L2 networkID are set to readyForClaim
 		err = tm.storage.UpdateL1DepositsStatus(tm.ctx, ger.ExitRoots[0][:], tm.l2NetworkID, dbTx)
 		if err != nil {
 			log.Errorf("rollupID: %d, error getting and updating L1DepositsStatus. Error: %v", tm.rollupID, err)
+			return tm.rollbackState(dbTx, err)
+		}
+		log.Infof("RollupID: %d, updating the status of L2 deposits from this network. The destination network is another L2. rollupsExitRoot: %s", tm.rollupID, ger.ExitRoots[1].String())
+		// Deposits with destination another L2 (networkID != 0) are set to readyForClaim
+		err = tm.storage.UpdateL2DepositsStatus(tm.ctx, ger.ExitRoots[1][:], tm.rollupID, tm.l2NetworkID, false, dbTx)
+		if err != nil {
+			log.Errorf("rollupID: %d, error updating L2DepositsStatus. Error: %v", tm.rollupID, err)
 			return tm.rollbackState(dbTx, err)
 		}
 	}

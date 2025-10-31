@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	ctmtypes "github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman/types"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/utils/gerror"
+	ctmtypes "github.com/0xPolygon/zkevm-bridge-service/claimtxman/types"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/common"
 	pgx "github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -153,7 +153,7 @@ func (p *PostgresStorage) AddTokenWrapped(ctx context.Context, tokenWrapped *eth
 			return err
 		}
 		// if err == pgx.ErrNoRows, this is due to missing the related deposit in the opposite network in fast sync mode.
-		// ref: https://github.com/0xPolygonHermez/zkevm-bridge-service/issues/230
+		// ref: https://github.com/0xPolygon/zkevm-bridge-service/issues/230
 		tokenMetadata = &etherman.TokenMetadata{}
 	} else {
 		tokenMetadata, err = getDecodedToken(metadata)
@@ -365,7 +365,7 @@ func (p *PostgresStorage) GetLatestTrustedExitRoot(ctx context.Context, networkI
 			if errors.Is(err, gerror.ErrStorageNotFound) {
 				log.Warn("Missing L1Ger for the L2Ger entry")
 			}
-			return nil, err
+			return nil, gerror.ErrL1GERNotFound
 		}
 		ger.ExitRoots = l1GER.ExitRoots
 	}
@@ -383,7 +383,7 @@ func (p *PostgresStorage) GetTokenWrapped(ctx context.Context, originalNetwork u
 	}
 
 	// this is due to missing the related deposit in the opposite network in fast sync mode.
-	// ref: https://github.com/0xPolygonHermez/zkevm-bridge-service/issues/230
+	// ref: https://github.com/0xPolygon/zkevm-bridge-service/issues/230
 	if token.Symbol == "" {
 		metadata, err := p.GetTokenMetadata(ctx, token.OriginalNetwork, token.NetworkID, token.OriginalTokenAddress, dbTx)
 		var tokenMetadata *etherman.TokenMetadata
@@ -649,11 +649,21 @@ func (p *PostgresStorage) UpdateL1DepositsStatus(ctx context.Context, exitRoot [
 }
 
 // UpdateL2DepositsStatus updates the ready_for_claim status of L2 deposits.
-func (p *PostgresStorage) UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID, networkID uint32, dbTx interface{}) error {
-	const updateL2DepositsStatusSQL = `UPDATE sync.deposit SET ready_for_claim = true
-		WHERE deposit_cnt <=
-		(SELECT sync.deposit.deposit_cnt FROM mt.root INNER JOIN sync.deposit ON sync.deposit.id = mt.root.deposit_id WHERE mt.root.root = (select leaf from mt.rollup_exit where root = $1 and rollup_id = $2) AND mt.root.network = $3)
-			AND network_id = $3 AND ready_for_claim = false;`
+func (p *PostgresStorage) UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID, networkID uint32, isDestNetL1 bool, dbTx interface{}) error {
+	var updateL2DepositsStatusSQL string 
+	// if the destination network is L1, the merkle proof can be retrieved inmediately. Thats why we can set is ready_for_claim to true directly.
+	if isDestNetL1 {
+		updateL2DepositsStatusSQL= `UPDATE sync.deposit SET ready_for_claim = true
+			WHERE deposit_cnt <=
+			(SELECT sync.deposit.deposit_cnt FROM mt.root INNER JOIN sync.deposit ON sync.deposit.id = mt.root.deposit_id WHERE mt.root.root = (select leaf from mt.rollup_exit where root = $1 and rollup_id = $2) AND mt.root.network = $3)
+				AND network_id = $3 AND ready_for_claim = false AND dest_net = 0;`
+	} else {
+		// if the destination network is another L2, we set ready_for_claim to true only when the L1GER is stored in L2 because if not, we would return the previous Ger and it doesn't contain the L2 deposit.
+		updateL2DepositsStatusSQL= `UPDATE sync.deposit SET ready_for_claim = true
+			WHERE deposit_cnt <=
+			(SELECT sync.deposit.deposit_cnt FROM mt.root INNER JOIN sync.deposit ON sync.deposit.id = mt.root.deposit_id WHERE mt.root.root = (select leaf from mt.rollup_exit where root = $1 and rollup_id = $2) AND mt.root.network = $3)
+				AND network_id = $3 AND ready_for_claim = false AND dest_net != 0;`
+	}
 	_, err := p.getExecQuerier(dbTx).Exec(ctx, updateL2DepositsStatusSQL, exitRoot, rollupID, networkID)
 	return err
 }
@@ -858,6 +868,43 @@ func (p *PostgresStorage) IgnoreDeposit(ctx context.Context, depositID uint64, d
 	const updateDepositsFlagSQL = "UPDATE sync.deposit SET ignore = true WHERE id = $1"
 	_, err := p.getExecQuerier(dbTx).Exec(ctx, updateDepositsFlagSQL, depositID)
 	return err
+}
+
+// AddSyncStatus stores the sync status progress.
+func (p *PostgresStorage) AddSyncStatus(ctx context.Context, syncStatus etherman.SyncStatus, dbTx interface{}) error {
+	const insertSyncStatusSQL = `INSERT INTO sync.status (network_id, percentage, remaining_blocks, synced)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (network_id) DO UPDATE
+		SET percentage       = EXCLUDED.percentage,
+			remaining_blocks = EXCLUDED.remaining_blocks,
+			synced           = EXCLUDED.synced;
+		`
+	_, err := p.getExecQuerier(dbTx).Exec(ctx, insertSyncStatusSQL, syncStatus.NetworkID, syncStatus.Percentage, syncStatus.RemainingBlocks, syncStatus.Synced)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetSyncStatus returns the sync status for all the networks.
+func (p *PostgresStorage) GetSyncStatus(ctx context.Context, dbTx interface{}) ([]*etherman.SyncStatus, error) {
+	const getSyncStatusSQL = "SELECT network_id, percentage, remaining_blocks, synced FROM sync.status order by network_id asc"
+	rows, err := p.getExecQuerier(dbTx).Query(ctx, getSyncStatusSQL)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	status := make([]*etherman.SyncStatus, 0, len(rows.RawValues()))
+	for rows.Next() {
+		var s etherman.SyncStatus
+		err = rows.Scan(&s.NetworkID, &s.Percentage, &s.RemainingBlocks, &s.Synced)
+		if err != nil {
+			return nil, err
+		}
+		status = append(status, &s)
+	}
+	return status, nil
 }
 
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.

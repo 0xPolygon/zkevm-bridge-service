@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl/pb"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/bridgectrl/pb"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -141,10 +141,52 @@ func runRestServer(ctx context.Context, grpcPort, httpPort string) error {
 		return err
 	}
 
+	// Whitelist handler - only allow valid API routes defined in proto
+	gatewayHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		
+		// Define valid API routes based on proto file + grpc-gateway endpoints
+		validRoutes := map[string]bool{
+			"/api":                    true,
+			"/sync":                   true,
+			"/merkle-proof":           true,
+			"/merkle-proof-by-ger":    true,
+			"/bridge":                 true,
+			"/tokenwrapped":           true,
+			"/pending-bridges":        true,
+			"/v2/merkle-proof":        true,
+			"/healthz":                true, // Automatically added by runtime.WithHealthzEndpoint
+		}
+		
+		// Check if path matches valid routes or starts with valid prefixes
+		isValid := validRoutes[path] || 
+			strings.HasPrefix(path, "/bridges/") ||
+			strings.HasPrefix(path, "/claims/")
+		
+		if !isValid {
+			// Return 404 for invalid routes without involving grpc-gateway
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Content-Type", "application/json")
+			
+			if r.Method == "OPTIONS" {
+				preflightHandler(w, r)
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+			
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte(`{"error":"Not Found","path":"` + path + `"}`))
+			return
+		}
+		
+		// Valid routes go to grpc-gateway with CORS
+		allowCORS(mux).ServeHTTP(w, r)
+	})
+
 	srv := &http.Server{
 		ReadTimeout: 1 * time.Second, //nolint:mnd
 		Addr:        ":" + httpPort,
-		Handler:     allowCORS(mux),
+		Handler:     gatewayHandler,
 	}
 
 	c := make(chan os.Signal, 1)

@@ -7,7 +7,7 @@ import (
 
 	common "github.com/ethereum/go-ethereum/common"
 
-	etherman "github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	etherman "github.com/0xPolygon/zkevm-bridge-service/etherman"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -281,6 +281,54 @@ func (_c *storageMock_AddRemoveL2GER_Call) Return(_a0 error) *storageMock_AddRem
 }
 
 func (_c *storageMock_AddRemoveL2GER_Call) RunAndReturn(run func(context.Context, etherman.GlobalExitRoot, interface{}) error) *storageMock_AddRemoveL2GER_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AddSyncStatus provides a mock function with given fields: ctx, syncStatus, dbTx
+func (_m *storageMock) AddSyncStatus(ctx context.Context, syncStatus etherman.SyncStatus, dbTx interface{}) error {
+	ret := _m.Called(ctx, syncStatus, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddSyncStatus")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, etherman.SyncStatus, interface{}) error); ok {
+		r0 = rf(ctx, syncStatus, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// storageMock_AddSyncStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddSyncStatus'
+type storageMock_AddSyncStatus_Call struct {
+	*mock.Call
+}
+
+// AddSyncStatus is a helper method to define mock.On call
+//   - ctx context.Context
+//   - syncStatus etherman.SyncStatus
+//   - dbTx interface{}
+func (_e *storageMock_Expecter) AddSyncStatus(ctx interface{}, syncStatus interface{}, dbTx interface{}) *storageMock_AddSyncStatus_Call {
+	return &storageMock_AddSyncStatus_Call{Call: _e.mock.On("AddSyncStatus", ctx, syncStatus, dbTx)}
+}
+
+func (_c *storageMock_AddSyncStatus_Call) Run(run func(ctx context.Context, syncStatus etherman.SyncStatus, dbTx interface{})) *storageMock_AddSyncStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(etherman.SyncStatus), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *storageMock_AddSyncStatus_Call) Return(_a0 error) *storageMock_AddSyncStatus_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *storageMock_AddSyncStatus_Call) RunAndReturn(run func(context.Context, etherman.SyncStatus, interface{}) error) *storageMock_AddSyncStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

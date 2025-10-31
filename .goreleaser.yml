@@ -10,10 +10,10 @@ builds:
   env:
     - CGO_ENABLED=0
   ldflags:
-    - -X github.com/0xPolygonHermez/zkevm-bridge-service.Version={{.Version}}
-    - -X github.com/0xPolygonHermez/zkevm-bridge-service.GitRev={{.Commit}} 
-    - -X github.com/0xPolygonHermez/zkevm-bridge-service.BuildDate={{.Date}}
-    - -X github.com/0xPolygonHermez/zkevm-bridge-service.GitBranch={{.Branch}}
+    - -X github.com/0xPolygon/zkevm-bridge-service.Version={{.Version}}
+    - -X github.com/0xPolygon/zkevm-bridge-service.GitRev={{.Commit}} 
+    - -X github.com/0xPolygon/zkevm-bridge-service.BuildDate={{.Date}}
+    - -X github.com/0xPolygon/zkevm-bridge-service.GitBranch={{.Branch}}
 release:
   # If set to auto, will mark the release as not ready for production
   # in case there is an indicator for this in the tag e.g. v1.0.0-rc1

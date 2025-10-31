@@ -51,7 +51,8 @@ L2URLs = [""]
 [Synchronizer]
 SyncInterval = "2s"
 SyncChunkSize = 100
-ForceL2SyncChunk = false
+ForceL2SyncChunk = true
+ForceL1SyncChunk = false
 
 [BridgeController]
 Height = 32
@@ -62,7 +63,7 @@ HTTPPort = "8080"
 DefaultPageLimit = 25
 CacheSize = 100000
 MaxPageLimit = 100
-FinalizedGEREnabled = false
+FinalizedGEREnabled = true
     [BridgeServer.DB]
         Database = "postgres"
         [BridgeServer.DB.PgStorage]

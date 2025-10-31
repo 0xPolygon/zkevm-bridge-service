@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )

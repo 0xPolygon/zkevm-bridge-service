@@ -7,7 +7,7 @@ import (
 
 	common "github.com/ethereum/go-ethereum/common"
 
-	etherman "github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
+	etherman "github.com/0xPolygon/zkevm-bridge-service/etherman"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -877,6 +877,65 @@ func (_c *bridgeServiceStorageMock_GetRoot_Call) Return(_a0 []byte, _a1 error) *
 }
 
 func (_c *bridgeServiceStorageMock_GetRoot_Call) RunAndReturn(run func(context.Context, uint32, uint32, interface{}) ([]byte, error)) *bridgeServiceStorageMock_GetRoot_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetSyncStatus provides a mock function with given fields: ctx, dbTx
+func (_m *bridgeServiceStorageMock) GetSyncStatus(ctx context.Context, dbTx interface{}) ([]*etherman.SyncStatus, error) {
+	ret := _m.Called(ctx, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetSyncStatus")
+	}
+
+	var r0 []*etherman.SyncStatus
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}) ([]*etherman.SyncStatus, error)); ok {
+		return rf(ctx, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, interface{}) []*etherman.SyncStatus); ok {
+		r0 = rf(ctx, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*etherman.SyncStatus)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, interface{}) error); ok {
+		r1 = rf(ctx, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// bridgeServiceStorageMock_GetSyncStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetSyncStatus'
+type bridgeServiceStorageMock_GetSyncStatus_Call struct {
+	*mock.Call
+}
+
+// GetSyncStatus is a helper method to define mock.On call
+//   - ctx context.Context
+//   - dbTx interface{}
+func (_e *bridgeServiceStorageMock_Expecter) GetSyncStatus(ctx interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetSyncStatus_Call {
+	return &bridgeServiceStorageMock_GetSyncStatus_Call{Call: _e.mock.On("GetSyncStatus", ctx, dbTx)}
+}
+
+func (_c *bridgeServiceStorageMock_GetSyncStatus_Call) Run(run func(ctx context.Context, dbTx interface{})) *bridgeServiceStorageMock_GetSyncStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(interface{}))
+	})
+	return _c
+}
+
+func (_c *bridgeServiceStorageMock_GetSyncStatus_Call) Return(_a0 []*etherman.SyncStatus, _a1 error) *bridgeServiceStorageMock_GetSyncStatus_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *bridgeServiceStorageMock_GetSyncStatus_Call) RunAndReturn(run func(context.Context, interface{}) ([]*etherman.SyncStatus, error)) *bridgeServiceStorageMock_GetSyncStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

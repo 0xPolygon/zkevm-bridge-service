@@ -5,14 +5,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/bridgectrl"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/claimtxman"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/db"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/metrics"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/server"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/synchronizer"
+	"github.com/0xPolygon/zkevm-bridge-service/bridgectrl"
+	"github.com/0xPolygon/zkevm-bridge-service/claimtxman"
+	"github.com/0xPolygon/zkevm-bridge-service/db"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/metrics"
+	"github.com/0xPolygon/zkevm-bridge-service/server"
+	"github.com/0xPolygon/zkevm-bridge-service/synchronizer"
 	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/viper"
 )
@@ -83,8 +83,9 @@ func Load(configFilePath string, network string) (*Config, error) {
 	}
 	if len(cfg.L2PolygonZkEVMGlobalExitRootAddresses) != len(cfg.RequireSovereignChainSmcs) ||
 		len(cfg.RequireSovereignChainSmcs) != len(cfg.L2PolygonBridgeAddresses) ||
-		len(cfg.L2PolygonBridgeAddresses) != len(cfg.Etherman.L2URLs) {
-		return nil, errors.New("the length of RequireSovereignChainSmcs, L2PolygonZkEVMGlobalExitRootAddresses, L2PolygonBridgeAddresses and L2URLs must be the same")
+		len(cfg.L2PolygonBridgeAddresses) != len(cfg.Etherman.L2URLs) ||
+		len(cfg.Etherman.L2URLs) != len(cfg.L2GenBlockNumbers) {
+		return nil, errors.New("the length of RequireSovereignChainSmcs, L2PolygonZkEVMGlobalExitRootAddresses, L2PolygonBridgeAddresses, L2GenBlockNumbers and L2URLs must be the same")
 	}
 
 	return cfg, nil

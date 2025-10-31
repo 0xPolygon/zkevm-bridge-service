@@ -4,9 +4,10 @@ import (
 	"context"
 	"os"
 	"strconv"
+	"strings"
 
-	"github.com/0xPolygonHermez/zkevm-bridge-service/etherman"
-	"github.com/0xPolygonHermez/zkevm-bridge-service/log"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman"
+	"github.com/0xPolygon/zkevm-bridge-service/log"
 	"github.com/ethereum/go-ethereum/accounts/abi"
 	packr "github.com/gobuffalo/packr/v2"
 	pgx "github.com/jackc/pgx/v4"
@@ -62,6 +63,18 @@ func runMigrations(cfg Config, direction migrate.MigrationDirection) error {
 	}
 
 	log.Info("successfully ran ", nMigrations, " migrations")
+	const cleanStatusSQL = "DELETE FROM sync.status"
+	_, err = db.Exec(cleanStatusSQL)
+	if err != nil {
+		// Ignore error if table doesn't exist (SQLSTATE 42P01)
+		errMsg := err.Error()
+		if errMsg != "" && (errMsg == "ERROR: relation \"sync.status\" does not exist (SQLSTATE 42P01)" ||
+			strings.Contains(errMsg, "relation \"sync.status\" does not exist") ||
+			strings.Contains(errMsg, "SQLSTATE 42P01")) {
+			return nil
+		}
+		return err
+	}
 	return nil
 }
 
