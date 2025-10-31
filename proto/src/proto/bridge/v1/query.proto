@@ -18,6 +18,13 @@ service BridgeService {
         };
     }
 
+    /// Get sync status
+    rpc GetSyncStatus(GetSyncStatusRequest) returns (GetSyncStatusResponse) {
+        option (google.api.http) = {
+            get: "/sync"
+        };
+    }
+
     /// Get bridges for the destination address both in L1 and L2
     rpc GetBridges(GetBridgesRequest) returns (GetBridgesResponse) {
         option (google.api.http) = {
@@ -72,6 +79,14 @@ service BridgeService {
             get: "/v2/merkle-proof"
         };
     }
+}
+
+// SyncStatus message
+message SyncStatus {
+    uint32 network_id = 1;
+    uint32 percentage = 2;
+    uint64 remaining_blocks = 3;
+    bool synced = 4;
 }
 
 // TokenWrapped message
@@ -130,6 +145,8 @@ message Proof {
 
 message CheckAPIRequest {}
 
+message GetSyncStatusRequest {}
+
 message GetBridgesRequest {
     string dest_addr = 1;
     uint32 offset = 2;
@@ -180,6 +197,10 @@ message GetClaimsRequest {
 
 message CheckAPIResponse {
     string api = 1;
+}
+
+message GetSyncStatusResponse {
+    repeated SyncStatus sync = 1;
 }
 
 message GetBridgesResponse {

@@ -745,17 +745,17 @@ func (_c *StorageInterface_UpdateL1DepositsStatus_Call) RunAndReturn(run func(co
 	return _c
 }
 
-// UpdateL2DepositsStatus provides a mock function with given fields: ctx, exitRoot, rollupID, networkID, dbTx
-func (_m *StorageInterface) UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID uint32, networkID uint32, dbTx interface{}) error {
-	ret := _m.Called(ctx, exitRoot, rollupID, networkID, dbTx)
+// UpdateL2DepositsStatus provides a mock function with given fields: ctx, exitRoot, rollupID, networkID, isDestNetL1, dbTx
+func (_m *StorageInterface) UpdateL2DepositsStatus(ctx context.Context, exitRoot []byte, rollupID uint32, networkID uint32, isDestNetL1 bool, dbTx interface{}) error {
+	ret := _m.Called(ctx, exitRoot, rollupID, networkID, isDestNetL1, dbTx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateL2DepositsStatus")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint32, uint32, interface{}) error); ok {
-		r0 = rf(ctx, exitRoot, rollupID, networkID, dbTx)
+	if rf, ok := ret.Get(0).(func(context.Context, []byte, uint32, uint32, bool, interface{}) error); ok {
+		r0 = rf(ctx, exitRoot, rollupID, networkID, isDestNetL1, dbTx)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -773,14 +773,15 @@ type StorageInterface_UpdateL2DepositsStatus_Call struct {
 //   - exitRoot []byte
 //   - rollupID uint32
 //   - networkID uint32
+//   - isDestNetL1 bool
 //   - dbTx interface{}
-func (_e *StorageInterface_Expecter) UpdateL2DepositsStatus(ctx interface{}, exitRoot interface{}, rollupID interface{}, networkID interface{}, dbTx interface{}) *StorageInterface_UpdateL2DepositsStatus_Call {
-	return &StorageInterface_UpdateL2DepositsStatus_Call{Call: _e.mock.On("UpdateL2DepositsStatus", ctx, exitRoot, rollupID, networkID, dbTx)}
+func (_e *StorageInterface_Expecter) UpdateL2DepositsStatus(ctx interface{}, exitRoot interface{}, rollupID interface{}, networkID interface{}, isDestNetL1 interface{}, dbTx interface{}) *StorageInterface_UpdateL2DepositsStatus_Call {
+	return &StorageInterface_UpdateL2DepositsStatus_Call{Call: _e.mock.On("UpdateL2DepositsStatus", ctx, exitRoot, rollupID, networkID, isDestNetL1, dbTx)}
 }
 
-func (_c *StorageInterface_UpdateL2DepositsStatus_Call) Run(run func(ctx context.Context, exitRoot []byte, rollupID uint32, networkID uint32, dbTx interface{})) *StorageInterface_UpdateL2DepositsStatus_Call {
+func (_c *StorageInterface_UpdateL2DepositsStatus_Call) Run(run func(ctx context.Context, exitRoot []byte, rollupID uint32, networkID uint32, isDestNetL1 bool, dbTx interface{})) *StorageInterface_UpdateL2DepositsStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]byte), args[2].(uint32), args[3].(uint32), args[4].(interface{}))
+		run(args[0].(context.Context), args[1].([]byte), args[2].(uint32), args[3].(uint32), args[4].(bool), args[5].(interface{}))
 	})
 	return _c
 }
@@ -790,7 +791,7 @@ func (_c *StorageInterface_UpdateL2DepositsStatus_Call) Return(_a0 error) *Stora
 	return _c
 }
 
-func (_c *StorageInterface_UpdateL2DepositsStatus_Call) RunAndReturn(run func(context.Context, []byte, uint32, uint32, interface{}) error) *StorageInterface_UpdateL2DepositsStatus_Call {
+func (_c *StorageInterface_UpdateL2DepositsStatus_Call) RunAndReturn(run func(context.Context, []byte, uint32, uint32, bool, interface{}) error) *StorageInterface_UpdateL2DepositsStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

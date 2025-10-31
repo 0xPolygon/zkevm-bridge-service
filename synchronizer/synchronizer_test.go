@@ -141,7 +141,18 @@ func TestSyncGer(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader1, nil).
-			Twice()
+			Times(3)
+
+		remainingBlocks := ethHeader1.Number.Uint64() - lastBlock.BlockNumber
+		syncStatus := etherman.SyncStatus{
+			NetworkID:       networkID,
+			Percentage:      0,
+			RemainingBlocks: remainingBlocks,
+			Synced:          false,
+		}
+		m.Storage.
+			On("AddSyncStatus", ctx, syncStatus, nil).
+			Return(nil)
 
 		globalExitRoot := etherman.GlobalExitRoot{
 			BlockID: 1,
@@ -283,7 +294,18 @@ func TestSyncTrustedGer(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader1, nil).
-			Twice()
+			Times(3)
+
+		remainingBlocks := ethHeader1.Number.Uint64() - lastBlock.BlockNumber
+		syncStatus := etherman.SyncStatus{
+			NetworkID:       networkID,
+			Percentage:      0,
+			RemainingBlocks: remainingBlocks,
+			Synced:          false,
+		}
+		m.Storage.
+			On("AddSyncStatus", ctx, syncStatus, nil).
+			Return(nil)
 
 		ethermanBlock0 := etherman.Block{
 			BlockHash: ethBlock0.Hash(),
@@ -431,7 +453,18 @@ func TestReorg(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader3bis, nil).
-			Twice()
+			Times(3)
+
+		remainingBlocks := ethHeader3bis.Number.Uint64() - lastBlock1.BlockNumber
+		syncStatus := etherman.SyncStatus{
+			NetworkID:       networkID,
+			Percentage:      0,
+			RemainingBlocks: remainingBlocks,
+			Synced:          false,
+		}
+		m.Storage.
+			On("AddSyncStatus", ctx, syncStatus, nil).
+			Return(nil)
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock1.Number()).
@@ -655,7 +688,18 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader3, nil).
-			Twice()
+			Times(3)
+
+		remainingBlocks := ethHeader3.Number.Uint64() - lastBlock1.BlockNumber
+		syncStatus := etherman.SyncStatus{
+			NetworkID:       networkID,
+			Percentage:      0,
+			RemainingBlocks: remainingBlocks,
+			Synced:          false,
+		}
+		m.Storage.
+			On("AddSyncStatus", ctx, syncStatus, nil).
+			Return(nil)
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock1.Number()).
@@ -812,7 +856,18 @@ func TestRegularReorg(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader2bis, nil).
-			Twice()
+			Times(3)
+
+		remainingBlocks := ethHeader2bis.Number.Uint64() - lastBlock1.BlockNumber
+		syncStatus := etherman.SyncStatus{
+			NetworkID:       networkID,
+			Percentage:      0,
+			RemainingBlocks: remainingBlocks,
+			Synced:          false,
+		}
+		m.Storage.
+			On("AddSyncStatus", ctx, syncStatus, nil).
+			Return(nil)
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock1.Number()).
@@ -1008,7 +1063,18 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader3, nil).
-			Twice()
+			Times(3)
+
+		remainingBlocks := ethHeader3.Number.Uint64() - lastBlock2.BlockNumber
+		syncStatus := etherman.SyncStatus{
+			NetworkID:       networkID,
+			Percentage:      0,
+			RemainingBlocks: remainingBlocks,
+			Synced:          false,
+		}
+		m.Storage.
+			On("AddSyncStatus", ctx, syncStatus, nil).
+			Return(nil)
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock2.Number()).
@@ -1202,7 +1268,18 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader2bis, nil).
-			Twice()
+			Times(3)
+
+		remainingBlocks := ethHeader2bis.Number.Uint64() - lastBlock1.BlockNumber
+		syncStatus := etherman.SyncStatus{
+			NetworkID:       networkID,
+			Percentage:      0,
+			RemainingBlocks: remainingBlocks,
+			Synced:          false,
+		}
+		m.Storage.
+			On("AddSyncStatus", ctx, syncStatus, nil).
+			Return(nil)
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock1.Number()).
@@ -1386,7 +1463,18 @@ func TestSyncL2GERUsingForcedSyncChunk(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader6, nil).
-			Once()
+			Twice()
+		
+		remainingBlocks := ethHeader6.Number.Uint64() - lastBlock.BlockNumber
+		syncStatus := etherman.SyncStatus{
+			NetworkID:       networkID,
+			Percentage:      0,
+			RemainingBlocks: remainingBlocks,
+			Synced:          false,
+		}
+		m.Storage.
+			On("AddSyncStatus", ctx, syncStatus, nil).
+			Return(nil)
 
 		m.Etherman.
 			On("HeaderByNumber", ctx, ethBlock0.Number()).
@@ -1573,7 +1661,18 @@ func TestMessyEvents(t *testing.T) {
 		m.Etherman.
 			On("HeaderByNumber", ctx, n).
 			Return(ethHeader1, nil).
-			Twice()
+			Times(3)
+
+		remainingBlocks := ethHeader1.Number.Uint64() - lastBlock.BlockNumber
+		syncStatus := etherman.SyncStatus{
+			NetworkID:       networkID,
+			Percentage:      0,
+			RemainingBlocks: remainingBlocks,
+			Synced:          false,
+		}
+		m.Storage.
+			On("AddSyncStatus", ctx, syncStatus, nil).
+			Return(nil)
 
 		globalExitRoot1 := etherman.GlobalExitRoot{
 			BlockID: 1,
