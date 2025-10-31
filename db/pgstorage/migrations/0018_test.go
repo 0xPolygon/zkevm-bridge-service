@@ -15,7 +15,7 @@ func (m migrationTest0018) InsertData(db *sql.DB) error {
 		return err
 	}
 	insertDeposit := `INSERT INTO sync.deposit(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
-		VALUES(0, 42949672, 42949672, decode('0000000000000000000000000000000000000000','hex'), '10000000000000000000', 42949672, decode('C949254D682D8C9AD5682521675B8F43B102AEC4','hex'), 1, 42949672, decode('C2D6575EA98EB55E36B5AC6E11196800362594458A4B3143DB50E4995CB2422E','hex'), decode('','hex'), 92233720368547758, true);`
+		VALUES(0, 42949, 42949, decode('0000000000000000000000000000000000000000','hex'), '10000000000000000000', 42949, decode('C949254D682D8C9AD5682521675B8F43B102AEC4','hex'), 1, 42949, decode('C2D6575EA98EB55E36B5AC6E11196800362594458A4B3143DB50E4995CB2422E','hex'), decode('','hex'), 92233720, true);`
 	if _, err := db.Exec(insertDeposit); err != nil {
 		return err
 	}
@@ -23,28 +23,28 @@ func (m migrationTest0018) InsertData(db *sql.DB) error {
 }
 
 func (m migrationTest0018) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) {
-	selectIgnore := "SELECT ignore FROM sync.deposit WHERE id = 92233720368547758;"
+	selectIgnore := "SELECT ignore FROM sync.deposit WHERE id = 92233720;"
 	var ignore bool
 	err := db.QueryRow(selectIgnore).Scan(&ignore)
 	assert.NoError(t, err)	
 	assert.Equal(t, false, ignore)
 
 	insertDeposit := `INSERT INTO sync.deposit(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim, ignore)
-		VALUES(0, 4294967295, 4294967295, decode('0000000000000000000000000000000000000000','hex'), '10000000000000000000', 4294967295, decode('C949254D682D8C9AD5682521675B8F43B102AEC4','hex'), 1, 4294967295, decode('C2D6575EA98EB55E36B5AC6E11196800362594458A4B3143DB50E4995CB2422E','hex'), decode('','hex'), 9223372036854775807, true, false);`
+		VALUES(0, 2147483647, 2147483647, decode('0000000000000000000000000000000000000000','hex'), '10000000000000000000', 2147483647, decode('C949254D682D8C9AD5682521675B8F43B102AEC4','hex'), 1, 2147483647, decode('C2D6575EA98EB55E36B5AC6E11196800362594458A4B3143DB50E4995CB2422E','hex'), decode('','hex'), 922337203, true, false);`
 	_, err = db.Exec(insertDeposit)
 	assert.NoError(t, err)
 
-	selectIgnore2 := "SELECT ignore FROM sync.deposit WHERE id = 9223372036854775807;"
+	selectIgnore2 := "SELECT ignore FROM sync.deposit WHERE id = 922337203;"
 	err = db.QueryRow(selectIgnore2).Scan(&ignore)
 	assert.NoError(t, err)	
 	assert.Equal(t, false, ignore)
 
 	insertDeposit2 := `INSERT INTO sync.deposit(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim, ignore)
-		VALUES(0, 429496729, 429496729, decode('0000000000000000000000000000000000000000','hex'), '10000000000000000000', 429496729, decode('C949254D682D8C9AD5682521675B8F43B102AEC4','hex'), 1, 429496729, decode('C2D6575EA98EB55E36B5AC6E11196800362594458A4B3143DB50E4995CB2422E','hex'), decode('','hex'), 922337203685477580, true, true);`
+		VALUES(0, 429496, 429496, decode('0000000000000000000000000000000000000000','hex'), '10000000000000000000', 429496, decode('C949254D682D8C9AD5682521675B8F43B102AEC4','hex'), 1, 429496, decode('C2D6575EA98EB55E36B5AC6E11196800362594458A4B3143DB50E4995CB2422E','hex'), decode('','hex'), 922337204, true, true);`
 	_, err = db.Exec(insertDeposit2)
 	assert.NoError(t, err)
 	
-	selectIgnore3 := "SELECT ignore FROM sync.deposit WHERE id = 922337203685477580;"
+	selectIgnore3 := "SELECT ignore FROM sync.deposit WHERE id = 922337204;"
 	err = db.QueryRow(selectIgnore3).Scan(&ignore)
 	assert.NoError(t, err)	
 	assert.Equal(t, true, ignore)

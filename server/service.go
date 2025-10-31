@@ -668,3 +668,26 @@ func (s *bridgeService) GetProofV2(ctx context.Context, req *pb.GetProofV2Reques
 		},
 	}, nil
 }
+
+// GetSyncStatus returns the sync Status of all networks.
+// Bridge rest API endpoint
+func (s *bridgeService) GetSyncStatus(ctx context.Context, req *pb.GetSyncStatusRequest) (*pb.GetSyncStatusResponse, error) {
+	status, err := s.storage.GetSyncStatus(ctx, nil)
+	if err != nil {
+		return nil, err
+	}
+	var returnSyncStatus []*pb.SyncStatus
+	for _, syncStatus := range status {
+		ss := &pb.SyncStatus{
+			NetworkId:      syncStatus.NetworkID,
+			Percentage:     syncStatus.Percentage,
+			RemainingBlocks: syncStatus.RemainingBlocks,
+			Synced:         syncStatus.Synced,
+		}
+		returnSyncStatus = append(returnSyncStatus, ss)
+	}
+
+	return &pb.GetSyncStatusResponse{
+		Sync: returnSyncStatus,
+	}, nil
+}

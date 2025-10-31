@@ -870,6 +870,43 @@ func (p *PostgresStorage) IgnoreDeposit(ctx context.Context, depositID uint64, d
 	return err
 }
 
+// AddSyncStatus stores the sync status progress.
+func (p *PostgresStorage) AddSyncStatus(ctx context.Context, syncStatus etherman.SyncStatus, dbTx interface{}) error {
+	const insertSyncStatusSQL = `INSERT INTO sync.status (network_id, percentage, remaining_blocks, synced)
+		VALUES ($1, $2, $3, $4)
+		ON CONFLICT (network_id) DO UPDATE
+		SET percentage       = EXCLUDED.percentage,
+			remaining_blocks = EXCLUDED.remaining_blocks,
+			synced           = EXCLUDED.synced;
+		`
+	_, err := p.getExecQuerier(dbTx).Exec(ctx, insertSyncStatusSQL, syncStatus.NetworkID, syncStatus.Percentage, syncStatus.RemainingBlocks, syncStatus.Synced)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetSyncStatus returns the sync status for all the networks.
+func (p *PostgresStorage) GetSyncStatus(ctx context.Context, dbTx interface{}) ([]*etherman.SyncStatus, error) {
+	const getSyncStatusSQL = "SELECT network_id, percentage, remaining_blocks, synced FROM sync.status order by network_id asc"
+	rows, err := p.getExecQuerier(dbTx).Query(ctx, getSyncStatusSQL)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	status := make([]*etherman.SyncStatus, 0, len(rows.RawValues()))
+	for rows.Next() {
+		var s etherman.SyncStatus
+		err = rows.Scan(&s.NetworkID, &s.Percentage, &s.RemainingBlocks, &s.Synced)
+		if err != nil {
+			return nil, err
+		}
+		status = append(status, &s)
+	}
+	return status, nil
+}
+
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.
 func (p *PostgresStorage) UpdateDepositsStatusForTesting(ctx context.Context, dbTx interface{}) error {
 	const updateDepositsStatusSQL = "UPDATE sync.deposit SET ready_for_claim = true;"
