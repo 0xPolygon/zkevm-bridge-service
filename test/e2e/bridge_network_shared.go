@@ -450,7 +450,7 @@ func waitToAutoClaim2(t *testing.T, ctx context.Context, testData *bridge2e2Test
 	}
 }
 
-// WaitMined waits for tx to be mined on the blockchain.
+// waitMinedByTxHash waits for tx to be mined on the blockchain.
 // It stops waiting when the context is canceled.
 func waitMinedByTxHash(ctx context.Context, client *utils.Client, txHash common.Hash) (*types.Receipt, error) {
 	queryTicker := time.NewTicker(time.Second)
@@ -477,7 +477,7 @@ func waitMinedByTxHash(ctx context.Context, client *utils.Client, txHash common.
 	}
 }
 
-// WaitTxToBeMined waits until a tx has been mined or the given timeout expires.
+// waitTxToBeMinedByTxHash waits until a tx has been mined or the given timeout expires.
 func waitTxToBeMinedByTxHash(parentCtx context.Context, client *utils.Client, txHash common.Hash, timeout time.Duration) (*types.Receipt, error) {
 	ctx, cancel := context.WithTimeout(parentCtx, timeout)
 	defer cancel()

@@ -117,7 +117,7 @@ func (tm *MonitorCompressedTxs) getPendingTxs(ctx context.Context, dbTx interfac
 	return NewPendingTxs(mTxs, groups, lastGroupID)
 }
 
-// monitorTxs process all pending monitored tx
+// MonitorTxs process all pending monitored tx
 func (tm *MonitorCompressedTxs) MonitorTxs() error {
 	dbTx, err := tm.storage.BeginDBTransaction(tm.ctx)
 	if err != nil {
@@ -131,7 +131,7 @@ func (tm *MonitorCompressedTxs) MonitorTxs() error {
 	return tm.storage.Commit(tm.ctx, dbTx)
 }
 
-// monitorTxs process all pending monitored tx
+// internalMonitorTxs process all pending monitored tx
 func (tm *MonitorCompressedTxs) internalMonitorTxs(ctx context.Context, dbTx interface{}) error {
 	pendingTx, err := tm.getPendingTxs(ctx, dbTx)
 	if err != nil {
@@ -193,7 +193,7 @@ func (tm *MonitorCompressedTxs) Process(ctx context.Context, pendingTxs *Pending
 	return nil
 }
 
-// OnFinishClaimGroupTx is called when a claim tx is mined successful
+// OnFinishClaimGroupTxSuccessful is called when a claim tx is mined successful
 func (tm *MonitorCompressedTxs) OnFinishClaimGroupTxSuccessful(group *ctmtypes.MonitoredTxGroup, txIndex int) {
 	txHash := group.DbEntry.ClaimTxHistory.TxHashes[txIndex].TxHash
 	msg := fmt.Sprintf("group_id:%d , tx %s was mined successfully", group.DbEntry.GroupID, txHash.String())
@@ -216,6 +216,7 @@ func (tm *MonitorCompressedTxs) OnFailGroup(group *ctmtypes.MonitoredTxGroup) {
 	}
 }
 
+// OnFinishClaimGroupTxFailed is called when a claim tx fails
 func (tm *MonitorCompressedTxs) OnFinishClaimGroupTxFailed(group *ctmtypes.MonitoredTxGroup, txIndex int, msg string) {
 	txHash := group.DbEntry.ClaimTxHistory.TxHashes[txIndex].TxHash
 	msg2 := fmt.Sprintf("tx %s. %s", txHash.String(), msg)

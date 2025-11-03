@@ -10,7 +10,7 @@ import (
 	"github.com/lib/pq"
 )
 
-// GetLatestGroupID
+// GetLatestMonitoredTxGroupID
 func (p *PostgresStorage) GetLatestMonitoredTxGroupID(ctx context.Context, dbTx interface{}) (uint64, error) {
 	const sql = `SELECT group_id FROM sync.monitored_txs_group ORDER BY group_id DESC LIMIT 1`
 	var groupID uint64
