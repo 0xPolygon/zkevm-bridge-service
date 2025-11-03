@@ -323,7 +323,7 @@ func (tm *ClaimTxManager) addClaimTx(deposit *etherman.Deposit, from common.Addr
 			log.Debug("error getting blockNumber, using latest. Error: ", err2)
 			b = "latest"
 		} else {
-			b = fmt.Sprintf("%x", block.Number())
+			b = fmt.Sprintf("0x%x", block.Number())
 		}
 		log.Warnf(`Use the next command to debug it manually.
 		curl --location --request POST 'http://localhost:8545' \
@@ -331,7 +331,7 @@ func (tm *ClaimTxManager) addClaimTx(deposit *etherman.Deposit, from common.Addr
 		--data-raw '{
 			"jsonrpc": "2.0",
 			"method": "eth_call",
-			"params": [{"from": "%s","to":"%s","data":"0x%s"},"0x%s"],
+			"params": [{"from": "%s","to":"%s","data":"0x%s"},"%s"],
 			"id": 1
 		}'`, from, to, common.Bytes2Hex(data), b)
 		log.Warnf("rollupID: %d, failed to estimate gas. Ignoring tx... DepositID: %d, Error: %v, Data: %s, GER: %s", tm.rollupID, deposit.Id, err, common.Bytes2Hex(data), ger.String())
