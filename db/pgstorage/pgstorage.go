@@ -601,8 +601,15 @@ func (p *PostgresStorage) GetClaims(ctx context.Context, destAddr string, limit,
 }
 
 // GetDeposits gets the deposit list which be smaller than depositCount.
-func (p *PostgresStorage) GetDeposits(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error) {
-	const getDepositsSQL = "SELECT d.id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE dest_addr = $1 ORDER BY d.block_id DESC, d.deposit_cnt DESC LIMIT $2 OFFSET $3"
+func (p *PostgresStorage) GetDeposits(ctx context.Context, destAddr string, networkID, destinationNetworkID *uint32, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error) {
+	var netID, destNetId string
+	if networkID != nil {
+		netID = fmt.Sprintf(" AND d.network_id = %d ", *networkID)
+	}
+	if destinationNetworkID != nil {
+		destNetId = fmt.Sprintf(" AND dest_net = %d ", *destinationNetworkID)
+	}
+	getDepositsSQL := "SELECT d.id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE dest_addr = $1 " + netID + destNetId + "ORDER BY d.block_id DESC, d.deposit_cnt DESC LIMIT $2 OFFSET $3"
 	rows, err := p.getExecQuerier(dbTx).Query(ctx, getDepositsSQL, common.FromHex(destAddr), limit, offset)
 	if err != nil {
 		return nil, err
@@ -613,8 +620,15 @@ func (p *PostgresStorage) GetDeposits(ctx context.Context, destAddr string, limi
 }
 
 // GetDepositCount gets the deposit count for the destination address.
-func (p *PostgresStorage) GetDepositCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error) {
-	const getDepositCountSQL = "SELECT COUNT(*) FROM sync.deposit WHERE dest_addr = $1"
+func (p *PostgresStorage) GetDepositCount(ctx context.Context, destAddr string, networkID, destinationNetworkID *uint32, dbTx interface{}) (uint64, error) {
+	var netID, destNetId string
+	if networkID != nil {
+		netID = fmt.Sprintf(" AND network_id = %d ", *networkID)
+	}
+	if destinationNetworkID != nil {
+		destNetId = fmt.Sprintf(" AND dest_net = %d ", *destinationNetworkID)
+	}
+	getDepositCountSQL := "SELECT COUNT(*) FROM sync.deposit WHERE dest_addr = $1" + netID + destNetId
 	var depositCount uint64
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getDepositCountSQL, common.FromHex(destAddr)).Scan(&depositCount)
 	return depositCount, err

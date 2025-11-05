@@ -363,7 +363,7 @@ func TestBSStorage(t *testing.T) {
 	err = testStore.AddClaim(ctx, claim, tx)
 	require.NoError(t, err)
 
-	count, err := testStore.GetDepositCount(ctx, deposit.DestinationAddress.String(), tx)
+	count, err := testStore.GetDepositCount(ctx, deposit.DestinationAddress.String(), nil, nil, tx)
 	require.NoError(t, err)
 	require.Equal(t, count, uint64(1))
 
@@ -372,7 +372,7 @@ func TestBSStorage(t *testing.T) {
 	require.Equal(t, rDeposit.DestinationAddress, deposit.DestinationAddress)
 	require.Equal(t, rDeposit.DepositCount, deposit.DepositCount)
 
-	rDeposits, err := testStore.GetDeposits(ctx, deposit.DestinationAddress.String(), 10, 0, tx)
+	rDeposits, err := testStore.GetDeposits(ctx, deposit.DestinationAddress.String(), nil, nil, 10, 0, tx)
 	require.NoError(t, err)
 	require.Equal(t, len(rDeposits), 1)
 
@@ -502,8 +502,8 @@ type testStore interface {
 	AddClaim(ctx context.Context, claim *etherman.Claim, dbTx interface{}) error
 	GetClaim(_ context.Context, depositCount, originNetworkID, networkID uint32, dbTx interface{}) (*etherman.Claim, error)
 	GetClaims(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Claim, error)
-	GetDepositCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error)
-	GetDeposits(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error)
+	GetDepositCount(ctx context.Context, destAddr string, networkID, destinationNetworkID *uint32, dbTx interface{}) (uint64, error)
+	GetDeposits(ctx context.Context, destAddr string, networkID, destinationNetworkID *uint32, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error)
 	GetDeposit(ctx context.Context, depositCounter, networkID uint32, dbTx interface{}) (*etherman.Deposit, error)
 	GetNumberDeposits(ctx context.Context, networkID uint32, blockNumber uint64, dbTx interface{}) (uint32, error)
 	GetClaimCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error)

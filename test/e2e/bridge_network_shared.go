@@ -174,9 +174,9 @@ func getBalance(ctx context.Context, client *utils.Client, privateKey string, ac
 }
 
 func isAlreadyClaimedError(err error) bool {
-	exectionRevertedMsg := "execution reverted"
+	executionRevertedMsg := "execution reverted"
 	if rpcErr, ok := err.(rpc.DataError); ok {
-		if rpcErr.Error() != exectionRevertedMsg {
+		if rpcErr.Error() != executionRevertedMsg {
 			return false
 		}
 		revertData := rpcErr.ErrorData()
