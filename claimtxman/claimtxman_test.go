@@ -210,14 +210,14 @@ func TestUpdateDepositStatus(t *testing.T) {
 	require.Equal(t, uint32(0), deposits[0].NetworkID)
 
 	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root.Bytes(), 1, 1, false, nil))
-	deposits, err = testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
+	deposits, err = testStore.GetDeposits(ctx, destAdr, nil, nil, 10, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 2)
 	require.True(t, deposits[1].ReadyForClaim)
 	require.False(t, deposits[0].ReadyForClaim)
 
 	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root1.Bytes(), 1, 1, true, nil))
-	deposits, err = testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
+	deposits, err = testStore.GetDeposits(ctx, destAdr, nil, nil, 10, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 2)
 	require.True(t, deposits[1].ReadyForClaim)
@@ -296,7 +296,7 @@ func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 
 	// This root is for network 1, this won't upgrade anything
 	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root1, 1, 2, true, nil))
-	deposits, err := testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
+	deposits, err := testStore.GetDeposits(ctx, destAdr, nil, nil, 10, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 2)
 	require.False(t, deposits[1].ReadyForClaim)
@@ -304,21 +304,21 @@ func TestUpdateL2DepositStatusMultipleRollups(t *testing.T) {
 
 	// This root is for network 2, this won't upgrade anything
 	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root2, 1, 1, true, nil))
-	deposits, err = testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
+	deposits, err = testStore.GetDeposits(ctx, destAdr, nil, nil, 10, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 2)
 	require.False(t, deposits[1].ReadyForClaim)
 	require.False(t, deposits[0].ReadyForClaim)
 
 	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root1, 1, 1, true, nil))
-	deposits, err = testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
+	deposits, err = testStore.GetDeposits(ctx, destAdr, nil, nil, 10, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 2)
 	require.True(t, deposits[1].ReadyForClaim)
 	require.False(t, deposits[0].ReadyForClaim)
 
 	require.NoError(t, store.UpdateL2DepositsStatus(ctx, l2Root2, 2, 2, false, nil))
-	deposits, err = testStore.GetDeposits(ctx, destAdr, 10, 0, nil)
+	deposits, err = testStore.GetDeposits(ctx, destAdr, nil, nil, 10, 0, nil)
 	require.NoError(t, err)
 	require.Len(t, deposits, 2)
 	require.True(t, deposits[1].ReadyForClaim)
@@ -329,7 +329,7 @@ type testStore interface {
 	AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx interface{}) (uint64, error)
 	ExecTesting(ctx context.Context, data string) error
 	SetRoot(ctx context.Context, root []byte, depositID uint64, network uint32, dbTx interface{}) error
-	GetDeposits(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error)
+	GetDeposits(ctx context.Context, destAddr string, networkID, destinationNetworkID *uint32, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error)
 }
 
 func newStorageSettings(ctx context.Context, storageType string) (StorageInterface, testStore, error) {
