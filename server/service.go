@@ -350,11 +350,23 @@ func (s *bridgeService) GetBridges(ctx context.Context, req *pb.GetBridgesReques
 	if limit > s.maxPageLimit {
 		limit = s.maxPageLimit
 	}
-	totalCount, err := s.storage.GetDepositCount(ctx, req.DestAddr, nil)
+	// Check if the user actually provided these fields
+    var networkID, destinationNetworkID *uint32
+    if req.NetId != nil {
+        networkID = req.NetId  // User explicitly provided this value (could be 0 or any positive number)
+        log.Infof("User provided net_id: %d", *networkID)
+    }
+
+    if req.DestNet != nil {
+        destinationNetworkID = req.DestNet  // User explicitly provided this value
+        log.Infof("User provided dest_net: %d", *destinationNetworkID)
+    }
+
+	totalCount, err := s.storage.GetDepositCount(ctx, req.DestAddr, networkID, destinationNetworkID, nil)
 	if err != nil {
 		return nil, err
 	}
-	deposits, err := s.storage.GetDeposits(ctx, req.DestAddr, limit, req.Offset, nil)
+	deposits, err := s.storage.GetDeposits(ctx, req.DestAddr, networkID, destinationNetworkID, limit, req.Offset, nil)
 	if err != nil {
 		return nil, err
 	}
