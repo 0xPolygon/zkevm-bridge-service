@@ -27,9 +27,34 @@ import (
 )
 
 var (
+	// SovereignChain L2GERManager events smc v12
+	acceptGlobalExitRootUpdaterSignatureHash = crypto.Keccak256Hash([]byte("AcceptGlobalExitRootUpdater(address,address)"))
+	acceptGlobalExitRootRemoverSignatureHash = crypto.Keccak256Hash([]byte("AcceptGlobalExitRootRemover(address,address)"))
+	transferGlobalExitRootRemoverSignatureHash = crypto.Keccak256Hash([]byte("TransferGlobalExitRootRemover(address,address)"))
+	transferGlobalExitRootUpdaterSignatureHash = crypto.Keccak256Hash([]byte("TransferGlobalExitRootUpdater(address,address)"))
+
+	// SovereignChain L2Bridge events smc v12
+	acceptEmergencyBridgePauserRoleSignatureHash = crypto.Keccak256Hash([]byte("AcceptEmergencyBridgePauserRole(address,address)"))
+	acceptEmergencyBridgeUnpauserRoleSignatureHash = crypto.Keccak256Hash([]byte("AcceptEmergencyBridgeUnpauserRole(address,address)"))
+	backwardLETSignatureHash = crypto.Keccak256Hash([]byte("BackwardLET(uint256,bytes32,uint256,bytes32)"))
+	detailedClaimEventDetailedClaimEventSignatureHash = crypto.Keccak256Hash([]byte("DetailedClaimEventDetailedClaimEvent(bytes32[32],bytes32[32],uint256,bytes32,bytes32,uint32,address,uint32,address,uint256,bytes)"))
+	forwardLETSignatureHash = crypto.Keccak256Hash([]byte("ForwardLET(uint256,bytes32,uint256,bytes32,bytes)"))
+	setClaimSignatureHash = crypto.Keccak256Hash([]byte("SetClaim(uint32,uint32)"))
+	setLocalBalanceTreeSignatureHash = crypto.Keccak256Hash([]byte("SetLocalBalanceTree(uint32,address,uint256)"))
+	transferEmergencyBridgePauserRoleSignatureHash = crypto.Keccak256Hash([]byte("TransferEmergencyBridgePauserRole(address,address)"))
+	transferEmergencyBridgeUnpauserRoleSignatureHash = crypto.Keccak256Hash([]byte("TransferEmergencyBridgeUnpauserRole(address,address)"))
+	updatedClaimedGlobalIndexHashChainSignatureHash = crypto.Keccak256Hash([]byte("UpdatedClaimedGlobalIndexHashChain(bytes32,bytes32)"))
+	updatedUnsetGlobalIndexHashChainSignatureHash = crypto.Keccak256Hash([]byte("UpdatedUnsetGlobalIndexHashChain(bytes32,bytes32)"))
+
+	// Bridge events smc v12
+	acceptProxiedTokensManagerRoleSignatureHash = crypto.Keccak256Hash([]byte("AcceptProxiedTokensManagerRole(address,address)"))
+	transferProxiedTokensManagerRoleSignatureHash = crypto.Keccak256Hash([]byte("TransferProxiedTokensManagerRole(address,address)"))
+
 	// SovereignChain L2GERManager events
 	updateHashChainValueSignatureHash        = crypto.Keccak256Hash([]byte("UpdateHashChainValue(bytes32,bytes32)"))
 	updateRemovalHashChainValueSignatureHash = crypto.Keccak256Hash([]byte("UpdateRemovalHashChainValue(bytes32,bytes32)"))
+	setGlobalExitRootRemoverSignatureHash    = crypto.Keccak256Hash([]byte("SetGlobalExitRootRemover(address)"))
+	setGlobalExitRootUpdaterSignatureHash    = crypto.Keccak256Hash([]byte("SetGlobalExitRootUpdater(address)"))
 
 	// SovereignChain L2Bridge events
 	setBridgeManagerSignatureHash                  = crypto.Keccak256Hash([]byte("SetBridgeManager(address)"))
@@ -37,6 +62,7 @@ var (
 	migrateLegacyTokenSignatureHash                = crypto.Keccak256Hash([]byte("MigrateLegacyToken(address,address,address,uint256)"))
 	removeLegacySovereignTokenAddressSignatureHash = crypto.Keccak256Hash([]byte("RemoveLegacySovereignTokenAddress(address)"))
 	setSovereignWETHAddressSignatureHash           = crypto.Keccak256Hash([]byte("SetSovereignWETHAddress(address,bool)"))
+	unsetClaimSignatureHash                        = crypto.Keccak256Hash([]byte("UnsetClaim(uint32,uint32)"))
 
 	// New Ger event
 	updateL1InfoTreeSignatureHash = crypto.Keccak256Hash([]byte("UpdateL1InfoTree(bytes32,bytes32)"))
@@ -46,7 +72,7 @@ var (
 	claimEventSignatureHash           = crypto.Keccak256Hash([]byte("ClaimEvent(uint256,uint32,address,address,uint256)"))
 	newWrappedTokenEventSignatureHash = crypto.Keccak256Hash([]byte("NewWrappedToken(uint32,address,address,bytes)")) // Used in oldBridge as well
 
-	// Old Bridge events
+	// Old Bridge events (PreLxLy)
 	oldClaimEventSignatureHash = crypto.Keccak256Hash([]byte("ClaimEvent(uint32,uint32,address,address,uint256)"))
 
 	// Proxy events
@@ -471,6 +497,67 @@ func (etherMan *Client) processEvent(vLog types.Log, blocks *[]Block, blocksOrde
 		return nil
 	case setSovereignWETHAddressSignatureHash:
 		etherMan.logger.Debug("setSovereignWETHAddress event detected. Ignoring...")
+		return nil
+//////////
+	case acceptGlobalExitRootUpdaterSignatureHash:
+		etherMan.logger.Debugf("AcceptGlobalExitRootUpdater event detected. Ignoring...")
+		return nil
+	case acceptGlobalExitRootRemoverSignatureHash:
+		etherMan.logger.Debugf("AcceptGlobalExitRootRemover event detected. Ignoring...")
+		return nil
+	case transferGlobalExitRootRemoverSignatureHash:
+		etherMan.logger.Debugf("TransferGlobalExitRootRemover event detected. Ignoring...")
+		return nil
+	case transferGlobalExitRootUpdaterSignatureHash:
+		etherMan.logger.Debugf("TransferGlobalExitRootUpdater event detected. Ignoring...")
+		return nil
+	case acceptEmergencyBridgePauserRoleSignatureHash:
+		etherMan.logger.Debugf("AcceptEmergencyBridgePauserRole event detected. Ignoring...")
+		return nil
+	case acceptEmergencyBridgeUnpauserRoleSignatureHash:
+		etherMan.logger.Debugf("AcceptEmergencyBridgeUnpauserRole event detected. Ignoring...")
+		return nil
+	case backwardLETSignatureHash:
+		etherMan.logger.Debugf("BackwardLET event detected. Ignoring...")
+		return nil
+	case detailedClaimEventDetailedClaimEventSignatureHash:
+		etherMan.logger.Debugf("DetailedClaimEventDetailedClaimEvent event detected. Ignoring...")
+		return nil
+	case forwardLETSignatureHash:
+		etherMan.logger.Debugf("ForwardLET event detected. Ignoring...")
+		return nil
+	case setClaimSignatureHash:
+		etherMan.logger.Debugf("SetClaim event detected. Ignoring...")
+		return nil
+	case setLocalBalanceTreeSignatureHash:
+		etherMan.logger.Debugf("SetLocalBalanceTree event detected. Ignoring...")
+		return nil
+	case transferEmergencyBridgePauserRoleSignatureHash:
+		etherMan.logger.Debugf("TransferEmergencyBridgePauserRole event detected. Ignoring...")
+		return nil
+	case transferEmergencyBridgeUnpauserRoleSignatureHash:
+		etherMan.logger.Debugf("TransferEmergencyBridgeUnpauserRole event detected. Ignoring...")
+		return nil
+	case updatedClaimedGlobalIndexHashChainSignatureHash:
+		etherMan.logger.Debugf("UpdatedClaimedGlobalIndexHashChain event detected. Ignoring...")
+		return nil
+	case updatedUnsetGlobalIndexHashChainSignatureHash:
+		etherMan.logger.Debugf("UpdatedUnsetGlobalIndexHashChain event detected. Ignoring...")
+		return nil
+	case acceptProxiedTokensManagerRoleSignatureHash:
+		etherMan.logger.Debugf("AcceptProxiedTokensManagerRole event detected. Ignoring...")
+		return nil
+	case transferProxiedTokensManagerRoleSignatureHash:
+		etherMan.logger.Debugf("TransferProxiedTokensManagerRole event detected. Ignoring...")
+		return nil
+	case setGlobalExitRootRemoverSignatureHash:
+		etherMan.logger.Debugf("SetGlobalExitRootRemover event detected. Ignoring...")
+		return nil
+	case setGlobalExitRootUpdaterSignatureHash:
+		etherMan.logger.Debugf("SetGlobalExitRootUpdater event detected. Ignoring...")
+		return nil
+	case unsetClaimSignatureHash:
+		etherMan.logger.Debugf("UnsetClaim event detected. Ignoring...")
 		return nil
 	}
 	etherMan.logger.Warnf("Event not registered: %+v", vLog)

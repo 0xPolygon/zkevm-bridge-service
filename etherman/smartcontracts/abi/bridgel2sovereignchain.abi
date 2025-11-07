@@ -5,6 +5,28 @@
 		"type": "constructor"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "target",
+				"type": "address"
+			}
+		],
+		"name": "AddressEmptyCode",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			}
+		],
+		"name": "AddressInsufficientBalance",
+		"type": "error"
+	},
+	{
 		"inputs": [],
 		"name": "AlreadyClaimed",
 		"type": "error"
@@ -12,6 +34,11 @@
 	{
 		"inputs": [],
 		"name": "AmountDoesNotMatchMsgValue",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "BridgeAddressNotAllowed",
 		"type": "error"
 	},
 	{
@@ -36,7 +63,12 @@
 	},
 	{
 		"inputs": [],
-		"name": "FailedTokenWrappedDeployment",
+		"name": "FailedInnerCall",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "FailedProxyDeployment",
 		"type": "error"
 	},
 	{
@@ -56,7 +88,48 @@
 	},
 	{
 		"inputs": [],
+		"name": "InvalidDepositCount",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "InvalidExpectedLER",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "InvalidGlobalIndex",
+		"type": "error"
+	},
+	{
+		"inputs": [],
 		"name": "InvalidInitializeFunction",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "InvalidLBTLeaf",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "InvalidLeafType",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "InvalidLeavesLength",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "proxyAdmin",
+				"type": "address"
+			}
+		],
+		"name": "InvalidProxyAdmin",
 		"type": "error"
 	},
 	{
@@ -71,7 +144,80 @@
 	},
 	{
 		"inputs": [],
+		"name": "InvalidSubtreeFrontier",
+		"type": "error"
+	},
+	{
+		"inputs": [],
 		"name": "InvalidZeroAddress",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "InvalidZeroNetworkID",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "proxyAdmin",
+				"type": "address"
+			}
+		],
+		"name": "InvalidZeroProxyAdminOwner",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint32",
+				"name": "originNetwork",
+				"type": "uint32"
+			},
+			{
+				"internalType": "address",
+				"name": "originTokenAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "localBalanceTreeAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "LocalBalanceTreeOverflow",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint32",
+				"name": "originNetwork",
+				"type": "uint32"
+			},
+			{
+				"internalType": "address",
+				"name": "originTokenAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "localBalanceTreeAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "LocalBalanceTreeUnderflow",
 		"type": "error"
 	},
 	{
@@ -96,7 +242,17 @@
 	},
 	{
 		"inputs": [],
+		"name": "NewDepositCountExceedsMax",
+		"type": "error"
+	},
+	{
+		"inputs": [],
 		"name": "NoValueInMessagesOnGasTokenNetworks",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "NonZeroValueForUnusedFrontier",
 		"type": "error"
 	},
 	{
@@ -106,22 +262,22 @@
 	},
 	{
 		"inputs": [],
-		"name": "NotValidOwner",
-		"type": "error"
-	},
-	{
-		"inputs": [],
-		"name": "NotValidSignature",
-		"type": "error"
-	},
-	{
-		"inputs": [],
-		"name": "NotValidSpender",
-		"type": "error"
-	},
-	{
-		"inputs": [],
 		"name": "OnlyBridgeManager",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "OnlyDeployer",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "OnlyEmergencyBridgePauser",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "OnlyEmergencyBridgeUnpauser",
 		"type": "error"
 	},
 	{
@@ -131,7 +287,32 @@
 	},
 	{
 		"inputs": [],
+		"name": "OnlyGlobalExitRootRemover",
+		"type": "error"
+	},
+	{
+		"inputs": [],
 		"name": "OnlyNotEmergencyState",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "OnlyPendingEmergencyBridgePauser",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "OnlyPendingEmergencyBridgeUnpauser",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "OnlyPendingProxiedTokensManager",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "OnlyProxiedTokensManager",
 		"type": "error"
 	},
 	{
@@ -142,6 +323,22 @@
 	{
 		"inputs": [],
 		"name": "OriginNetworkInvalid",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			}
+		],
+		"name": "SafeERC20FailedOperation",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "SubtreeFrontierMismatch",
 		"type": "error"
 	},
 	{
@@ -168,6 +365,94 @@
 		"inputs": [],
 		"name": "WETHRemappingNotSupportedOnGasTokenNetworks",
 		"type": "error"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "oldEmergencyBridgePauser",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "newEmergencyBridgePauser",
+				"type": "address"
+			}
+		],
+		"name": "AcceptEmergencyBridgePauserRole",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "oldEmergencyBridgeUnpauser",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "newEmergencyBridgeUnpauser",
+				"type": "address"
+			}
+		],
+		"name": "AcceptEmergencyBridgeUnpauserRole",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "oldProxiedTokensManager",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "newProxiedTokensManager",
+				"type": "address"
+			}
+		],
+		"name": "AcceptProxiedTokensManagerRole",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "previousDepositCount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "previousRoot",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newDepositCount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "newRoot",
+				"type": "bytes32"
+			}
+		],
+		"name": "BackwardLET",
+		"type": "event"
 	},
 	{
 		"anonymous": false,
@@ -263,6 +548,79 @@
 	},
 	{
 		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bytes32[32]",
+				"name": "smtProofLocalExitRoot",
+				"type": "bytes32[32]"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32[32]",
+				"name": "smtProofRollupExitRoot",
+				"type": "bytes32[32]"
+			},
+			{
+				"indexed": true,
+				"internalType": "uint256",
+				"name": "globalIndex",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "mainnetExitRoot",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "rollupExitRoot",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint32",
+				"name": "originNetwork",
+				"type": "uint32"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "originTokenAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint32",
+				"name": "destinationNetwork",
+				"type": "uint32"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "destinationAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes",
+				"name": "metadata",
+				"type": "bytes"
+			}
+		],
+		"name": "DetailedClaimEvent",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
 		"inputs": [],
 		"name": "EmergencyStateActivated",
 		"type": "event"
@@ -271,6 +629,43 @@
 		"anonymous": false,
 		"inputs": [],
 		"name": "EmergencyStateDeactivated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "previousDepositCount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "previousRoot",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newDepositCount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "newRoot",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes",
+				"name": "newLeaves",
+				"type": "bytes"
+			}
+		],
+		"name": "ForwardLET",
 		"type": "event"
 	},
 	{
@@ -380,6 +775,50 @@
 			{
 				"indexed": false,
 				"internalType": "uint32",
+				"name": "leafIndex",
+				"type": "uint32"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint32",
+				"name": "sourceNetwork",
+				"type": "uint32"
+			}
+		],
+		"name": "SetClaim",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "uint32",
+				"name": "originNetwork",
+				"type": "uint32"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "originTokenAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "SetLocalBalanceTree",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint32",
 				"name": "originNetwork",
 				"type": "uint32"
 			},
@@ -429,23 +868,125 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"internalType": "uint32",
-				"name": "leafIndex",
-				"type": "uint32"
+				"internalType": "address",
+				"name": "currentEmergencyBridgePauser",
+				"type": "address"
 			},
 			{
 				"indexed": false,
-				"internalType": "uint32",
-				"name": "sourceBridgeNetwork",
-				"type": "uint32"
+				"internalType": "address",
+				"name": "newEmergencyBridgePauser",
+				"type": "address"
 			}
 		],
-		"name": "UnsetClaim",
+		"name": "TransferEmergencyBridgePauserRole",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "currentEmergencyBridgeUnpauser",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "newEmergencyBridgeUnpauser",
+				"type": "address"
+			}
+		],
+		"name": "TransferEmergencyBridgeUnpauserRole",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "currentProxiedTokensManager",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "newProxiedTokensManager",
+				"type": "address"
+			}
+		],
+		"name": "TransferProxiedTokensManagerRole",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "claimedGlobalIndex",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "newClaimedGlobalIndexHashChain",
+				"type": "bytes32"
+			}
+		],
+		"name": "UpdatedClaimedGlobalIndexHashChain",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "unsetGlobalIndex",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "newUnsetGlobalIndexHashChain",
+				"type": "bytes32"
+			}
+		],
+		"name": "UpdatedUnsetGlobalIndexHashChain",
 		"type": "event"
 	},
 	{
 		"inputs": [],
-		"name": "BASE_INIT_BYTECODE_WRAPPED_TOKEN",
+		"name": "BRIDGE_SOVEREIGN_VERSION",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "BRIDGE_VERSION",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "INIT_BYTECODE_TRANSPARENT_PROXY",
 		"outputs": [
 			{
 				"internalType": "bytes",
@@ -461,7 +1002,7 @@
 		"name": "WETHToken",
 		"outputs": [
 			{
-				"internalType": "contract TokenWrapped",
+				"internalType": "contract ITokenWrappedBridgeUpgradeable",
 				"name": "",
 				"type": "address"
 			}
@@ -471,9 +1012,58 @@
 	},
 	{
 		"inputs": [],
+		"name": "acceptEmergencyBridgePauserRole",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "acceptEmergencyBridgeUnpauserRole",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "acceptProxiedTokensManagerRole",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "activateEmergencyState",
 		"outputs": [],
-		"stateMutability": "pure",
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "newDepositCount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes32[32]",
+				"name": "newFrontier",
+				"type": "bytes32[32]"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "nextLeaf",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bytes32[32]",
+				"name": "proof",
+				"type": "bytes32[32]"
+			}
+		],
+		"name": "backwardLET",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -512,6 +1102,19 @@
 		"name": "bridgeAsset",
 		"outputs": [],
 		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "bridgeLib",
+		"outputs": [
+			{
+				"internalType": "contract BridgeLib",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -615,35 +1218,6 @@
 			}
 		],
 		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint32",
-				"name": "originNetwork",
-				"type": "uint32"
-			},
-			{
-				"internalType": "address",
-				"name": "originTokenAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "token",
-				"type": "address"
-			}
-		],
-		"name": "calculateTokenWrapperAddress",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -793,9 +1367,69 @@
 	},
 	{
 		"inputs": [],
+		"name": "claimedGlobalIndexHashChain",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint32",
+				"name": "originNetwork",
+				"type": "uint32"
+			},
+			{
+				"internalType": "address",
+				"name": "originTokenAddress",
+				"type": "address"
+			}
+		],
+		"name": "computeTokenProxyAddress",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "deactivateEmergencyState",
 		"outputs": [],
-		"stateMutability": "pure",
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint32",
+				"name": "originNetwork",
+				"type": "uint32"
+			},
+			{
+				"internalType": "address",
+				"name": "originTokenAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "isNotMintable",
+				"type": "bool"
+			}
+		],
+		"name": "deployWrappedTokenAndRemap",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -809,6 +1443,87 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "emergencyBridgePauser",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "emergencyBridgeUnpauser",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint8",
+						"name": "leafType",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint32",
+						"name": "originNetwork",
+						"type": "uint32"
+					},
+					{
+						"internalType": "address",
+						"name": "originAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint32",
+						"name": "destinationNetwork",
+						"type": "uint32"
+					},
+					{
+						"internalType": "address",
+						"name": "destinationAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes",
+						"name": "metadata",
+						"type": "bytes"
+					}
+				],
+				"internalType": "struct AgglayerBridgeL2.LeafData[]",
+				"name": "newLeaves",
+				"type": "tuple[]"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "expectedLER",
+				"type": "bytes32"
+			}
+		],
+		"name": "forwardLET",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -901,6 +1616,19 @@
 	},
 	{
 		"inputs": [],
+		"name": "getProxiedTokensManager",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "getRoot",
 		"outputs": [
 			{
@@ -957,10 +1685,23 @@
 	},
 	{
 		"inputs": [],
+		"name": "getWrappedTokenBridgeImplementation",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "globalExitRootManager",
 		"outputs": [
 			{
-				"internalType": "contract IBasePolygonZkEVMGlobalExitRoot",
+				"internalType": "contract IBaseLegacyAgglayerGER",
 				"name": "",
 				"type": "address"
 			}
@@ -986,7 +1727,7 @@
 				"type": "uint32"
 			},
 			{
-				"internalType": "contract IBasePolygonZkEVMGlobalExitRoot",
+				"internalType": "contract IBaseLegacyAgglayerGER",
 				"name": "_globalExitRootManager",
 				"type": "address"
 			},
@@ -1014,11 +1755,33 @@
 				"internalType": "bool",
 				"name": "_sovereignWETHAddressIsNotMintable",
 				"type": "bool"
+			},
+			{
+				"internalType": "address",
+				"name": "_emergencyBridgePauser",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_emergencyBridgeUnpauser",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "_proxiedTokensManager",
+				"type": "address"
 			}
 		],
 		"name": "initialize",
 		"outputs": [],
 		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "initialize",
+		"outputs": [],
+		"stateMutability": "pure",
 		"type": "function"
 	},
 	{
@@ -1039,7 +1802,7 @@
 				"type": "uint32"
 			},
 			{
-				"internalType": "contract IBasePolygonZkEVMGlobalExitRoot",
+				"internalType": "contract IBaseLegacyAgglayerGER",
 				"name": "",
 				"type": "address"
 			},
@@ -1112,6 +1875,25 @@
 	{
 		"inputs": [
 			{
+				"internalType": "bytes32",
+				"name": "tokenInfoHash",
+				"type": "bytes32"
+			}
+		],
+		"name": "localBalanceTree",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "legacyTokenAddress",
 				"type": "address"
@@ -1120,6 +1902,11 @@
 				"internalType": "uint256",
 				"name": "amount",
 				"type": "uint256"
+			},
+			{
+				"internalType": "bytes",
+				"name": "permitData",
+				"type": "bytes"
 			}
 		],
 		"name": "migrateLegacyToken",
@@ -1142,6 +1929,45 @@
 	},
 	{
 		"inputs": [],
+		"name": "pendingEmergencyBridgePauser",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "pendingEmergencyBridgeUnpauser",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "pendingProxiedTokensManager",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "polygonRollupManager",
 		"outputs": [
 			{
@@ -1154,34 +1980,8 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint32",
-				"name": "originNetwork",
-				"type": "uint32"
-			},
-			{
-				"internalType": "address",
-				"name": "originTokenAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "symbol",
-				"type": "string"
-			},
-			{
-				"internalType": "uint8",
-				"name": "decimals",
-				"type": "uint8"
-			}
-		],
-		"name": "precalculatedWrapperAddress",
+		"inputs": [],
+		"name": "proxiedTokensManager",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -1214,6 +2014,42 @@
 			}
 		],
 		"name": "setBridgeManager",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint32[]",
+				"name": "originNetwork",
+				"type": "uint32[]"
+			},
+			{
+				"internalType": "address[]",
+				"name": "originTokenAddress",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "amount",
+				"type": "uint256[]"
+			}
+		],
+		"name": "setLocalBalanceTree",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "globalIndexes",
+				"type": "uint256[]"
+			}
+		],
+		"name": "setMultipleClaims",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -1286,17 +2122,64 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint32[]",
-				"name": "leafIndexes",
-				"type": "uint32[]"
-			},
-			{
-				"internalType": "uint32[]",
-				"name": "sourceBridgeNetworks",
-				"type": "uint32[]"
+				"internalType": "address",
+				"name": "newEmergencyBridgePauser",
+				"type": "address"
 			}
 		],
-		"name": "unsetMultipleClaimedBitmap",
+		"name": "transferEmergencyBridgePauserRole",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newEmergencyBridgeUnpauser",
+				"type": "address"
+			}
+		],
+		"name": "transferEmergencyBridgeUnpauserRole",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newProxiedTokensManager",
+				"type": "address"
+			}
+		],
+		"name": "transferProxiedTokensManagerRole",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "unsetGlobalIndexHashChain",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "globalIndexes",
+				"type": "uint256[]"
+			}
+		],
+		"name": "unsetMultipleClaims",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -1343,6 +2226,19 @@
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"name": "version",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -1356,6 +2252,19 @@
 				"internalType": "bool",
 				"name": "isNotMintable",
 				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "wrappedTokenBytecodeStorer",
+		"outputs": [
+			{
+				"internalType": "contract IBytecodeStorer",
+				"name": "",
+				"type": "address"
 			}
 		],
 		"stateMutability": "view",
