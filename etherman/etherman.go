@@ -10,6 +10,7 @@ import (
 
 	"github.com/0xPolygon/zkevm-bridge-service/etherman/metrics"
 	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/claimcompressor"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/bridgel2sovereignchain"
 	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/globalexitrootmanagerl2sovereignchain"
 	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/oldglobalexitrootmanagerl2sovereignchain"
 	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/oldpolygonzkevmbridge"
@@ -147,6 +148,12 @@ const (
 	TokensOrder EventOrder = "TokenWrapped"
 	// VerifyBatchOrder identifies a VerifyBatch event
 	VerifyBatchOrder EventOrder = "VerifyBatch"
+	// UnsetClaimOrder identifies an updatedUnsetGlobalIndexHashChainSignatureHash event (UnsetClaim event)
+	UnsetClaimOrder EventOrder = "UnsetClaim"
+	// BackwardLETOrder identifies a BackwardLET event
+	BackwardLETOrder EventOrder = "BackwardLET"
+	// SetClaimOrder identifies a SetClaim event
+	SetClaimOrder EventOrder = "SetClaim"
 )
 
 type ethClienter interface {
@@ -165,6 +172,7 @@ type Client struct {
 	ClaimCompressor            *claimcompressor.Claimcompressor
 	OldGerL2SovereignChain     *oldglobalexitrootmanagerl2sovereignchain.Oldglobalexitrootmanagerl2sovereignchain
 	GerL2SovereignChain        *globalexitrootmanagerl2sovereignchain.Globalexitrootmanagerl2sovereignchain
+	BridgeL2SovereignChain     *bridgel2sovereignchain.Bridgel2sovereignchain
 	NetworkID                  uint32
 	SCAddresses                []common.Address
 	logger                     *log.Logger
@@ -251,6 +259,7 @@ func NewL2Client(url string, polygonBridgeAddress, claimCompressorAddress, polyg
 	var (
 		oldGerL2SovereignChain *oldglobalexitrootmanagerl2sovereignchain.Oldglobalexitrootmanagerl2sovereignchain
 		gerL2SovereignChain    *globalexitrootmanagerl2sovereignchain.Globalexitrootmanagerl2sovereignchain
+		bridgeL2SovereignChain *bridgel2sovereignchain.Bridgel2sovereignchain
 	)
 	if sovereignChain {
 		oldGerL2SovereignChain, err = oldglobalexitrootmanagerl2sovereignchain.NewOldglobalexitrootmanagerl2sovereignchain(polygonZkEVMGlobalExitRootAddress, ethClient)
@@ -261,6 +270,10 @@ func NewL2Client(url string, polygonBridgeAddress, claimCompressorAddress, polyg
 		gerL2SovereignChain, err = globalexitrootmanagerl2sovereignchain.NewGlobalexitrootmanagerl2sovereignchain(polygonZkEVMGlobalExitRootAddress, ethClient)
 		if err != nil {
 			logger.Error("error creating an instance of globalexitrootmanagerl2sovereignchain: ", err)
+			return nil, err
+		}
+		bridgeL2SovereignChain, err = bridgel2sovereignchain.NewBridgel2sovereignchain(polygonBridgeAddress, ethClient)
+		if err != nil {
 			return nil, err
 		}
 		scAddresses = append(scAddresses, polygonZkEVMGlobalExitRootAddress)
@@ -278,6 +291,7 @@ func NewL2Client(url string, polygonBridgeAddress, claimCompressorAddress, polyg
 		NetworkID:              networkID,
 		OldGerL2SovereignChain: oldGerL2SovereignChain,
 		GerL2SovereignChain:    gerL2SovereignChain,
+		BridgeL2SovereignChain: bridgeL2SovereignChain,
 	}, nil
 }
 
@@ -298,6 +312,9 @@ func (etherMan *Client) GetRollupInfoByBlockRange(ctx context.Context, fromBlock
 			rollupManagerVerifyBatchesSignatureHash,
 			updateHashChainValueSignatureHash,
 			updateRemovalHashChainValueSignatureHash,
+			backwardLETSignatureHash,
+			setClaimSignatureHash,
+			updatedUnsetGlobalIndexHashChainSignatureHash,
 		}},
 	}
 	if toBlock != nil {
@@ -518,8 +535,8 @@ func (etherMan *Client) processEvent(vLog types.Log, blocks *[]Block, blocksOrde
 		etherMan.logger.Debugf("AcceptEmergencyBridgeUnpauserRole event detected. Ignoring...")
 		return nil
 	case backwardLETSignatureHash:
-		etherMan.logger.Debugf("BackwardLET event detected. Ignoring...")
-		return nil
+		etherMan.logger.Debugf("BackwardLET event detected")
+		return etherMan.backwardLETSovereignEvent(vLog, blocks, blocksOrder)
 	case detailedClaimEventDetailedClaimEventSignatureHash:
 		etherMan.logger.Debugf("DetailedClaimEventDetailedClaimEvent event detected. Ignoring...")
 		return nil
@@ -527,8 +544,8 @@ func (etherMan *Client) processEvent(vLog types.Log, blocks *[]Block, blocksOrde
 		etherMan.logger.Debugf("ForwardLET event detected. Ignoring...")
 		return nil
 	case setClaimSignatureHash:
-		etherMan.logger.Debugf("SetClaim event detected. Ignoring...")
-		return nil
+		etherMan.logger.Debugf("SetClaim event detected")
+		return etherMan.setClaimSovereignEvent(vLog, blocks, blocksOrder)
 	case setLocalBalanceTreeSignatureHash:
 		etherMan.logger.Debugf("SetLocalBalanceTree event detected. Ignoring...")
 		return nil
@@ -542,8 +559,8 @@ func (etherMan *Client) processEvent(vLog types.Log, blocks *[]Block, blocksOrde
 		etherMan.logger.Debugf("UpdatedClaimedGlobalIndexHashChain event detected. Ignoring...")
 		return nil
 	case updatedUnsetGlobalIndexHashChainSignatureHash:
-		etherMan.logger.Debugf("UpdatedUnsetGlobalIndexHashChain event detected. Ignoring...")
-		return nil
+		etherMan.logger.Debugf("UpdatedUnsetGlobalIndexHashChain event detected")
+		return etherMan.unSetClaimSovereignEvent(vLog, blocks, blocksOrder)
 	case acceptProxiedTokensManagerRoleSignatureHash:
 		etherMan.logger.Debugf("AcceptProxiedTokensManagerRole event detected. Ignoring...")
 		return nil
@@ -930,4 +947,113 @@ func (etherMan *Client) CompressClaimCall(mainnetExitRoot, rollupExitRoot common
 		return []byte{}, nil
 	}
 	return compressedData, nil
+}
+
+func (etherMan *Client) unSetClaimSovereignEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+	unsetClaim, err := etherMan.BridgeL2SovereignChain.ParseUpdatedUnsetGlobalIndexHashChain(vLog)
+	if err != nil {
+		return err
+	}
+	var unsetClaimData UnsetClaim
+	unsetClaimData.GlobalIndex = big.NewInt(0).SetBytes(unsetClaim.UnsetGlobalIndex[:])
+	mainnetFlag, rollupIndex, localRootIndex, err := DecodeGlobalIndex(unsetClaimData.GlobalIndex)
+	if err != nil {
+		return err
+	}
+	unsetClaimData.MainnetFlag = mainnetFlag
+	unsetClaimData.RollupIndex = rollupIndex
+	unsetClaimData.Index = localRootIndex
+
+	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
+		var block = Block{
+			BlockNumber: vLog.BlockNumber,
+			BlockHash:   vLog.BlockHash,
+		}
+		block.UnsetClaims = append(block.UnsetClaims, unsetClaimData)
+		*blocks = append(*blocks, block)
+	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
+		(*blocks)[len(*blocks)-1].UnsetClaims = append((*blocks)[len(*blocks)-1].UnsetClaims, unsetClaimData)
+	} else {
+		etherMan.logger.Error("Error processing unSetClaim event. BlockHash:", vLog.BlockHash, ". BlockNumber: ", vLog.BlockNumber)
+		return fmt.Errorf("error processing unSetClaim event")
+	}
+	or := Order{
+		Name: UnsetClaimOrder,
+		Pos:  len((*blocks)[len(*blocks)-1].UnsetClaims) - 1,
+	}
+	(*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash] = append((*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash], or)
+	return nil
+}
+
+func (etherMan *Client) setClaimSovereignEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+	setClaim, err := etherMan.BridgeL2SovereignChain.ParseSetClaim(vLog)
+	if err != nil {
+		return err
+	}
+	var setClaimData SetClaim
+	// setClaimData.GlobalIndex = big.NewInt(0).SetBytes(setClaim.SetGlobalIndex[:])
+	// mainnetFlag, rollupIndex, localRootIndex, err := DecodeGlobalIndex(setClaimData.GlobalIndex)
+	// if err != nil {
+	// 	return err
+	// }
+	setClaimData.MainnetFlag = setClaim.SourceNetwork == 0
+	var rollupIndex uint32
+	if !setClaimData.MainnetFlag {
+		rollupIndex = setClaim.SourceNetwork - 1
+	}
+	setClaimData.RollupIndex = rollupIndex
+	setClaimData.Index = setClaim.LeafIndex
+	setClaimData.GlobalIndex = GenerateGlobalIndex(setClaimData.MainnetFlag, setClaimData.RollupIndex, setClaimData.Index)
+
+	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
+		var block = Block{
+			BlockNumber: vLog.BlockNumber,
+			BlockHash:   vLog.BlockHash,
+		}
+		block.SetClaims = append(block.SetClaims, setClaimData)
+		*blocks = append(*blocks, block)
+	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
+		(*blocks)[len(*blocks)-1].SetClaims = append((*blocks)[len(*blocks)-1].SetClaims, setClaimData)
+	} else {
+		etherMan.logger.Error("Error processing SetClaim event. BlockHash:", vLog.BlockHash, ". BlockNumber: ", vLog.BlockNumber)
+		return fmt.Errorf("error processing SetClaim event")
+	}
+	or := Order{
+		Name: SetClaimOrder,
+		Pos:  len((*blocks)[len(*blocks)-1].SetClaims) - 1,
+	}
+	(*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash] = append((*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash], or)
+	return nil
+}
+
+func (etherMan *Client) backwardLETSovereignEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+	backwardLET, err := etherMan.BridgeL2SovereignChain.ParseBackwardLET(vLog)
+	if err != nil {
+		return err
+	}
+	var LET BackwardLET
+	LET.NewDepositCount = backwardLET.NewDepositCount
+	LET.NewRoot = backwardLET.NewRoot
+	LET.PreviousRoot = backwardLET.PreviousRoot
+	LET.PreviousDepositCount = backwardLET.PreviousDepositCount
+
+	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
+		var block = Block{
+			BlockNumber: vLog.BlockNumber,
+			BlockHash:   vLog.BlockHash,
+		}
+		block.BackwardLETs = append(block.BackwardLETs, LET)
+		*blocks = append(*blocks, block)
+	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
+		(*blocks)[len(*blocks)-1].BackwardLETs = append((*blocks)[len(*blocks)-1].BackwardLETs, LET)
+	} else {
+		etherMan.logger.Error("Error processing BackwardLET event. BlockHash:", vLog.BlockHash, ". BlockNumber: ", vLog.BlockNumber)
+		return fmt.Errorf("error processing BackwardLET event")
+	}
+	or := Order{
+		Name: BackwardLETOrder,
+		Pos:  len((*blocks)[len(*blocks)-1].BackwardLETs) - 1,
+	}
+	(*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash] = append((*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash], or)
+	return nil
 }
