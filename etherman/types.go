@@ -133,8 +133,9 @@ type SetClaim struct {
 
 // BackwardLET struct
 type BackwardLET struct {
-	PreviousDepositCount *big.Int
+	BlockID              uint64
+	PreviousDepositCount uint32
 	PreviousRoot         common.Hash
-	NewDepositCount      *big.Int
+	NewDepositCount      uint32
 	NewRoot              common.Hash
 }

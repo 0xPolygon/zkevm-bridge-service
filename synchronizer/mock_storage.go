@@ -25,6 +25,54 @@ func (_m *storageMock) EXPECT() *storageMock_Expecter {
 	return &storageMock_Expecter{mock: &_m.Mock}
 }
 
+// AddBackwardLET provides a mock function with given fields: ctx, backwardLET, dbTx
+func (_m *storageMock) AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) error {
+	ret := _m.Called(ctx, backwardLET, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddBackwardLET")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *etherman.BackwardLET, interface{}) error); ok {
+		r0 = rf(ctx, backwardLET, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// storageMock_AddBackwardLET_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddBackwardLET'
+type storageMock_AddBackwardLET_Call struct {
+	*mock.Call
+}
+
+// AddBackwardLET is a helper method to define mock.On call
+//   - ctx context.Context
+//   - backwardLET *etherman.BackwardLET
+//   - dbTx interface{}
+func (_e *storageMock_Expecter) AddBackwardLET(ctx interface{}, backwardLET interface{}, dbTx interface{}) *storageMock_AddBackwardLET_Call {
+	return &storageMock_AddBackwardLET_Call{Call: _e.mock.On("AddBackwardLET", ctx, backwardLET, dbTx)}
+}
+
+func (_c *storageMock_AddBackwardLET_Call) Run(run func(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{})) *storageMock_AddBackwardLET_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*etherman.BackwardLET), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *storageMock_AddBackwardLET_Call) Return(_a0 error) *storageMock_AddBackwardLET_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *storageMock_AddBackwardLET_Call) RunAndReturn(run func(context.Context, *etherman.BackwardLET, interface{}) error) *storageMock_AddBackwardLET_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AddBlock provides a mock function with given fields: ctx, block, dbTx
 func (_m *storageMock) AddBlock(ctx context.Context, block *etherman.Block, dbTx interface{}) (uint64, error) {
 	ret := _m.Called(ctx, block, dbTx)
@@ -1065,6 +1113,55 @@ func (_c *storageMock_Reset_Call) Return(_a0 error) *storageMock_Reset_Call {
 }
 
 func (_c *storageMock_Reset_Call) RunAndReturn(run func(context.Context, uint64, uint32, interface{}) error) *storageMock_Reset_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ResetDeposits provides a mock function with given fields: ctx, depositCount, networkID, dbTx
+func (_m *storageMock) ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{}) error {
+	ret := _m.Called(ctx, depositCount, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ResetDeposits")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, interface{}) error); ok {
+		r0 = rf(ctx, depositCount, networkID, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// storageMock_ResetDeposits_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ResetDeposits'
+type storageMock_ResetDeposits_Call struct {
+	*mock.Call
+}
+
+// ResetDeposits is a helper method to define mock.On call
+//   - ctx context.Context
+//   - depositCount uint32
+//   - networkID uint32
+//   - dbTx interface{}
+func (_e *storageMock_Expecter) ResetDeposits(ctx interface{}, depositCount interface{}, networkID interface{}, dbTx interface{}) *storageMock_ResetDeposits_Call {
+	return &storageMock_ResetDeposits_Call{Call: _e.mock.On("ResetDeposits", ctx, depositCount, networkID, dbTx)}
+}
+
+func (_c *storageMock_ResetDeposits_Call) Run(run func(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{})) *storageMock_ResetDeposits_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(uint32), args[3].(interface{}))
+	})
+	return _c
+}
+
+func (_c *storageMock_ResetDeposits_Call) Return(_a0 error) *storageMock_ResetDeposits_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *storageMock_ResetDeposits_Call) RunAndReturn(run func(context.Context, uint32, uint32, interface{}) error) *storageMock_ResetDeposits_Call {
 	_c.Call.Return(run)
 	return _c
 }

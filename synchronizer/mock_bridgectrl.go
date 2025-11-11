@@ -118,6 +118,66 @@ func (_c *bridgectrlMock_AddRollupExitLeaf_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
+// GetExitRoot provides a mock function with given fields: ctx, networkID, dbTx
+func (_m *bridgectrlMock) GetExitRoot(ctx context.Context, networkID uint32, dbTx interface{}) ([]byte, error) {
+	ret := _m.Called(ctx, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetExitRoot")
+	}
+
+	var r0 []byte
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, interface{}) ([]byte, error)); ok {
+		return rf(ctx, networkID, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, interface{}) []byte); ok {
+		r0 = rf(ctx, networkID, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]byte)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, interface{}) error); ok {
+		r1 = rf(ctx, networkID, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// bridgectrlMock_GetExitRoot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetExitRoot'
+type bridgectrlMock_GetExitRoot_Call struct {
+	*mock.Call
+}
+
+// GetExitRoot is a helper method to define mock.On call
+//   - ctx context.Context
+//   - networkID uint32
+//   - dbTx interface{}
+func (_e *bridgectrlMock_Expecter) GetExitRoot(ctx interface{}, networkID interface{}, dbTx interface{}) *bridgectrlMock_GetExitRoot_Call {
+	return &bridgectrlMock_GetExitRoot_Call{Call: _e.mock.On("GetExitRoot", ctx, networkID, dbTx)}
+}
+
+func (_c *bridgectrlMock_GetExitRoot_Call) Run(run func(ctx context.Context, networkID uint32, dbTx interface{})) *bridgectrlMock_GetExitRoot_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *bridgectrlMock_GetExitRoot_Call) Return(_a0 []byte, _a1 error) *bridgectrlMock_GetExitRoot_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *bridgectrlMock_GetExitRoot_Call) RunAndReturn(run func(context.Context, uint32, interface{}) ([]byte, error)) *bridgectrlMock_GetExitRoot_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ReorgMT provides a mock function with given fields: ctx, depositCount, networkID, dbTx
 func (_m *bridgectrlMock) ReorgMT(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{}) error {
 	ret := _m.Called(ctx, depositCount, networkID, dbTx)

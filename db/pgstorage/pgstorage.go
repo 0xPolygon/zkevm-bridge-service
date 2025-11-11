@@ -921,6 +921,25 @@ func (p *PostgresStorage) GetSyncStatus(ctx context.Context, dbTx interface{}) (
 	return status, nil
 }
 
+// ResetDeposits resets the state to a depositCount.
+func (p *PostgresStorage) ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{}) error {
+	if networkID == 0 {
+		return errors.New("cannot reset L1 deposits")
+	}
+	const resetSQL = "DELETE FROM sync.deposit WHERE deposit_cnt > $1 AND network_id = $2"
+	e := p.getExecQuerier(dbTx)
+	_, err := e.Exec(ctx, resetSQL, depositCount, networkID)
+	return err
+}
+
+// AddBackwardLET adds a new BackwardLET event to the db.
+func (p *PostgresStorage) AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) error {
+	const addExitRootSQL = "INSERT INTO sync.backward_let(block_id, previous_deposit_cnt, previous_root, new_deposit_cnt, new_root) VALUES ($1, $2, $3, $4, $5)"
+	e := p.getExecQuerier(dbTx)
+	_, err := e.Exec(ctx, addExitRootSQL, backwardLET.BlockID, backwardLET.PreviousDepositCount, backwardLET.PreviousRoot, backwardLET.NewDepositCount, backwardLET.NewRoot)
+	return err
+}
+
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.
 func (p *PostgresStorage) UpdateDepositsStatusForTesting(ctx context.Context, dbTx interface{}) error {
 	const updateDepositsStatusSQL = "UPDATE sync.deposit SET ready_for_claim = true;"

@@ -328,9 +328,9 @@ func TestBackwardLETSovereignEvent(t *testing.T) {
 	blocks, _, err := etherman.GetRollupInfoByBlockRange(ctx, initBlock.NumberU64(), &finalBlockNumber)
 	require.NoError(t, err)
 
-	assert.Equal(t, uint64(1), blocks[0].BackwardLETs[0].NewDepositCount.Uint64())
+	assert.Equal(t, uint32(1), blocks[0].BackwardLETs[0].NewDepositCount)
 	assert.Equal(t, "0x27ae5ba08d7291c96c8cbddcc148bf48a6d68c7974b94356f53754ef6171d757", blocks[0].BackwardLETs[0].NewRoot.String())
-	assert.Equal(t, uint64(0), blocks[0].BackwardLETs[0].PreviousDepositCount.Uint64())
+	assert.Equal(t, uint32(0), blocks[0].BackwardLETs[0].PreviousDepositCount)
 	assert.Equal(t, "0x27ae5ba08d7291c96c8cbddcc148bf48a6d68c7974b94356f53754ef6171d757", blocks[0].BackwardLETs[0].PreviousRoot.String())
 }
 

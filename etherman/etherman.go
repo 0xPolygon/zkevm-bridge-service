@@ -1032,10 +1032,10 @@ func (etherMan *Client) backwardLETSovereignEvent(vLog types.Log, blocks *[]Bloc
 		return err
 	}
 	var LET BackwardLET
-	LET.NewDepositCount = backwardLET.NewDepositCount
+	LET.NewDepositCount = uint32(backwardLET.NewDepositCount.Uint64()) // nolint:gosec
 	LET.NewRoot = backwardLET.NewRoot
 	LET.PreviousRoot = backwardLET.PreviousRoot
-	LET.PreviousDepositCount = backwardLET.PreviousDepositCount
+	LET.PreviousDepositCount = uint32(backwardLET.PreviousDepositCount.Uint64()) // nolint:gosec
 
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
 		var block = Block{
