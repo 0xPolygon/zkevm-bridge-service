@@ -597,6 +597,14 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				if err != nil {
 					return err
 				}
+			case etherman.UnsetClaimOrder:
+				if len(blocks[i].UnsetClaims) < element.Pos+1 {
+					return fmt.Errorf("UnsetClaim event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
+				err = s.processUnsetClaimSovereign(blocks[i].UnsetClaims[element.Pos], blockID, blocks[i].BlockNumber, dbTx)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		err = s.storage.Commit(s.ctx, dbTx)
@@ -943,6 +951,23 @@ func (s *ClientSynchronizer) processBackwardLETSovereign(backwardLET etherman.Ba
 	err = s.storage.AddBackwardLET(s.ctx, &backwardLET, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error adding BackwardLET to the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	return nil
+}
+
+func (s *ClientSynchronizer) processUnsetClaimSovereign(unsetClaim etherman.UnsetClaim, blockID, blockNumber uint64, dbTx interface{}) error {
+	unsetClaim.BlockID = blockID
+	// Add event to the db
+	err := s.storage.AddUnsetClaim(s.ctx, &unsetClaim, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error adding UnsetClaim to the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// Delete claim by global index
+	err = s.storage.DeleteClaimByGlobalIndex(s.ctx, unsetClaim.GlobalIndex, s.networkID, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error deleting claim by global index in processUnsetClaimSovereign. Error: %v", s.networkID, err)
 		return s.rollback(blockNumber, err, dbTx)
 	}
 	return nil

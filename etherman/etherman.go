@@ -560,7 +560,7 @@ func (etherMan *Client) processEvent(vLog types.Log, blocks *[]Block, blocksOrde
 		return nil
 	case updatedUnsetGlobalIndexHashChainSignatureHash:
 		etherMan.logger.Debugf("UpdatedUnsetGlobalIndexHashChain event detected")
-		return etherMan.unSetClaimSovereignEvent(vLog, blocks, blocksOrder)
+		return etherMan.unsetClaimSovereignEvent(vLog, blocks, blocksOrder)
 	case acceptProxiedTokensManagerRoleSignatureHash:
 		etherMan.logger.Debugf("AcceptProxiedTokensManagerRole event detected. Ignoring...")
 		return nil
@@ -949,7 +949,7 @@ func (etherMan *Client) CompressClaimCall(mainnetExitRoot, rollupExitRoot common
 	return compressedData, nil
 }
 
-func (etherMan *Client) unSetClaimSovereignEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+func (etherMan *Client) unsetClaimSovereignEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
 	unsetClaim, err := etherMan.BridgeL2SovereignChain.ParseUpdatedUnsetGlobalIndexHashChain(vLog)
 	if err != nil {
 		return err

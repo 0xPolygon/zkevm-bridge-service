@@ -940,6 +940,31 @@ func (p *PostgresStorage) AddBackwardLET(ctx context.Context, backwardLET *ether
 	return err
 }
 
+// AddSetClaim adds a new SetClaim event to the db.
+func (p *PostgresStorage) AddSetClaim(ctx context.Context, setClaim *etherman.SetClaim, dbTx interface{}) error {
+	return p.addSetUnsetClaim(ctx, "SET", setClaim.BlockID, setClaim.MainnetFlag, setClaim.RollupIndex, setClaim.Index, setClaim.GlobalIndex, dbTx)
+}
+
+// AddUnsetClaim adds a new UnsetClaim event to the db.
+func (p *PostgresStorage) AddUnsetClaim(ctx context.Context, unsetClaim *etherman.UnsetClaim, dbTx interface{}) error {
+	return p.addSetUnsetClaim(ctx, "UNSET", unsetClaim.BlockID, unsetClaim.MainnetFlag, unsetClaim.RollupIndex, unsetClaim.Index, unsetClaim.GlobalIndex, dbTx)
+}
+
+func (p *PostgresStorage) addSetUnsetClaim(ctx context.Context, eventType string, blockID uint64, mainnetFlag bool, rollupIndex, index uint32, globalIndex *big.Int, dbTx interface{}) error {
+	const addExitRootSQL = "INSERT INTO sync.set_unset_claim(block_id, mainnet_flag, rollup_index, index, global_index, type) VALUES($1, $2, $3, $4, $5, $6)"
+	e := p.getExecQuerier(dbTx)
+	_, err := e.Exec(ctx, addExitRootSQL, blockID, mainnetFlag, rollupIndex, index, globalIndex.String(), eventType)
+	return err
+}
+
+// DeleteClaimByGlobalIndex resets the state to a depositCount.
+func (p *PostgresStorage) DeleteClaimByGlobalIndex(ctx context.Context, globalIndex *big.Int, networkID uint32, dbTx interface{}) error {
+	const resetSQL = "DELETE FROM sync.claim WHERE global_index = $1 AND network_id = $2"
+	e := p.getExecQuerier(dbTx)
+	_, err := e.Exec(ctx, resetSQL, globalIndex.String(), networkID)
+	return err
+}
+
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.
 func (p *PostgresStorage) UpdateDepositsStatusForTesting(ctx context.Context, dbTx interface{}) error {
 	const updateDepositsStatusSQL = "UPDATE sync.deposit SET ready_for_claim = true;"
