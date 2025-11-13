@@ -38,9 +38,9 @@ var (
 	acceptEmergencyBridgePauserRoleSignatureHash = crypto.Keccak256Hash([]byte("AcceptEmergencyBridgePauserRole(address,address)"))
 	acceptEmergencyBridgeUnpauserRoleSignatureHash = crypto.Keccak256Hash([]byte("AcceptEmergencyBridgeUnpauserRole(address,address)"))
 	backwardLETSignatureHash = crypto.Keccak256Hash([]byte("BackwardLET(uint256,bytes32,uint256,bytes32)"))
-	detailedClaimEventDetailedClaimEventSignatureHash = crypto.Keccak256Hash([]byte("DetailedClaimEventDetailedClaimEvent(bytes32[32],bytes32[32],uint256,bytes32,bytes32,uint32,address,uint32,address,uint256,bytes)"))
+	detailedClaimEventDetailedClaimEventSignatureHash = crypto.Keccak256Hash([]byte("DetailedClaimEventDetailedClaimEvent(bytes32[32],bytes32[32],uint256,bytes32,bytes32,uint8,uint32,address,uint32,address,uint256,bytes)"))
 	forwardLETSignatureHash = crypto.Keccak256Hash([]byte("ForwardLET(uint256,bytes32,uint256,bytes32,bytes)"))
-	setClaimSignatureHash = crypto.Keccak256Hash([]byte("SetClaim(uint32,uint32)"))
+	setClaimSignatureHash = crypto.Keccak256Hash([]byte("SetClaim(bytes32)"))
 	setLocalBalanceTreeSignatureHash = crypto.Keccak256Hash([]byte("SetLocalBalanceTree(uint32,address,uint256)"))
 	transferEmergencyBridgePauserRoleSignatureHash = crypto.Keccak256Hash([]byte("TransferEmergencyBridgePauserRole(address,address)"))
 	transferEmergencyBridgeUnpauserRoleSignatureHash = crypto.Keccak256Hash([]byte("TransferEmergencyBridgeUnpauserRole(address,address)"))
@@ -991,19 +991,15 @@ func (etherMan *Client) setClaimSovereignEvent(vLog types.Log, blocks *[]Block, 
 		return err
 	}
 	var setClaimData SetClaim
-	// setClaimData.GlobalIndex = big.NewInt(0).SetBytes(setClaim.SetGlobalIndex[:])
-	// mainnetFlag, rollupIndex, localRootIndex, err := DecodeGlobalIndex(setClaimData.GlobalIndex)
-	// if err != nil {
-	// 	return err
-	// }
-	setClaimData.MainnetFlag = setClaim.SourceNetwork == 0
-	var rollupIndex uint32
-	if !setClaimData.MainnetFlag {
-		rollupIndex = setClaim.SourceNetwork - 1
+	setClaimData.GlobalIndex = big.NewInt(0).SetBytes(setClaim.GlobalIndex[:])
+	mainnetFlag, rollupIndex, localRootIndex, err := DecodeGlobalIndex(setClaimData.GlobalIndex)
+	if err != nil {
+		return err
 	}
+	setClaimData.MainnetFlag = mainnetFlag
 	setClaimData.RollupIndex = rollupIndex
-	setClaimData.Index = setClaim.LeafIndex
-	setClaimData.GlobalIndex = GenerateGlobalIndex(setClaimData.MainnetFlag, setClaimData.RollupIndex, setClaimData.Index)
+	setClaimData.Index = localRootIndex
+	setClaimData.TxHash = vLog.TxHash
 
 	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
 		var block = Block{

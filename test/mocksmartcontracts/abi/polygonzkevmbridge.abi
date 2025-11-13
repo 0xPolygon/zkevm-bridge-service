@@ -359,15 +359,9 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"internalType": "uint32",
-				"name": "leafIndex",
-				"type": "uint32"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint32",
-				"name": "sourceNetwork",
-				"type": "uint32"
+				"internalType": "bytes32",
+				"name": "globalIndex",
+				"type": "bytes32"
 			}
 		],
 		"name": "SetClaim",

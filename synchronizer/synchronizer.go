@@ -605,6 +605,14 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				if err != nil {
 					return err
 				}
+			case etherman.SetClaimOrder:
+				if len(blocks[i].SetClaims) < element.Pos+1 {
+					return fmt.Errorf("SetClaim event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
+				err = s.processSetClaimSovereign(blocks[i].SetClaims[element.Pos], blockID, blocks[i].BlockNumber, dbTx)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		err = s.storage.Commit(s.ctx, dbTx)
@@ -970,6 +978,54 @@ func (s *ClientSynchronizer) processUnsetClaimSovereign(unsetClaim etherman.Unse
 		log.Errorf("networkID: %d, error deleting claim by global index in processUnsetClaimSovereign. Error: %v", s.networkID, err)
 		return s.rollback(blockNumber, err, dbTx)
 	}
+	return nil
+}
+
+func (s *ClientSynchronizer) processSetClaimSovereign(setClaim etherman.SetClaim, blockID, blockNumber uint64, dbTx interface{}) error {
+	setClaim.BlockID = blockID
+	// Add event to the db
+	err := s.storage.AddSetClaim(s.ctx, &setClaim, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error adding setClaim to the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// Read deposit information
+	var depositNetwork uint32
+	if !setClaim.MainnetFlag {
+		depositNetwork = setClaim.RollupIndex + 1
+	}
+	deposit, err := s.storage.GetDeposit(s.ctx, setClaim.Index, depositNetwork, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting deposit from the state. DepositCount: %d, depositNetwork: %d, Error: %v", s.networkID, setClaim.Index, depositNetwork, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	if s.networkID != deposit.DestinationNetwork {
+		err := fmt.Errorf("networkID: %d, error processing SetClaim. Deposit destination network (%d) does not match with the current networkID (%d)",
+			s.networkID, deposit.DestinationNetwork, s.networkID)
+		log.Error(err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// Store the claim
+	claim := etherman.Claim{
+		MainnetFlag: setClaim.MainnetFlag,
+		RollupIndex: setClaim.RollupIndex,
+		Index: setClaim.Index,
+		OriginalNetwork: deposit.OriginalNetwork,
+		OriginalAddress: deposit.OriginalAddress,
+		Amount: deposit.Amount,
+		DestinationAddress: deposit.DestinationAddress,
+		BlockID: setClaim.BlockID,
+		BlockNumber: blockNumber,
+		NetworkID: s.networkID,
+		TxHash: setClaim.TxHash,
+		GlobalIndex: setClaim.GlobalIndex.String(),
+	}
+	err = s.storage.AddClaim(s.ctx, &claim, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error storing new Claim in Block:  %d, Claim: %+v, err: %v", s.networkID, claim.BlockNumber, claim, err)
+		return s.rollback(claim.BlockNumber, err, dbTx)
+	}
+	s.metrics.ClaimAmount(claim.Amount)
 	return nil
 }
 

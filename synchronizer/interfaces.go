@@ -43,6 +43,8 @@ type storageInterface interface {
 	AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) error
 	DeleteClaimByGlobalIndex(ctx context.Context, globalIndex *big.Int, networkID uint32, dbTx interface{}) error
 	AddUnsetClaim(ctx context.Context, unsetClaim *etherman.UnsetClaim, dbTx interface{}) error
+	AddSetClaim(ctx context.Context, setClaim *etherman.SetClaim, dbTx interface{}) error
+	GetDeposit(ctx context.Context, depositCounter, networkID uint32, dbTx interface{}) (*etherman.Deposit, error)
 }
 
 type bridgectrlInterface interface {

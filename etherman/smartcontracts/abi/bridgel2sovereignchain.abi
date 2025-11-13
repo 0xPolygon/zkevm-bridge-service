@@ -252,6 +252,11 @@
 	},
 	{
 		"inputs": [],
+		"name": "NonSupportedFunction",
+		"type": "error"
+	},
+	{
+		"inputs": [],
 		"name": "NonZeroValueForUnusedFrontier",
 		"type": "error"
 	},
@@ -581,6 +586,12 @@
 			},
 			{
 				"indexed": false,
+				"internalType": "uint8",
+				"name": "leafType",
+				"type": "uint8"
+			},
+			{
+				"indexed": false,
 				"internalType": "uint32",
 				"name": "originNetwork",
 				"type": "uint32"
@@ -774,15 +785,9 @@
 		"inputs": [
 			{
 				"indexed": false,
-				"internalType": "uint32",
-				"name": "leafIndex",
-				"type": "uint32"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint32",
-				"name": "sourceNetwork",
-				"type": "uint32"
+				"internalType": "bytes32",
+				"name": "globalIndex",
+				"type": "bytes32"
 			}
 		],
 		"name": "SetClaim",
@@ -957,32 +962,6 @@
 		],
 		"name": "UpdatedUnsetGlobalIndexHashChain",
 		"type": "event"
-	},
-	{
-		"inputs": [],
-		"name": "BRIDGE_SOVEREIGN_VERSION",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "BRIDGE_VERSION",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
 	},
 	{
 		"inputs": [],
@@ -1189,35 +1168,6 @@
 		"name": "bridgeMessageWETH",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "leafHash",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "bytes32[32]",
-				"name": "smtProof",
-				"type": "bytes32[32]"
-			},
-			{
-				"internalType": "uint32",
-				"name": "index",
-				"type": "uint32"
-			}
-		],
-		"name": "calculateRoot",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "pure",
 		"type": "function"
 	},
 	{
@@ -1476,6 +1426,81 @@
 			{
 				"components": [
 					{
+						"internalType": "bytes32[32]",
+						"name": "smtProofLocalExitRoot",
+						"type": "bytes32[32]"
+					},
+					{
+						"internalType": "bytes32[32]",
+						"name": "smtProofRollupExitRoot",
+						"type": "bytes32[32]"
+					},
+					{
+						"internalType": "uint256",
+						"name": "globalIndex",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "mainnetExitRoot",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "bytes32",
+						"name": "rollupExitRoot",
+						"type": "bytes32"
+					},
+					{
+						"internalType": "uint8",
+						"name": "leafType",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint32",
+						"name": "originNetwork",
+						"type": "uint32"
+					},
+					{
+						"internalType": "address",
+						"name": "originAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint32",
+						"name": "destinationNetwork",
+						"type": "uint32"
+					},
+					{
+						"internalType": "address",
+						"name": "destinationAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes",
+						"name": "metadata",
+						"type": "bytes"
+					}
+				],
+				"internalType": "struct AgglayerBridgeL2.ClaimData[]",
+				"name": "claims",
+				"type": "tuple[]"
+			}
+		],
+		"name": "forceEmitDetailedClaimEvent",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"components": [
+					{
 						"internalType": "uint8",
 						"name": "leafType",
 						"type": "uint8"
@@ -1563,55 +1588,6 @@
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint8",
-				"name": "leafType",
-				"type": "uint8"
-			},
-			{
-				"internalType": "uint32",
-				"name": "originNetwork",
-				"type": "uint32"
-			},
-			{
-				"internalType": "address",
-				"name": "originAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "uint32",
-				"name": "destinationNetwork",
-				"type": "uint32"
-			},
-			{
-				"internalType": "address",
-				"name": "destinationAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bytes32",
-				"name": "metadataHash",
-				"type": "bytes32"
-			}
-		],
-		"name": "getLeafValue",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "pure",
 		"type": "function"
 	},
 	{
@@ -1775,13 +1751,6 @@
 		"name": "initialize",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "initialize",
-		"outputs": [],
-		"stateMutability": "pure",
 		"type": "function"
 	},
 	{
@@ -1969,19 +1938,6 @@
 	{
 		"inputs": [],
 		"name": "polygonRollupManager",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "proxiedTokensManager",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -2192,40 +2148,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "leafHash",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "bytes32[32]",
-				"name": "smtProof",
-				"type": "bytes32[32]"
-			},
-			{
-				"internalType": "uint32",
-				"name": "index",
-				"type": "uint32"
-			},
-			{
-				"internalType": "bytes32",
-				"name": "root",
-				"type": "bytes32"
-			}
-		],
-		"name": "verifyMerkleProof",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
 		"inputs": [],
 		"name": "version",
 		"outputs": [
@@ -2252,19 +2174,6 @@
 				"internalType": "bool",
 				"name": "isNotMintable",
 				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "wrappedTokenBytecodeStorer",
-		"outputs": [
-			{
-				"internalType": "contract IBytecodeStorer",
-				"name": "",
-				"type": "address"
 			}
 		],
 		"stateMutability": "view",

@@ -129,6 +129,7 @@ type SetClaim struct {
 	RollupIndex uint32
 	Index       uint32
 	GlobalIndex *big.Int
+	TxHash      common.Hash
 }
 
 // BackwardLET struct
