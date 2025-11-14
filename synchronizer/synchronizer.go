@@ -906,6 +906,7 @@ func (s *ClientSynchronizer) processRemoveL2GlobalExitRoot(ger etherman.GlobalEx
 
 func (s *ClientSynchronizer) processBackwardLETSovereign(backwardLET etherman.BackwardLET, blockID, blockNumber uint64, dbTx interface{}) error {
 	backwardLET.BlockID = blockID
+	log.Debugf("networkID: %d, Full BackwardLET event: %+v", s.networkID, backwardLET)
 	// First check the initial state of the MT
 	depositCnt, err := s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
 	if err != nil {
@@ -925,7 +926,7 @@ func (s *ClientSynchronizer) processBackwardLETSovereign(backwardLET etherman.Ba
 		return s.rollback(blockNumber, err, dbTx)
 	}
 	// MT entries are deleted in cascade when invalid deposits are deleted.
-	// Remove the deposits that are no longer valid (deposit_cnt > backwardLET.NewDepositCount)
+	// Remove the deposits that are no longer valid (deposit_cnt >= backwardLET.NewDepositCount)
 	err = s.storage.ResetDeposits(s.ctx, backwardLET.NewDepositCount, s.networkID, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error reseting deposits in processBackwardLETSovereign. Error: %v", s.networkID, err)
@@ -950,7 +951,7 @@ func (s *ClientSynchronizer) processBackwardLETSovereign(backwardLET etherman.Ba
 	}
 	localExitTreeRoot = common.BytesToHash(let)
 	if localExitTreeRoot != backwardLET.NewRoot || depositCnt != backwardLET.NewDepositCount {
-		err := fmt.Errorf("networkID: %d, error processing BackwardLET. NewRoot or NewDepositCount do not match with the current state after reseting the state. Current localExitTreeRoot: %s, BackwardLET.PrevLocalExitTreeRoot: %s, Current depositCnt: %d, BackwardLET.PrevDepositCount: %d",
+		err := fmt.Errorf("networkID: %d, error processing BackwardLET. NewRoot or NewDepositCount do not match with the current state after reseting the state. Current localExitTreeRoot: %s, BackwardLET.NewRoot: %s, Current depositCnt: %d, BackwardLET.NewDepositCount: %d",
 			s.networkID, localExitTreeRoot.String(), backwardLET.NewRoot.String(), depositCnt, backwardLET.NewDepositCount)
 		log.Error(err)
 		return s.rollback(blockNumber, err, dbTx)

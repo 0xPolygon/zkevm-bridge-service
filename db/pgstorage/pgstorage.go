@@ -926,7 +926,7 @@ func (p *PostgresStorage) ResetDeposits(ctx context.Context, depositCount uint32
 	if networkID == 0 {
 		return errors.New("cannot reset L1 deposits")
 	}
-	const resetSQL = "DELETE FROM sync.deposit WHERE deposit_cnt > $1 AND network_id = $2"
+	const resetSQL = "DELETE FROM sync.deposit WHERE deposit_cnt >= $1 AND network_id = $2"
 	e := p.getExecQuerier(dbTx)
 	_, err := e.Exec(ctx, resetSQL, depositCount, networkID)
 	return err

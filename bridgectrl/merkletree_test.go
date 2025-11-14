@@ -77,7 +77,7 @@ func TestLeafHash(t *testing.T) {
 				DepositCount:       uint32(ti + 1), // nolint:gosec
 				Metadata:           common.FromHex(testVector.Metadata),
 			}
-			leafHash := hashDeposit(deposit)
+			leafHash := HashDeposit(deposit)
 			assert.Equal(t, testVector.ExpectedHash[2:], hex.EncodeToString(leafHash[:]))
 		})
 	}
@@ -134,7 +134,7 @@ func TestMTAddLeaf(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, hex.EncodeToString(curRoot), testVector.CurrentRoot[2:])
 
-			leafHash := hashDeposit(deposit)
+			leafHash := HashDeposit(deposit)
 			err = mt.addLeaf(ctx, depositIDs[len(depositIDs)-1], leafHash, uint32(len(testVector.ExistingLeaves)), nil) // nolint:gosec
 			require.NoError(t, err)
 			newRoot, err := mt.getRoot(ctx, nil)
@@ -183,7 +183,7 @@ func TestMTGetProof(t *testing.T) {
 				}
 				depositID, err := testStore.AddDeposit(ctx, deposit, nil)
 				require.NoError(t, err)
-				leafHash := hashDeposit(deposit)
+				leafHash := HashDeposit(deposit)
 				if li == int(testVector.Index) {
 					cur = leafHash
 				}
@@ -396,7 +396,7 @@ func TestCheckMerkleProof(t *testing.T) {
 		DepositCount:       0,
 		Metadata:           []byte{},
 	}
-	leafHash := hashDeposit(deposit)
+	leafHash := HashDeposit(deposit)
 	smtProof := [][KeyLen]byte{
 		common.HexToHash("0x0000000000000000000000000000000000000000000000000000000000000000"),
 		common.HexToHash("0xad3228b676f7d3cd4284a5443f17f1962b36e491b30a40b2405849e597ba5fb5"),
@@ -453,7 +453,7 @@ func TestCheckMerkleProof2(t *testing.T) {
 		DepositCount:       0,
 		Metadata:           []byte{},
 	}
-	leafBytes := hashDeposit(deposit)
+	leafBytes := HashDeposit(deposit)
 	leafHash := common.BytesToHash(leafBytes[:])
 	t.Log("leafHash: ", leafHash)
 	assert.Equal(t, expectedLeafHash, leafHash)

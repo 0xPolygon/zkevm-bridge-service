@@ -74,7 +74,7 @@ func TestBridgeTree(t *testing.T) {
 				DepositCount:       uint32(i), // nolint:gosec
 				Metadata:           common.FromHex(testVector.Metadata),
 			}
-			leafHash := hashDeposit(deposit)
+			leafHash := HashDeposit(deposit)
 			assert.Equal(t, testVector.ExpectedHash, hex.EncodeToString(leafHash[:]))
 			depositID, err := testStore.AddDeposit(ctx, deposit, nil)
 			require.NoError(t, err)

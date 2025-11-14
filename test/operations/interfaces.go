@@ -16,11 +16,14 @@ type StorageInterface interface {
 	GetLatestTrustedExitRoot(ctx context.Context, networkID uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error)
 	GetTokenWrapped(ctx context.Context, originalNetwork uint32, originalTokenAddress common.Address, dbTx interface{}) (*etherman.TokenWrapped, error)
 	GetDepositCountByRoot(ctx context.Context, root []byte, network uint32, dbTx interface{}) (uint32, error)
+	GetDeposit(ctx context.Context, depositCounter, networkID uint32, dbTx interface{}) (*etherman.Deposit, error)
 	UpdateBlocksForTesting(ctx context.Context, networkID uint32, blockNum uint64, dbTx interface{}) error
 	GetClaim(ctx context.Context, depositCount, origNetworkID, networkID uint32, dbTx interface{}) (*etherman.Claim, error)
 	GetClaims(ctx context.Context, destAddr string, limit uint32, offset uint32, dbTx interface{}) ([]*etherman.Claim, error)
 	UpdateDepositsStatusForTesting(ctx context.Context, dbTx interface{}) error
 	GetLatestMonitoredTxGroupID(ctx context.Context, dbTx interface{}) (uint64, error)
+	Get(ctx context.Context, key []byte, dbTx interface{}) ([][]byte, error)
+	QueryRowTesting(ctx context.Context, data string, dbTx interface{}) interface{}
 	// synchronizer
 	AddBlock(ctx context.Context, block *etherman.Block, dbTx interface{}) (uint64, error)
 	AddGlobalExitRoot(ctx context.Context, exitRoot *etherman.GlobalExitRoot, dbTx interface{}) error

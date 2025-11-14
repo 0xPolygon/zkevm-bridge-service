@@ -59,7 +59,7 @@ func (bt *BridgeController) GetMerkleTreeID(networkID uint32) (uint32, error) {
 
 // AddDeposit adds deposit information to the bridge tree.
 func (bt *BridgeController) AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx interface{}) error {
-	leaf := hashDeposit(deposit)
+	leaf := HashDeposit(deposit)
 	tID, err := bt.GetMerkleTreeID(deposit.NetworkID)
 	if err != nil {
 		return err

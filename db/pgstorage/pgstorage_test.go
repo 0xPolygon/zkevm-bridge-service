@@ -319,10 +319,12 @@ func TestResetDeposits(t *testing.T) {
 	err = store.ResetDeposits(ctx, 0, 0, nil)
 	require.Error(t, err)
 	d, err := store.GetNumberDeposits(ctx, 1, 1, nil)
+	require.NoError(t, err)
 	assert.Equal(t, uint32(3), d)
 	err = store.ResetDeposits(ctx, 0, 1, nil)
 	require.NoError(t, err)
 	d, err = store.GetNumberDeposits(ctx, 1, 1, nil)
+	require.NoError(t, err)
 	assert.Equal(t, uint32(1), d)
 }
 
