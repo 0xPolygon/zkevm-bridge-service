@@ -23,7 +23,7 @@ const (
 	l2AccHexPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
 	l2NetworkURL       = "http://localhost:8123"
 
-	index = 1
+	indexToRemove = 2
 	l2NetworkID = 1
 )
 
@@ -84,15 +84,25 @@ func main() {
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
-	nextLeaf, deposit, err := manager.GetLeaf(ctx, index+1, l2NetworkID)
+	nextLeaf, err := manager.GetLeaf(ctx, indexToRemove, l2NetworkID)
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
-	rollupMerkleProof, err := manager.GetProof(ctx, deposit.NetworkID, deposit.DepositCount)
+	log.Debug("nextLeaf: ", nextLeaf)
+	rollupMerkleProof, root, err := manager.GetProof(ctx, indexToRemove, l2NetworkID)
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
-	frontier := manager.ComputeFrontierFromProof(index, rollupMerkleProof)
+	for i := range rollupMerkleProof {
+		log.Debugf("rollupMerkleProof[%d]: %s", i, common.BytesToHash(rollupMerkleProof[i][:]).String())
+	}
+	var smcRoot common.Hash
+	smcRoot, err = br.GetRoot(&bind.CallOpts{Pending: false})
+	log.Debug("root from smc: ", root)
+	if smcRoot != root {
+		log.Fatalf("Error: invalid root from smart contract. StoredRoot: ", root, ". SmcRoot: ", smcRoot)
+	}
+	frontier := manager.ComputeFrontierFromProof(indexToRemove, rollupMerkleProof)
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
@@ -110,10 +120,10 @@ func main() {
 		time.Sleep(5 * time.Second) //nolint:mnd
 	}
 	log.Info("Sending claim tx...")
-	tx, err := br.BackwardLET(auth, big.NewInt(index), frontier, nextLeaf, rollupMerkleProof)
+	tx, err := br.BackwardLET(auth, big.NewInt(indexToRemove), frontier, nextLeaf, rollupMerkleProof)
 	if err != nil {
 		a, _ := bridgel2sovereignchain.Bridgel2sovereignchainMetaData.GetAbi()
-		input, err3 := a.Pack("backwardLET", big.NewInt(index), frontier, nextLeaf, rollupMerkleProof)
+		input, err3 := a.Pack("backwardLET", big.NewInt(indexToRemove), frontier, nextLeaf, rollupMerkleProof)
 		if err3 != nil {
 			log.Error("error packing call. Error: ", err3)
 		}

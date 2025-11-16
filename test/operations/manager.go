@@ -1049,12 +1049,15 @@ func (m *Manager) RemoveL2GER(ctx context.Context, l2GERManagerAddr common.Addre
 	return m.WaitExitRootToBeSynced(ctx, globalExitRoot, 0, networkID)
 }
 
-func (m *Manager) GetLeaf(ctx context.Context, index uint32, networkID uint32) (common.Hash, *etherman.Deposit, error) {
+func (m *Manager) GetLeaf(ctx context.Context, index uint32, networkID uint32) (common.Hash, error) {
 	deposit, err := m.storage.GetDeposit(ctx, index, networkID, nil)
 	if err != nil {
-		return common.Hash{}, nil, err
+		if errors.Is(err, gerror.ErrStorageNotFound) {
+			return common.Hash{}, nil
+		}
+		return common.Hash{}, err
 	}
-	return bridgectrl.HashDeposit(deposit), deposit, nil
+	return bridgectrl.HashDeposit(deposit), nil
 }
 
 // ComputeFrontierFromProof build the frontier for backwardLET.
@@ -1072,13 +1075,13 @@ func (m *Manager) ComputeFrontierFromProof(n uint64, proof [MtHeight][bridgectrl
 	return
 }
 
-func (m *Manager) GetProof(ctx context.Context, depositCnt, networkID uint32) ([MtHeight][bridgectrl.KeyLen]byte, error) {
+func (m *Manager) GetProof(ctx context.Context, depositCnt, networkID uint32) ([MtHeight][bridgectrl.KeyLen]byte, common.Hash, error) {
 	// First, get the root
-	query := "SELECT root FROM mt.root WHERE network = 1 ORDER BY deposit_id desc LIMIT 1;"
+	query := fmt.Sprintf("SELECT root FROM mt.root WHERE network = %d ORDER BY deposit_id desc LIMIT 1;", networkID)
 	var root common.Hash
 	err := m.storage.QueryRowTesting(ctx, query, nil).(pgx.Row).Scan(&root)
 	if err != nil {
-		return [32][32]byte{}, fmt.Errorf("error getting the root from db: %v", err)
+		return [32][32]byte{}, common.Hash{}, fmt.Errorf("error getting the root from db: %v", err)
 	}
 	var siblings [][bridgectrl.KeyLen]byte
 	cur := root
@@ -1086,7 +1089,15 @@ func (m *Manager) GetProof(ctx context.Context, depositCnt, networkID uint32) ([
 	for h := int(MtHeight - 1); h >= 0; h-- {
 		left, right, err := m.getNode(ctx, cur, nil)
 		if err != nil {
-			return [32][32]byte{}, fmt.Errorf("height: %d, cur: %s, error: %v", h, common.BytesToHash(cur[:]).String(), err)
+			return [32][32]byte{}, common.Hash{}, fmt.Errorf("height: %d, cur: %s, error: %v", h, common.BytesToHash(cur[:]).String(), err)
+		}
+		// This is just a protection but it should never happen
+		if bridgectrl.Hash(left, right) != cur {
+			if bridgectrl.Hash(right, left) == cur {
+				left, right = right, left
+			} else {
+				return [32][32]byte{}, common.Hash{}, fmt.Errorf("DB node children don't match parent")
+			}
 		}
 		/*
 		*        Root                (level h=3 => height=4)
@@ -1130,7 +1141,7 @@ func (m *Manager) GetProof(ctx context.Context, depositCnt, networkID uint32) ([
 		proof[i] = siblings[i]
 	}
 
-	return proof, nil
+	return proof, root, nil
 }
 
 func (m *Manager) getNode(ctx context.Context, parentHash [bridgectrl.KeyLen]byte, dbTx interface{}) (left, right [bridgectrl.KeyLen]byte, err error) {
