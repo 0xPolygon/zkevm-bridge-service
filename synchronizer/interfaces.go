@@ -30,6 +30,7 @@ type storageInterface interface {
 	Reset(ctx context.Context, blockNumber uint64, networkID uint32, dbTx interface{}) error
 	GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx interface{}) (etherman.Block, error)
 	GetNumberDeposits(ctx context.Context, origNetworkID uint32, blockNumber uint64, dbTx interface{}) (uint32, error)
+	ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{}) error
 	AddTrustedGlobalExitRoot(ctx context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx interface{}) (bool, error)
 	GetLatestL1SyncedExitRoot(ctx context.Context, dbTx interface{}) (*etherman.GlobalExitRoot, error)
 	GetLatestTrustedExitRoot(ctx context.Context, networkID uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error)
@@ -39,6 +40,11 @@ type storageInterface interface {
 	UpdateL2GER(ctx context.Context, ger etherman.GlobalExitRoot, dbTx interface{}) error
 	AddRemoveL2GER(ctx context.Context, globalExitRoot etherman.GlobalExitRoot, dbTx interface{}) error
 	AddSyncStatus(ctx context.Context, syncStatus etherman.SyncStatus, dbTx interface{}) error
+	AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) error
+	DeleteClaimByGlobalIndex(ctx context.Context, globalIndex *big.Int, networkID uint32, dbTx interface{}) error
+	AddUnsetClaim(ctx context.Context, unsetClaim *etherman.UnsetClaim, dbTx interface{}) error
+	AddSetClaim(ctx context.Context, setClaim *etherman.SetClaim, dbTx interface{}) error
+	GetDeposit(ctx context.Context, depositCounter, networkID uint32, dbTx interface{}) (*etherman.Deposit, error)
 }
 
 type bridgectrlInterface interface {
@@ -46,6 +52,7 @@ type bridgectrlInterface interface {
 	ReorgMT(ctx context.Context, depositCount, networkID uint32, dbTx interface{}) error
 	RollbackMT(ctx context.Context, networkID uint32, dbTx interface{}) error
 	AddRollupExitLeaf(ctx context.Context, rollupLeaf etherman.RollupExitLeaf, dbTx interface{}) error
+	GetExitRoot(ctx context.Context, networkID uint32, dbTx interface{}) ([]byte, error)
 }
 
 type zkEVMClientInterface interface {

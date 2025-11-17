@@ -18,7 +18,9 @@ type Block struct {
 	Claims          []Claim
 	Tokens          []TokenWrapped
 	VerifiedBatches []VerifiedBatch
-	ActivateEtrog   []bool
+	UnsetClaims     []UnsetClaim
+	SetClaims       []SetClaim
+	BackwardLETs    []BackwardLET
 }
 
 // GlobalExitRoot struct
@@ -109,4 +111,32 @@ type SyncStatus struct {
 	Percentage      uint32
 	RemainingBlocks uint64
 	Synced          bool
+}
+
+// UnsetClaim struct
+type UnsetClaim struct {
+	BlockID     uint64
+	MainnetFlag bool
+	RollupIndex uint32
+	Index       uint32
+	GlobalIndex *big.Int
+}
+
+// SetClaim struct
+type SetClaim struct {
+	BlockID     uint64
+	MainnetFlag bool
+	RollupIndex uint32
+	Index       uint32
+	GlobalIndex *big.Int
+	TxHash      common.Hash
+}
+
+// BackwardLET struct
+type BackwardLET struct {
+	BlockID              uint64
+	PreviousDepositCount uint32
+	PreviousRoot         common.Hash
+	NewDepositCount      uint32
+	NewRoot              common.Hash
 }

@@ -4,6 +4,7 @@ package synchronizer
 
 import (
 	context "context"
+	big "math/big"
 
 	common "github.com/ethereum/go-ethereum/common"
 
@@ -23,6 +24,54 @@ type storageMock_Expecter struct {
 
 func (_m *storageMock) EXPECT() *storageMock_Expecter {
 	return &storageMock_Expecter{mock: &_m.Mock}
+}
+
+// AddBackwardLET provides a mock function with given fields: ctx, backwardLET, dbTx
+func (_m *storageMock) AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) error {
+	ret := _m.Called(ctx, backwardLET, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddBackwardLET")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *etherman.BackwardLET, interface{}) error); ok {
+		r0 = rf(ctx, backwardLET, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// storageMock_AddBackwardLET_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddBackwardLET'
+type storageMock_AddBackwardLET_Call struct {
+	*mock.Call
+}
+
+// AddBackwardLET is a helper method to define mock.On call
+//   - ctx context.Context
+//   - backwardLET *etherman.BackwardLET
+//   - dbTx interface{}
+func (_e *storageMock_Expecter) AddBackwardLET(ctx interface{}, backwardLET interface{}, dbTx interface{}) *storageMock_AddBackwardLET_Call {
+	return &storageMock_AddBackwardLET_Call{Call: _e.mock.On("AddBackwardLET", ctx, backwardLET, dbTx)}
+}
+
+func (_c *storageMock_AddBackwardLET_Call) Run(run func(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{})) *storageMock_AddBackwardLET_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*etherman.BackwardLET), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *storageMock_AddBackwardLET_Call) Return(_a0 error) *storageMock_AddBackwardLET_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *storageMock_AddBackwardLET_Call) RunAndReturn(run func(context.Context, *etherman.BackwardLET, interface{}) error) *storageMock_AddBackwardLET_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // AddBlock provides a mock function with given fields: ctx, block, dbTx
@@ -285,6 +334,54 @@ func (_c *storageMock_AddRemoveL2GER_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
+// AddSetClaim provides a mock function with given fields: ctx, setClaim, dbTx
+func (_m *storageMock) AddSetClaim(ctx context.Context, setClaim *etherman.SetClaim, dbTx interface{}) error {
+	ret := _m.Called(ctx, setClaim, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddSetClaim")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *etherman.SetClaim, interface{}) error); ok {
+		r0 = rf(ctx, setClaim, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// storageMock_AddSetClaim_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddSetClaim'
+type storageMock_AddSetClaim_Call struct {
+	*mock.Call
+}
+
+// AddSetClaim is a helper method to define mock.On call
+//   - ctx context.Context
+//   - setClaim *etherman.SetClaim
+//   - dbTx interface{}
+func (_e *storageMock_Expecter) AddSetClaim(ctx interface{}, setClaim interface{}, dbTx interface{}) *storageMock_AddSetClaim_Call {
+	return &storageMock_AddSetClaim_Call{Call: _e.mock.On("AddSetClaim", ctx, setClaim, dbTx)}
+}
+
+func (_c *storageMock_AddSetClaim_Call) Run(run func(ctx context.Context, setClaim *etherman.SetClaim, dbTx interface{})) *storageMock_AddSetClaim_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*etherman.SetClaim), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *storageMock_AddSetClaim_Call) Return(_a0 error) *storageMock_AddSetClaim_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *storageMock_AddSetClaim_Call) RunAndReturn(run func(context.Context, *etherman.SetClaim, interface{}) error) *storageMock_AddSetClaim_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AddSyncStatus provides a mock function with given fields: ctx, syncStatus, dbTx
 func (_m *storageMock) AddSyncStatus(ctx context.Context, syncStatus etherman.SyncStatus, dbTx interface{}) error {
 	ret := _m.Called(ctx, syncStatus, dbTx)
@@ -435,6 +532,54 @@ func (_c *storageMock_AddTrustedGlobalExitRoot_Call) Return(_a0 bool, _a1 error)
 }
 
 func (_c *storageMock_AddTrustedGlobalExitRoot_Call) RunAndReturn(run func(context.Context, *etherman.GlobalExitRoot, interface{}) (bool, error)) *storageMock_AddTrustedGlobalExitRoot_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AddUnsetClaim provides a mock function with given fields: ctx, unsetClaim, dbTx
+func (_m *storageMock) AddUnsetClaim(ctx context.Context, unsetClaim *etherman.UnsetClaim, dbTx interface{}) error {
+	ret := _m.Called(ctx, unsetClaim, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddUnsetClaim")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *etherman.UnsetClaim, interface{}) error); ok {
+		r0 = rf(ctx, unsetClaim, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// storageMock_AddUnsetClaim_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddUnsetClaim'
+type storageMock_AddUnsetClaim_Call struct {
+	*mock.Call
+}
+
+// AddUnsetClaim is a helper method to define mock.On call
+//   - ctx context.Context
+//   - unsetClaim *etherman.UnsetClaim
+//   - dbTx interface{}
+func (_e *storageMock_Expecter) AddUnsetClaim(ctx interface{}, unsetClaim interface{}, dbTx interface{}) *storageMock_AddUnsetClaim_Call {
+	return &storageMock_AddUnsetClaim_Call{Call: _e.mock.On("AddUnsetClaim", ctx, unsetClaim, dbTx)}
+}
+
+func (_c *storageMock_AddUnsetClaim_Call) Run(run func(ctx context.Context, unsetClaim *etherman.UnsetClaim, dbTx interface{})) *storageMock_AddUnsetClaim_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*etherman.UnsetClaim), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *storageMock_AddUnsetClaim_Call) Return(_a0 error) *storageMock_AddUnsetClaim_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *storageMock_AddUnsetClaim_Call) RunAndReturn(run func(context.Context, *etherman.UnsetClaim, interface{}) error) *storageMock_AddUnsetClaim_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -599,6 +744,116 @@ func (_c *storageMock_Commit_Call) Return(_a0 error) *storageMock_Commit_Call {
 }
 
 func (_c *storageMock_Commit_Call) RunAndReturn(run func(context.Context, interface{}) error) *storageMock_Commit_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeleteClaimByGlobalIndex provides a mock function with given fields: ctx, globalIndex, networkID, dbTx
+func (_m *storageMock) DeleteClaimByGlobalIndex(ctx context.Context, globalIndex *big.Int, networkID uint32, dbTx interface{}) error {
+	ret := _m.Called(ctx, globalIndex, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteClaimByGlobalIndex")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *big.Int, uint32, interface{}) error); ok {
+		r0 = rf(ctx, globalIndex, networkID, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// storageMock_DeleteClaimByGlobalIndex_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteClaimByGlobalIndex'
+type storageMock_DeleteClaimByGlobalIndex_Call struct {
+	*mock.Call
+}
+
+// DeleteClaimByGlobalIndex is a helper method to define mock.On call
+//   - ctx context.Context
+//   - globalIndex *big.Int
+//   - networkID uint32
+//   - dbTx interface{}
+func (_e *storageMock_Expecter) DeleteClaimByGlobalIndex(ctx interface{}, globalIndex interface{}, networkID interface{}, dbTx interface{}) *storageMock_DeleteClaimByGlobalIndex_Call {
+	return &storageMock_DeleteClaimByGlobalIndex_Call{Call: _e.mock.On("DeleteClaimByGlobalIndex", ctx, globalIndex, networkID, dbTx)}
+}
+
+func (_c *storageMock_DeleteClaimByGlobalIndex_Call) Run(run func(ctx context.Context, globalIndex *big.Int, networkID uint32, dbTx interface{})) *storageMock_DeleteClaimByGlobalIndex_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*big.Int), args[2].(uint32), args[3].(interface{}))
+	})
+	return _c
+}
+
+func (_c *storageMock_DeleteClaimByGlobalIndex_Call) Return(_a0 error) *storageMock_DeleteClaimByGlobalIndex_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *storageMock_DeleteClaimByGlobalIndex_Call) RunAndReturn(run func(context.Context, *big.Int, uint32, interface{}) error) *storageMock_DeleteClaimByGlobalIndex_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetDeposit provides a mock function with given fields: ctx, depositCounter, networkID, dbTx
+func (_m *storageMock) GetDeposit(ctx context.Context, depositCounter uint32, networkID uint32, dbTx interface{}) (*etherman.Deposit, error) {
+	ret := _m.Called(ctx, depositCounter, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDeposit")
+	}
+
+	var r0 *etherman.Deposit
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, interface{}) (*etherman.Deposit, error)); ok {
+		return rf(ctx, depositCounter, networkID, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, interface{}) *etherman.Deposit); ok {
+		r0 = rf(ctx, depositCounter, networkID, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*etherman.Deposit)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, uint32, interface{}) error); ok {
+		r1 = rf(ctx, depositCounter, networkID, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// storageMock_GetDeposit_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDeposit'
+type storageMock_GetDeposit_Call struct {
+	*mock.Call
+}
+
+// GetDeposit is a helper method to define mock.On call
+//   - ctx context.Context
+//   - depositCounter uint32
+//   - networkID uint32
+//   - dbTx interface{}
+func (_e *storageMock_Expecter) GetDeposit(ctx interface{}, depositCounter interface{}, networkID interface{}, dbTx interface{}) *storageMock_GetDeposit_Call {
+	return &storageMock_GetDeposit_Call{Call: _e.mock.On("GetDeposit", ctx, depositCounter, networkID, dbTx)}
+}
+
+func (_c *storageMock_GetDeposit_Call) Run(run func(ctx context.Context, depositCounter uint32, networkID uint32, dbTx interface{})) *storageMock_GetDeposit_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(uint32), args[3].(interface{}))
+	})
+	return _c
+}
+
+func (_c *storageMock_GetDeposit_Call) Return(_a0 *etherman.Deposit, _a1 error) *storageMock_GetDeposit_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *storageMock_GetDeposit_Call) RunAndReturn(run func(context.Context, uint32, uint32, interface{}) (*etherman.Deposit, error)) *storageMock_GetDeposit_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1065,6 +1320,55 @@ func (_c *storageMock_Reset_Call) Return(_a0 error) *storageMock_Reset_Call {
 }
 
 func (_c *storageMock_Reset_Call) RunAndReturn(run func(context.Context, uint64, uint32, interface{}) error) *storageMock_Reset_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ResetDeposits provides a mock function with given fields: ctx, depositCount, networkID, dbTx
+func (_m *storageMock) ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{}) error {
+	ret := _m.Called(ctx, depositCount, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ResetDeposits")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, uint32, interface{}) error); ok {
+		r0 = rf(ctx, depositCount, networkID, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// storageMock_ResetDeposits_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ResetDeposits'
+type storageMock_ResetDeposits_Call struct {
+	*mock.Call
+}
+
+// ResetDeposits is a helper method to define mock.On call
+//   - ctx context.Context
+//   - depositCount uint32
+//   - networkID uint32
+//   - dbTx interface{}
+func (_e *storageMock_Expecter) ResetDeposits(ctx interface{}, depositCount interface{}, networkID interface{}, dbTx interface{}) *storageMock_ResetDeposits_Call {
+	return &storageMock_ResetDeposits_Call{Call: _e.mock.On("ResetDeposits", ctx, depositCount, networkID, dbTx)}
+}
+
+func (_c *storageMock_ResetDeposits_Call) Run(run func(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{})) *storageMock_ResetDeposits_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(uint32), args[3].(interface{}))
+	})
+	return _c
+}
+
+func (_c *storageMock_ResetDeposits_Call) Return(_a0 error) *storageMock_ResetDeposits_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *storageMock_ResetDeposits_Call) RunAndReturn(run func(context.Context, uint32, uint32, interface{}) error) *storageMock_ResetDeposits_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -194,7 +194,7 @@ func deploySovereignChainSMC(ctx *cli.Context) error {
 		log.Error("error: ", err)
 		return err
 	}
-	_, err = br.Initialize(auth, 1, common.Address{}, 0, globalExitRootAddr, auth.From, []byte{}, auth.From, common.Address{}, false)
+	_, err = br.Initialize(auth, 1, common.Address{}, 0, globalExitRootAddr, auth.From, []byte{}, auth.From, common.Address{}, false, auth.From, auth.From, common.HexToAddress("0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266"))
 	if err != nil {
 		log.Error("error: ", err)
 		return err
