@@ -290,13 +290,13 @@ func TestResetDeposits(t *testing.T) {
 
 	INSERT INTO sync.deposit
 	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
-	VALUES(0, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 1, decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, 0, decode('ABE7A77275EE22780BB94EA900D42CEF88F5A2F0E1A7C76696556D7FF17767E6','hex'), decode('','hex'), 4, true);
+	VALUES(0, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 0, decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, 0, decode('ABE7A77275EE22780BB94EA900D42CEF88F5A2F0E1A7C76696556D7FF17767E6','hex'), decode('','hex'), 4, true);
 	INSERT INTO sync.deposit
 	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
-	VALUES(0, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 1, decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, 1, decode('A282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F','hex'), decode('','hex'), 5, true);
+	VALUES(0, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 0, decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, 1, decode('A282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F','hex'), decode('','hex'), 5, true);
 	INSERT INTO sync.deposit
 	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
-	VALUES(0, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 1, decode('F38FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, 2, decode('B282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F','hex'), decode('','hex'), 6, true);
+	VALUES(0, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 0, decode('F38FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, 2, decode('B282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F','hex'), decode('','hex'), 6, true);
 	INSERT INTO sync.claim
 	(network_id, "index", orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag)
 	VALUES(0, 0, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, decode('CF2C816AB6F8A8F5F9DDA6EE97D433CC841E69B5669A5CDF499826FA4B99C179','hex'), 0, true);
@@ -316,12 +316,12 @@ func TestResetDeposits(t *testing.T) {
 	require.NoError(t, err)
 
 
-	err = store.ResetDeposits(ctx, 0, 0, nil)
+	err = store.ResetDeposits(ctx, 1, 0, nil)
 	require.Error(t, err)
 	d, err := store.GetNumberDeposits(ctx, 1, 1, nil)
 	require.NoError(t, err)
 	assert.Equal(t, uint32(3), d)
-	err = store.ResetDeposits(ctx, 0, 1, nil)
+	err = store.ResetDeposits(ctx, 1, 1, nil)
 	require.NoError(t, err)
 	d, err = store.GetNumberDeposits(ctx, 1, 1, nil)
 	require.NoError(t, err)
