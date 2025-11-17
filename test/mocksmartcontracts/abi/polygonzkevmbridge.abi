@@ -1,12 +1,22 @@
 [
 	{
 		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [],
 		"name": "AlreadyClaimed",
 		"type": "error"
 	},
 	{
 		"inputs": [],
 		"name": "AmountDoesNotMatchMsgValue",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "BridgeAddressNotAllowed",
 		"type": "error"
 	},
 	{
@@ -21,6 +31,11 @@
 	},
 	{
 		"inputs": [],
+		"name": "FailedProxyDeployment",
+		"type": "error"
+	},
+	{
+		"inputs": [],
 		"name": "GasTokenNetworkMustBeZeroOnEther",
 		"type": "error"
 	},
@@ -31,7 +46,44 @@
 	},
 	{
 		"inputs": [],
+		"name": "InvalidGlobalIndex",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "InvalidInitializeFunction",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "proxyAdmin",
+				"type": "address"
+			}
+		],
+		"name": "InvalidProxyAdmin",
+		"type": "error"
+	},
+	{
+		"inputs": [],
 		"name": "InvalidSmtProof",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "InvalidZeroAddress",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "proxyAdmin",
+				"type": "address"
+			}
+		],
+		"name": "InvalidZeroProxyAdminOwner",
 		"type": "error"
 	},
 	{
@@ -56,27 +108,22 @@
 	},
 	{
 		"inputs": [],
+		"name": "NewDepositCountExceedsMax",
+		"type": "error"
+	},
+	{
+		"inputs": [],
 		"name": "NoValueInMessagesOnGasTokenNetworks",
 		"type": "error"
 	},
 	{
 		"inputs": [],
+		"name": "NonZeroValueForUnusedFrontier",
+		"type": "error"
+	},
+	{
+		"inputs": [],
 		"name": "NotValidAmount",
-		"type": "error"
-	},
-	{
-		"inputs": [],
-		"name": "NotValidOwner",
-		"type": "error"
-	},
-	{
-		"inputs": [],
-		"name": "NotValidSignature",
-		"type": "error"
-	},
-	{
-		"inputs": [],
-		"name": "NotValidSpender",
 		"type": "error"
 	},
 	{
@@ -91,8 +138,73 @@
 	},
 	{
 		"inputs": [],
+		"name": "OnlyPendingProxiedTokensManager",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "OnlyProxiedTokensManager",
+		"type": "error"
+	},
+	{
+		"inputs": [],
 		"name": "OnlyRollupManager",
 		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "SubtreeFrontierMismatch",
+		"type": "error"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "oldProxiedTokensManager",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "newProxiedTokensManager",
+				"type": "address"
+			}
+		],
+		"name": "AcceptProxiedTokensManagerRole",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "previousDepositCount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "previousRoot",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newDepositCount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "newRoot",
+				"type": "bytes32"
+			}
+		],
+		"name": "BackwardLET",
+		"type": "event"
 	},
 	{
 		"anonymous": false,
@@ -243,11 +355,88 @@
 		"type": "event"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "globalIndex",
+				"type": "bytes32"
+			}
+		],
+		"name": "SetClaim",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "currentProxiedTokensManager",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "newProxiedTokensManager",
+				"type": "address"
+			}
+		],
+		"name": "TransferProxiedTokensManagerRole",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "unsetGlobalIndex",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "newUnsetGlobalIndexHashChain",
+				"type": "bytes32"
+			}
+		],
+		"name": "UpdatedUnsetGlobalIndexHashChain",
+		"type": "event"
+	},
+	{
+		"inputs": [],
+		"name": "BRIDGE_VERSION",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "INIT_BYTECODE_TRANSPARENT_PROXY",
+		"outputs": [
+			{
+				"internalType": "bytes",
+				"name": "",
+				"type": "bytes"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "WETHToken",
 		"outputs": [
 			{
-				"internalType": "contract TokenWrapped",
+				"internalType": "contract ITokenWrappedBridgeUpgradeable",
 				"name": "",
 				"type": "address"
 			}
@@ -257,7 +446,42 @@
 	},
 	{
 		"inputs": [],
+		"name": "acceptProxiedTokensManagerRole",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "activateEmergencyState",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "newDepositCount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes32[32]",
+				"name": "newFrontier",
+				"type": "bytes32[32]"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "nextLeaf",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "bytes32[32]",
+				"name": "proof",
+				"type": "bytes32[32]"
+			}
+		],
+		"name": "backwardLET",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -298,6 +522,19 @@
 		"name": "bridgeAsset",
 		"outputs": [],
 		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "bridgeLib",
+		"outputs": [
+			{
+				"internalType": "contract BridgeLib",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -388,35 +625,6 @@
 			}
 		],
 		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint32",
-				"name": "originNetwork",
-				"type": "uint32"
-			},
-			{
-				"internalType": "address",
-				"name": "originTokenAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "token",
-				"type": "address"
-			}
-		],
-		"name": "calculateTokenWrapperAddress",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -565,6 +773,30 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint32",
+				"name": "originNetwork",
+				"type": "uint32"
+			},
+			{
+				"internalType": "address",
+				"name": "originTokenAddress",
+				"type": "address"
+			}
+		],
+		"name": "computeTokenProxyAddress",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "deactivateEmergencyState",
 		"outputs": [],
@@ -674,6 +906,19 @@
 	},
 	{
 		"inputs": [],
+		"name": "getProxiedTokensManager",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "getRoot",
 		"outputs": [
 			{
@@ -730,15 +975,35 @@
 	},
 	{
 		"inputs": [],
-		"name": "globalExitRootManager",
+		"name": "getWrappedTokenBridgeImplementation",
 		"outputs": [
 			{
-				"internalType": "contract IBasePolygonZkEVMGlobalExitRoot",
+				"internalType": "address",
 				"name": "",
 				"type": "address"
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "globalExitRootManager",
+		"outputs": [
+			{
+				"internalType": "contract IBaseLegacyAgglayerGER",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "initialize",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -759,7 +1024,7 @@
 				"type": "uint32"
 			},
 			{
-				"internalType": "contract IBasePolygonZkEVMGlobalExitRoot",
+				"internalType": "contract IBaseLegacyAgglayerGER",
 				"name": "_globalExitRootManager",
 				"type": "address"
 			},
@@ -844,7 +1109,33 @@
 	},
 	{
 		"inputs": [],
+		"name": "pendingProxiedTokensManager",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "polygonRollupManager",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "proxiedTokensManager",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -858,40 +1149,14 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint32",
-				"name": "originNetwork",
-				"type": "uint32"
-			},
-			{
-				"internalType": "address",
-				"name": "originTokenAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "symbol",
-				"type": "string"
-			},
-			{
-				"internalType": "uint8",
-				"name": "decimals",
-				"type": "uint8"
+				"internalType": "uint256[]",
+				"name": "globalIndexes",
+				"type": "uint256[]"
 			}
 		],
-		"name": "precalculatedWrapperAddress",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
+		"name": "setMultipleClaims",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -911,6 +1176,32 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newProxiedTokensManager",
+				"type": "address"
+			}
+		],
+		"name": "transferProxiedTokensManagerRole",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "globalIndexes",
+				"type": "uint256[]"
+			}
+		],
+		"name": "unsetMultipleClaims",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -952,6 +1243,32 @@
 			}
 		],
 		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "version",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "wrappedTokenBytecodeStorer",
+		"outputs": [
+			{
+				"internalType": "contract IBytecodeStorer",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{

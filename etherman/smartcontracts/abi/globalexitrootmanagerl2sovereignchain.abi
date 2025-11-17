@@ -22,12 +22,7 @@
     },
     {
         "inputs": [],
-        "name": "InvalidInitialization",
-        "type": "error"
-    },
-    {
-        "inputs": [],
-        "name": "NotInitializing",
+        "name": "InvalidZeroAddress",
         "type": "error"
     },
     {
@@ -46,13 +41,61 @@
         "type": "error"
     },
     {
+        "inputs": [],
+        "name": "OnlyPendingGlobalExitRootRemover",
+        "type": "error"
+    },
+    {
+        "inputs": [],
+        "name": "OnlyPendingGlobalExitRootUpdater",
+        "type": "error"
+    },
+    {
         "anonymous": false,
         "inputs": [
             {
                 "indexed": false,
-                "internalType": "uint64",
+                "internalType": "address",
+                "name": "oldGlobalExitRootRemover",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "newGlobalExitRootRemover",
+                "type": "address"
+            }
+        ],
+        "name": "AcceptGlobalExitRootRemover",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "oldGlobalExitRootUpdater",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "newGlobalExitRootUpdater",
+                "type": "address"
+            }
+        ],
+        "name": "AcceptGlobalExitRootUpdater",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": false,
+                "internalType": "uint8",
                 "name": "version",
-                "type": "uint64"
+                "type": "uint8"
             }
         ],
         "name": "Initialized",
@@ -62,26 +105,38 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": true,
+                "indexed": false,
                 "internalType": "address",
-                "name": "newGlobalExitRootRemover",
+                "name": "currentGlobalExitRootRemover",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "pendingGlobalExitRootRemover",
                 "type": "address"
             }
         ],
-        "name": "SetGlobalExitRootRemover",
+        "name": "TransferGlobalExitRootRemover",
         "type": "event"
     },
     {
         "anonymous": false,
         "inputs": [
             {
-                "indexed": true,
+                "indexed": false,
                 "internalType": "address",
-                "name": "newGlobalExitRootUpdater",
+                "name": "currentGlobalExitRootUpdater",
+                "type": "address"
+            },
+            {
+                "indexed": false,
+                "internalType": "address",
+                "name": "pendingGlobalExitRootUpdater",
                 "type": "address"
             }
         ],
-        "name": "SetGlobalExitRootUpdater",
+        "name": "TransferGlobalExitRootUpdater",
         "type": "event"
     },
     {
@@ -121,6 +176,33 @@
         ],
         "name": "UpdateRemovalHashChainValue",
         "type": "event"
+    },
+    {
+        "inputs": [],
+        "name": "GER_SOVEREIGN_VERSION",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "acceptGlobalExitRootRemover",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "acceptGlobalExitRootUpdater",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
     },
     {
         "inputs": [],
@@ -238,6 +320,32 @@
         "type": "function"
     },
     {
+        "inputs": [],
+        "name": "pendingGlobalExitRootRemover",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "pendingGlobalExitRootUpdater",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
         "inputs": [
             {
                 "internalType": "bytes32[]",
@@ -267,11 +375,11 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "_globalExitRootRemover",
+                "name": "_newGlobalExitRootRemover",
                 "type": "address"
             }
         ],
-        "name": "setGlobalExitRootRemover",
+        "name": "transferGlobalExitRootRemover",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -280,11 +388,11 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "_globalExitRootUpdater",
+                "name": "_newGlobalExitRootUpdater",
                 "type": "address"
             }
         ],
-        "name": "setGlobalExitRootUpdater",
+        "name": "transferGlobalExitRootUpdater",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -300,6 +408,19 @@
         "name": "updateExitRoot",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "version",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "pure",
         "type": "function"
     }
 ]

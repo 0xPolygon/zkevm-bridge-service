@@ -34,7 +34,7 @@ func generateZeroHashes(height uint8) [][KeyLen]byte {
 	return zeroHashes
 }
 
-func hashDeposit(deposit *etherman.Deposit) [KeyLen]byte {
+func HashDeposit(deposit *etherman.Deposit) [KeyLen]byte {
 	var res [KeyLen]byte
 	origNet := make([]byte, 4) //nolint:mnd
 	binary.BigEndian.PutUint32(origNet, uint32(deposit.OriginalNetwork))
