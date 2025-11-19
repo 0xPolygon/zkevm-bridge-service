@@ -965,6 +965,16 @@ func (p *PostgresStorage) DeleteClaimByGlobalIndex(ctx context.Context, globalIn
 	return err
 }
 
+func (p *PostgresStorage) GetLastComputedRoot(ctx context.Context, networkID uint32, dbTx interface{}) (common.Hash, error) {
+	const query = "SELECT root FROM mt.root WHERE network = $1 ORDER BY deposit_id desc LIMIT 1;"
+	var root common.Hash
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, query, networkID).(pgx.Row).Scan(&root)
+	if err != nil {
+		return common.Hash{}, fmt.Errorf("error getting the root from db: %v", err)
+	}
+	return root, nil
+}
+
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.
 func (p *PostgresStorage) UpdateDepositsStatusForTesting(ctx context.Context, dbTx interface{}) error {
 	const updateDepositsStatusSQL = "UPDATE sync.deposit SET ready_for_claim = true;"

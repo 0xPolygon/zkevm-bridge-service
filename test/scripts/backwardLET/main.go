@@ -84,15 +84,11 @@ func main() {
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
-	nextLeaf, err := manager.GetLeaf(ctx, indexToRemove, l2NetworkID)
+	nextLeaf, root, rollupMerkleProof, frontier, err := manager.GetBackwardLETData(ctx, indexToRemove, l2NetworkID)
 	if err != nil {
 		log.Fatal("Error: ", err)
 	}
 	log.Debug("nextLeaf: ", nextLeaf)
-	rollupMerkleProof, root, err := manager.GetProof(ctx, indexToRemove, l2NetworkID)
-	if err != nil {
-		log.Fatal("Error: ", err)
-	}
 	for i := range rollupMerkleProof {
 		log.Debugf("rollupMerkleProof[%d]: %s", i, common.BytesToHash(rollupMerkleProof[i][:]).String())
 	}
@@ -101,10 +97,6 @@ func main() {
 	log.Debug("root from smc: ", root)
 	if smcRoot != root {
 		log.Fatalf("Error: invalid root from smart contract. StoredRoot: ", root, ". SmcRoot: ", smcRoot)
-	}
-	frontier := manager.ComputeFrontierFromProof(indexToRemove, rollupMerkleProof)
-	if err != nil {
-		log.Fatal("Error: ", err)
 	}
 	// Enable emergencyState
 	isEmergencyState, err := br.IsEmergencyState(&bind.CallOpts{Pending: false})

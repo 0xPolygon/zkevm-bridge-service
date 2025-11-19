@@ -571,6 +571,66 @@ func (_c *bridgeServiceStorageMock_GetL1ExitRootByGER_Call) RunAndReturn(run fun
 	return _c
 }
 
+// GetLastComputedRoot provides a mock function with given fields: ctx, networkID, dbTx
+func (_m *bridgeServiceStorageMock) GetLastComputedRoot(ctx context.Context, networkID uint32, dbTx interface{}) (common.Hash, error) {
+	ret := _m.Called(ctx, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLastComputedRoot")
+	}
+
+	var r0 common.Hash
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, interface{}) (common.Hash, error)); ok {
+		return rf(ctx, networkID, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, interface{}) common.Hash); ok {
+		r0 = rf(ctx, networkID, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(common.Hash)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, interface{}) error); ok {
+		r1 = rf(ctx, networkID, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// bridgeServiceStorageMock_GetLastComputedRoot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLastComputedRoot'
+type bridgeServiceStorageMock_GetLastComputedRoot_Call struct {
+	*mock.Call
+}
+
+// GetLastComputedRoot is a helper method to define mock.On call
+//   - ctx context.Context
+//   - networkID uint32
+//   - dbTx interface{}
+func (_e *bridgeServiceStorageMock_Expecter) GetLastComputedRoot(ctx interface{}, networkID interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetLastComputedRoot_Call {
+	return &bridgeServiceStorageMock_GetLastComputedRoot_Call{Call: _e.mock.On("GetLastComputedRoot", ctx, networkID, dbTx)}
+}
+
+func (_c *bridgeServiceStorageMock_GetLastComputedRoot_Call) Run(run func(ctx context.Context, networkID uint32, dbTx interface{})) *bridgeServiceStorageMock_GetLastComputedRoot_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *bridgeServiceStorageMock_GetLastComputedRoot_Call) Return(_a0 common.Hash, _a1 error) *bridgeServiceStorageMock_GetLastComputedRoot_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *bridgeServiceStorageMock_GetLastComputedRoot_Call) RunAndReturn(run func(context.Context, uint32, interface{}) (common.Hash, error)) *bridgeServiceStorageMock_GetLastComputedRoot_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLatestExitRoot provides a mock function with given fields: ctx, networkID, destNetwork, dbTx
 func (_m *bridgeServiceStorageMock) GetLatestExitRoot(ctx context.Context, networkID uint32, destNetwork uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error) {
 	ret := _m.Called(ctx, networkID, destNetwork, dbTx)

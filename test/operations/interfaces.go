@@ -43,4 +43,5 @@ type BridgeServiceInterface interface {
 	GetClaims(ctx context.Context, req *pb.GetClaimsRequest) (*pb.GetClaimsResponse, error)
 	GetProof(ctx context.Context, req *pb.GetProofRequest) (*pb.GetProofResponse, error)
 	GetProofByGER(ctx context.Context, req *pb.GetProofByGERRequest) (*pb.GetProofResponse, error)
+	GetBackwardLETData(ctx context.Context, req *pb.GetBackwardLETDataRequest) (*pb.GetBackwardLETDataResponse, error)
 }
