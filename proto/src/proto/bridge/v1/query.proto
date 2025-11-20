@@ -73,6 +73,13 @@ service BridgeService {
         };
     }
 
+    /// Get BackwardLET data for L2 sovereign networks
+    rpc GetBackwardLETData(GetBackwardLETDataRequest) returns (GetBackwardLETDataResponse) {
+        option (google.api.http) = {
+            get: "/backward-let"
+        };
+    }
+
     /// Get the merkle proof for the specific deposit. It is compatible with Apps Team bridge
     rpc GetProofV2(GetProofV2Request) returns (GetProofResponse) {
         option (google.api.http) = {
@@ -163,6 +170,11 @@ message GetPendingBridgesRequest {
     uint32 limit = 5;
 }
 
+message GetBackwardLETDataRequest {
+    uint32 net_id = 1;
+    uint32 deposit_cnt = 2;
+}
+
 message GetProofRequest {
     uint32 net_id = 1;
     uint32 deposit_cnt = 2;
@@ -208,6 +220,13 @@ message GetSyncStatusResponse {
 message GetBridgesResponse {
     repeated Deposit deposits = 1;
     uint64 total_cnt = 2;
+}
+
+message GetBackwardLETDataResponse {
+    repeated string frontier = 1;
+    repeated string rollup_merkle_proof = 2;
+    string leaf_hash = 3;
+    string root = 4;
 }
 
 message GetProofResponse {

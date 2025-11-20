@@ -361,6 +361,40 @@ func TestAddBackwardLET(t *testing.T) {
 	assert.Equal(t, uint32(1), count)
 }
 
+func TestAddForwardLET(t *testing.T) {
+	data := `INSERT INTO sync.block
+	(id, block_num, block_hash, network_id)
+	VALUES(1, 1, decode('5C7831','hex'), 0);
+	`
+	dbCfg := NewConfigFromEnv()
+	ctx := context.Background()
+	err := InitOrReset(ctx, dbCfg)
+	require.NoError(t, err)
+
+	store, err := NewPostgresStorage(ctx, dbCfg)
+	require.NoError(t, err)
+
+	_, err = store.Exec(ctx, data)
+	require.NoError(t, err)
+
+	fLET := &etherman.ForwardLET{
+		BlockID: 1,
+    	PreviousDepositCount: 3,
+    	PreviousRoot: common.HexToHash("0x6282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F"),
+    	NewDepositCount: 1,
+    	NewRoot: common.HexToHash("0xAA82FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEECC"),
+		NewRawLeaves: []byte("Random bytes to fill the db field"),
+	}
+	err = store.AddForwardLET(ctx, fLET, nil)
+	require.NoError(t, err)
+
+	var count uint32
+	selectCount := "SELECT count(*) FROM sync.forward_let"
+	err = store.QueryRow(ctx, selectCount).Scan(&count)
+	assert.NoError(t, err)
+	assert.Equal(t, uint32(1), count)
+}
+
 func TestAddSetUnsetClaim(t *testing.T) {
 	data := `INSERT INTO sync.block
 	(id, block_num, block_hash, network_id)

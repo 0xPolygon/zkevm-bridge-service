@@ -22,7 +22,6 @@ import (
 	"github.com/0xPolygon/zkevm-bridge-service/log"
 	"github.com/0xPolygon/zkevm-bridge-service/server"
 	"github.com/0xPolygon/zkevm-bridge-service/utils"
-	pgx "github.com/jackc/pgx/v4"
 	"github.com/0xPolygon/zkevm-bridge-service/utils/gerror"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -1049,107 +1048,23 @@ func (m *Manager) RemoveL2GER(ctx context.Context, l2GERManagerAddr common.Addre
 	return m.WaitExitRootToBeSynced(ctx, globalExitRoot, 0, networkID)
 }
 
-func (m *Manager) GetLeaf(ctx context.Context, index uint32, networkID uint32) (common.Hash, error) {
-	deposit, err := m.storage.GetDeposit(ctx, index, networkID, nil)
+func (m *Manager) GetBackwardLETData(ctx context.Context, depositCnt, networkID uint32) (common.Hash, common.Hash, [32][32]byte, [32][32]byte, error) {
+	data, err := m.bridgeService.GetBackwardLETData(ctx, &pb.GetBackwardLETDataRequest{
+		NetId:      networkID,
+		DepositCnt: depositCnt,
+	})
 	if err != nil {
-		if errors.Is(err, gerror.ErrStorageNotFound) {
-			return common.Hash{}, nil
-		}
-		return common.Hash{}, err
+		return common.Hash{}, common.Hash{}, [32][32]byte{}, [32][32]byte{}, err
 	}
-	return bridgectrl.HashDeposit(deposit), nil
-}
-
-// ComputeFrontierFromProof build the frontier for backwardLET.
-// Rule: in each level i, if the bit i of n is 1 => frontier[i] = proof[i],
-// If it is 0 => frontier[i] = 0x00..00.
-func (m *Manager) ComputeFrontierFromProof(n uint64, proof [MtHeight][bridgectrl.KeyLen]byte) (frontier [MtHeight][bridgectrl.KeyLen]byte) {
-	var zero [32]byte
-	for i := uint(0); i < MtHeight; i++ {
-		if ((n >> i) & 1) == 1 {
-			frontier[i] = proof[i]
-		} else {
-			frontier[i] = zero
-		}
+	leafHash := common.HexToHash(data.LeafHash)
+	proof := [32][32]byte{}
+	for i, p := range data.RollupMerkleProof {
+		proof[i] = common.HexToHash(p)
 	}
-	return
-}
-
-func (m *Manager) GetProof(ctx context.Context, depositCnt, networkID uint32) ([MtHeight][bridgectrl.KeyLen]byte, common.Hash, error) {
-	// First, get the root
-	query := fmt.Sprintf("SELECT root FROM mt.root WHERE network = %d ORDER BY deposit_id desc LIMIT 1;", networkID)
-	var root common.Hash
-	err := m.storage.QueryRowTesting(ctx, query, nil).(pgx.Row).Scan(&root)
-	if err != nil {
-		return [32][32]byte{}, common.Hash{}, fmt.Errorf("error getting the root from db: %v", err)
+	frontier := [32][32]byte{}
+	for i, f := range data.Frontier {
+		frontier[i] = common.HexToHash(f)
 	}
-	var siblings [][bridgectrl.KeyLen]byte
-	cur := root
-	// It starts in height-1 because 0 is the level of the leafs
-	for h := int(MtHeight - 1); h >= 0; h-- {
-		left, right, err := m.getNode(ctx, cur, nil)
-		if err != nil {
-			return [32][32]byte{}, common.Hash{}, fmt.Errorf("height: %d, cur: %s, error: %v", h, common.BytesToHash(cur[:]).String(), err)
-		}
-		// This is just a protection but it should never happen
-		if bridgectrl.Hash(left, right) != cur {
-			if bridgectrl.Hash(right, left) == cur {
-				left, right = right, left
-			} else {
-				return [32][32]byte{}, common.Hash{}, fmt.Errorf("DB node children don't match parent")
-			}
-		}
-		/*
-		*        Root                (level h=3 => height=4)
-		*      /     \
-		*	 O5       O6             (level h=2)
-		*	/ \      / \
-		*  O1  O2   O3  O4           (level h=1)
-		*  /\   /\   /\ /\
-		* 0  1 2  3 4 5 6 7 Leafs    (level h=0)
-		* Example 1:
-		* Choose index = 3 => 011 binary
-		* Assuming we are in level 1 => h=1; 1<<h = 010 binary
-		* Now, let's do AND operation => 011&010=010 which is higher than 0 so we need the left sibling (O1)
-		* Example 2:
-		* Choose index = 4 => 100 binary
-		* Assuming we are in level 1 => h=1; 1<<h = 010 binary
-		* Now, let's do AND operation => 100&010=000 which is not higher than 0 so we need the right sibling (O4)
-		* Example 3:
-		* Choose index = 4 => 100 binary
-		* Assuming we are in level 2 => h=2; 1<<h = 100 binary
-		* Now, let's do AND operation => 100&100=100 which is higher than 0 so we need the left sibling (O5)
-		*/
-
-		if depositCnt&(1<<h) > 0 {
-			siblings = append(siblings, left)
-			cur = right
-		} else {
-			siblings = append(siblings, right)
-			cur = left
-		}
-	}
-
-	// We need to invert the siblings to go from leafs to the top
-	for st, en := 0, len(siblings)-1; st < en; st, en = st+1, en-1 {
-		siblings[st], siblings[en] = siblings[en], siblings[st]
-	}
-
-	// Convert slice to fixed-size array
-	var proof [MtHeight][bridgectrl.KeyLen]byte
-	for i := 0; i < len(siblings) && i < MtHeight; i++ {
-		proof[i] = siblings[i]
-	}
-
-	return proof, root, nil
-}
-
-func (m *Manager) getNode(ctx context.Context, parentHash [bridgectrl.KeyLen]byte, dbTx interface{}) (left, right [bridgectrl.KeyLen]byte, err error) {
-	value, err := m.storage.Get(ctx, parentHash[:], dbTx)
-	if err != nil {
-		return left, right, fmt.Errorf("parentHash: %s, error: %v", common.BytesToHash(parentHash[:]).String(), err)
-	}
-	copy(left[:], value[0])
-	copy(right[:], value[1])
-	return left, right, nil
+	root := common.HexToHash(data.Root)
+	return leafHash, root, proof, frontier, nil
 }
