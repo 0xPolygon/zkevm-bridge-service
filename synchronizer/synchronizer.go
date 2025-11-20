@@ -1009,17 +1009,25 @@ func (s *ClientSynchronizer) processForwardLETSovereign(forwardLET etherman.Forw
 			Amount:             forwardLET.NewLeaves[i].Amount,
 			DestinationNetwork: forwardLET.NewLeaves[i].DestinationNetwork,
 			DestinationAddress: forwardLET.NewLeaves[i].DestinationAddress,
-			DepositCount:       initialDepositCount + uint32(i) + 1,
+			DepositCount:       initialDepositCount + uint32(i),
 			BlockID:            forwardLET.BlockID,
+			BlockNumber:        blockNumber,
 			NetworkID:          s.networkID,
 			TxHash:             forwardLET.TxHash,
 			Metadata:           forwardLET.NewLeaves[i].Metadata,
 		}
-		err = s.processDeposit(deposit, blockID, dbTx)
+		depositID, err := s.storage.AddDeposit(s.ctx, &deposit, dbTx)
 		if err != nil {
-			log.Errorf("networkID: %d, error processing deposits. Error: %s. %+v", s.networkID, err.Error(), deposit)
-			return s.rollback(blockNumber, err, dbTx)
+			log.Errorf("networkID: %d, failed to store new deposit locally, BlockNumber: %d, Deposit: %+v err: %v", s.networkID, deposit.BlockNumber, deposit, err)
+			return s.rollback(deposit.BlockNumber, err, dbTx)
 		}
+		deposit.Id = depositID
+		err = s.bridgeCtrl.AddDeposit(s.ctx, &deposit, dbTx)
+		if err != nil {
+			log.Errorf("networkID: %d, failed to store new deposit in the bridge tree, BlockNumber: %d, Deposit: %+v err: %v", s.networkID, deposit.BlockNumber, deposit, err)
+			return s.rollback(deposit.BlockNumber, err, dbTx)
+		}
+		s.metrics.DepositAmount(deposit.Amount)
 	}
 
 	// Check again the state
