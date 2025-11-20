@@ -21,6 +21,7 @@ type Block struct {
 	UnsetClaims     []UnsetClaim
 	SetClaims       []SetClaim
 	BackwardLETs    []BackwardLET
+	ForwardLETs     []ForwardLET
 }
 
 // GlobalExitRoot struct
@@ -140,3 +141,28 @@ type BackwardLET struct {
 	NewDepositCount      uint32
 	NewRoot              common.Hash
 }
+
+// ForwardLET struct
+type ForwardLET struct {
+	BlockID              uint64
+	PreviousDepositCount uint32
+	PreviousRoot         common.Hash
+	NewDepositCount      uint32
+	NewRoot              common.Hash
+	NewRawLeaves         []byte
+	NewLeaves            []LeafData
+	TxHash               common.Hash
+
+}
+
+// LeafData struct
+type LeafData struct {
+	LeafType           uint8
+	OriginNetwork      uint32
+	OriginAddress      common.Address
+	DestinationNetwork uint32
+	DestinationAddress common.Address
+	Amount             *big.Int
+	Metadata           []byte
+}
+

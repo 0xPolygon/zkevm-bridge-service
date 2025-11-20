@@ -29,8 +29,8 @@ func (m migrationTest0020) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 	insertUnSetClaim := `INSERT INTO sync.set_unset_claim(block_id, mainnet_flag, rollup_index, index, global_index, type)
 		VALUES(1, false, 4294967295, 4294967295, '18446744073709551615', 'UNSET');`
 	_, err = db.Exec(insertUnSetClaim)
-
 	assert.NoError(t, err)
+
 	var count uint32
 	selectCount := "SELECT count(*) FROM sync.backward_let"
 	err = db.QueryRow(selectCount).Scan(&count)

@@ -391,3 +391,52 @@ func TestSetMultipleClaimsSovereignEvent(t *testing.T) {
 	assert.Equal(t, false, blocks[0].SetClaims[0].MainnetFlag)
 	assert.Equal(t, uint32(2), blocks[0].SetClaims[0].RollupIndex)
 }
+
+func TestForwardLETSovereignEvent(t *testing.T) {
+	ctx := t.Context()
+	// Set up testing environment
+	etherman, ethBackend, auth, _, _, _, l2BridgeSovereign := newTestingEnv(ctx)
+
+	// Read currentBlock
+	initBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
+	require.NoError(t, err)
+
+	leaves := []bridgel2sovereignchain.AgglayerBridgeL2LeafData {
+		{
+			LeafType: 0,
+			OriginNetwork: 0,
+			OriginAddress: common.Address{},
+			DestinationNetwork: 1,
+			DestinationAddress: common.HexToAddress("0x61A1d716a74fb45d29f148C6C20A2eccabaFD753"),
+			Amount: big.NewInt(1),
+			Metadata: []byte{},
+		},
+		{
+			LeafType: 0,
+			OriginNetwork: 0,
+			OriginAddress: common.Address{},
+			DestinationNetwork: 1,
+			DestinationAddress: common.HexToAddress("0x61A1d716a74fb45d29f148C6C20A2eccabaFD753"),
+			Amount: big.NewInt(1),
+			Metadata: []byte{},
+		},
+	}
+	_, err = l2BridgeSovereign.ForwardLET(auth, leaves, common.Hash{})
+	require.NoError(t, err)
+
+	// Mine the tx in a block
+	ethBackend.Commit()
+
+	// Now read the event
+	finalBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
+	require.NoError(t, err)
+	finalBlockNumber := finalBlock.NumberU64()
+	blocks, _, err := etherman.GetRollupInfoByBlockRange(ctx, initBlock.NumberU64(), &finalBlockNumber)
+	require.NoError(t, err)
+
+	assert.Equal(t, uint32(2), blocks[0].ForwardLETs[0].NewDepositCount)
+	assert.Equal(t, "0x143bf21923fc84104de314e92b560216e80c77c7e50e35d64968fcbc16780987", blocks[0].ForwardLETs[0].NewRoot.String())
+	assert.Equal(t, uint32(0), blocks[0].ForwardLETs[0].PreviousDepositCount)
+	assert.Equal(t, "0x27ae5ba08d7291c96c8cbddcc148bf48a6d68c7974b94356f53754ef6171d757", blocks[0].ForwardLETs[0].PreviousRoot.String())
+	assert.NotEqual(t, common.Hash{}, blocks[0].ForwardLETs[0].TxHash)	
+}

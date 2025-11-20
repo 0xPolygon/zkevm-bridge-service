@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"reflect"
 	"time"
 
 	"github.com/0xPolygon/zkevm-bridge-service/etherman/metrics"
@@ -19,6 +20,7 @@ import (
 	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmglobalexitroot"
 	"github.com/0xPolygon/zkevm-bridge-service/log"
 	ethereum "github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
@@ -152,6 +154,8 @@ const (
 	UnsetClaimOrder EventOrder = "UnsetClaim"
 	// BackwardLETOrder identifies a BackwardLET event
 	BackwardLETOrder EventOrder = "BackwardLET"
+	// ForwardLETOrder identifies a ForwardLET event
+	ForwardLETOrder EventOrder = "ForwardLET"
 	// SetClaimOrder identifies a SetClaim event
 	SetClaimOrder EventOrder = "SetClaim"
 )
@@ -313,6 +317,7 @@ func (etherMan *Client) GetRollupInfoByBlockRange(ctx context.Context, fromBlock
 			updateHashChainValueSignatureHash,
 			updateRemovalHashChainValueSignatureHash,
 			backwardLETSignatureHash,
+			forwardLETSignatureHash,
 			setClaimSignatureHash,
 			updatedUnsetGlobalIndexHashChainSignatureHash,
 		}},
@@ -541,8 +546,8 @@ func (etherMan *Client) processEvent(vLog types.Log, blocks *[]Block, blocksOrde
 		etherMan.logger.Debugf("DetailedClaimEventDetailedClaimEvent event detected. Ignoring...")
 		return nil
 	case forwardLETSignatureHash:
-		etherMan.logger.Debugf("ForwardLET event detected. Ignoring...")
-		return nil
+		etherMan.logger.Debugf("ForwardLET event detected")
+		return etherMan.forwardLETSovereignEvent(vLog, blocks, blocksOrder)
 	case setClaimSignatureHash:
 		etherMan.logger.Debugf("SetClaim event detected")
 		return etherMan.setClaimSovereignEvent(vLog, blocks, blocksOrder)
@@ -1052,4 +1057,88 @@ func (etherMan *Client) backwardLETSovereignEvent(vLog types.Log, blocks *[]Bloc
 	}
 	(*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash] = append((*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash], or)
 	return nil
+}
+
+func (etherMan *Client) forwardLETSovereignEvent(vLog types.Log, blocks *[]Block, blocksOrder *map[common.Hash][]Order) error {
+	forwardLET, err := etherMan.BridgeL2SovereignChain.ParseForwardLET(vLog)
+	if err != nil {
+		return err
+	}
+	var LET ForwardLET
+	LET.NewDepositCount = uint32(forwardLET.NewDepositCount.Uint64()) // nolint:gosec
+	LET.NewRoot = forwardLET.NewRoot
+	LET.PreviousRoot = forwardLET.PreviousRoot
+	LET.PreviousDepositCount = uint32(forwardLET.PreviousDepositCount.Uint64()) // nolint:gosec
+	LET.NewRawLeaves = forwardLET.NewLeaves
+	newLeaves, err := etherMan.decodeForwardLETLeaves(forwardLET.NewLeaves)
+	if err != nil {
+		return err
+	}
+	LET.NewLeaves = newLeaves
+	LET.TxHash = vLog.TxHash
+
+	if len(*blocks) == 0 || ((*blocks)[len(*blocks)-1].BlockHash != vLog.BlockHash || (*blocks)[len(*blocks)-1].BlockNumber != vLog.BlockNumber) {
+		var block = Block{
+			BlockNumber: vLog.BlockNumber,
+			BlockHash:   vLog.BlockHash,
+		}
+		block.ForwardLETs = append(block.ForwardLETs, LET)
+		*blocks = append(*blocks, block)
+	} else if (*blocks)[len(*blocks)-1].BlockHash == vLog.BlockHash && (*blocks)[len(*blocks)-1].BlockNumber == vLog.BlockNumber {
+		(*blocks)[len(*blocks)-1].ForwardLETs = append((*blocks)[len(*blocks)-1].ForwardLETs, LET)
+	} else {
+		etherMan.logger.Error("Error processing ForwardLET event. BlockHash:", vLog.BlockHash, ". BlockNumber: ", vLog.BlockNumber)
+		return fmt.Errorf("error processing ForwardLET event")
+	}
+	or := Order{
+		Name: ForwardLETOrder,
+		Pos:  len((*blocks)[len(*blocks)-1].ForwardLETs) - 1,
+	}
+	(*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash] = append((*blocksOrder)[(*blocks)[len(*blocks)-1].BlockHash], or)
+	return nil
+}
+
+func (etherMan *Client) decodeForwardLETLeaves(rawLeaves []byte) ([]LeafData, error) {
+	// Definimos el tipo tuple[] que corresponde a LeafData[]
+    leafArrayType, err := abi.NewType("tuple[]", "", []abi.ArgumentMarshaling{
+        {Name: "leafType",           Type: "uint8"},
+        {Name: "originNetwork",      Type: "uint32"},
+        {Name: "originAddress",      Type: "address"},
+        {Name: "destinationNetwork", Type: "uint32"},
+        {Name: "destinationAddress", Type: "address"},
+        {Name: "amount",             Type: "uint256"},
+        {Name: "metadata",           Type: "bytes"},
+    })
+    if err != nil {
+        return nil, fmt.Errorf("NewType: %w", err)
+    }
+
+    args := abi.Arguments{
+        {Name: "newLeaves", Type: leafArrayType},
+    }
+
+    decoded, err := args.UnpackValues(rawLeaves)
+    if err != nil {
+        return nil, fmt.Errorf("UnpackValues: %w", err)
+    }
+    if len(decoded) != 1 {
+        return nil, fmt.Errorf("esperado 1 valor top-level, tengo %d", len(decoded))
+    }
+
+    // decoded[0] es un []struct{...} interno del paquete abi
+    v := reflect.ValueOf(decoded[0])
+    if v.Kind() != reflect.Slice {
+        return nil, fmt.Errorf("esperaba slice, tengo %T (kind %s)", decoded[0], v.Kind())
+    }
+
+    leaves := make([]LeafData, v.Len())
+    for i := 0; i < v.Len(); i++ {
+        tupleVal := v.Index(i).Interface()
+
+        // Convertimos el struct interno al nuestro usando abi.ConvertType
+        converted := abi.ConvertType(tupleVal, new(LeafData)).(*LeafData)
+        leaves[i] = *converted
+    }
+
+    return leaves, nil
 }

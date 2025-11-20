@@ -41,6 +41,7 @@ type storageInterface interface {
 	AddRemoveL2GER(ctx context.Context, globalExitRoot etherman.GlobalExitRoot, dbTx interface{}) error
 	AddSyncStatus(ctx context.Context, syncStatus etherman.SyncStatus, dbTx interface{}) error
 	AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) error
+	AddForwardLET(ctx context.Context, forwardLET *etherman.ForwardLET, dbTx interface{}) error
 	DeleteClaimByGlobalIndex(ctx context.Context, globalIndex *big.Int, networkID uint32, dbTx interface{}) error
 	AddUnsetClaim(ctx context.Context, unsetClaim *etherman.UnsetClaim, dbTx interface{}) error
 	AddSetClaim(ctx context.Context, setClaim *etherman.SetClaim, dbTx interface{}) error

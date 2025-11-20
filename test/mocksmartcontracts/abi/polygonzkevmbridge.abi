@@ -315,6 +315,43 @@
 		"inputs": [
 			{
 				"indexed": false,
+				"internalType": "uint256",
+				"name": "previousDepositCount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "previousRoot",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "newDepositCount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes32",
+				"name": "newRoot",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "bytes",
+				"name": "newLeaves",
+				"type": "bytes"
+			}
+		],
+		"name": "ForwardLET",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
 				"internalType": "uint8",
 				"name": "version",
 				"type": "uint8"
@@ -404,19 +441,6 @@
 		],
 		"name": "UpdatedUnsetGlobalIndexHashChain",
 		"type": "event"
-	},
-	{
-		"inputs": [],
-		"name": "BRIDGE_VERSION",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
 	},
 	{
 		"inputs": [],
@@ -596,35 +620,6 @@
 		"name": "bridgeMessageWETH",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "leafHash",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "bytes32[32]",
-				"name": "smtProof",
-				"type": "bytes32[32]"
-			},
-			{
-				"internalType": "uint32",
-				"name": "index",
-				"type": "uint32"
-			}
-		],
-		"name": "calculateRoot",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "pure",
 		"type": "function"
 	},
 	{
@@ -817,6 +812,61 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint8",
+						"name": "leafType",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint32",
+						"name": "originNetwork",
+						"type": "uint32"
+					},
+					{
+						"internalType": "address",
+						"name": "originAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint32",
+						"name": "destinationNetwork",
+						"type": "uint32"
+					},
+					{
+						"internalType": "address",
+						"name": "destinationAddress",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bytes",
+						"name": "metadata",
+						"type": "bytes"
+					}
+				],
+				"internalType": "struct AgglayerBridge.LeafData[]",
+				"name": "newLeaves",
+				"type": "tuple[]"
+			},
+			{
+				"internalType": "bytes32",
+				"name": "expectedLER",
+				"type": "bytes32"
+			}
+		],
+		"name": "forwardLET",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "gasTokenAddress",
 		"outputs": [
@@ -853,55 +903,6 @@
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint8",
-				"name": "leafType",
-				"type": "uint8"
-			},
-			{
-				"internalType": "uint32",
-				"name": "originNetwork",
-				"type": "uint32"
-			},
-			{
-				"internalType": "address",
-				"name": "originAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "uint32",
-				"name": "destinationNetwork",
-				"type": "uint32"
-			},
-			{
-				"internalType": "address",
-				"name": "destinationAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bytes32",
-				"name": "metadataHash",
-				"type": "bytes32"
-			}
-		],
-		"name": "getLeafValue",
-		"outputs": [
-			{
-				"internalType": "bytes32",
-				"name": "",
-				"type": "bytes32"
-			}
-		],
-		"stateMutability": "pure",
 		"type": "function"
 	},
 	{
@@ -997,13 +998,6 @@
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "initialize",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -1134,19 +1128,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "proxiedTokensManager",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "uint256[]",
@@ -1212,40 +1193,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "bytes32",
-				"name": "leafHash",
-				"type": "bytes32"
-			},
-			{
-				"internalType": "bytes32[32]",
-				"name": "smtProof",
-				"type": "bytes32[32]"
-			},
-			{
-				"internalType": "uint32",
-				"name": "index",
-				"type": "uint32"
-			},
-			{
-				"internalType": "bytes32",
-				"name": "root",
-				"type": "bytes32"
-			}
-		],
-		"name": "verifyMerkleProof",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
 		"inputs": [],
 		"name": "version",
 		"outputs": [
@@ -1256,19 +1203,6 @@
 			}
 		],
 		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "wrappedTokenBytecodeStorer",
-		"outputs": [
-			{
-				"internalType": "contract IBytecodeStorer",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{

@@ -24,4 +24,5 @@ type bridgeServiceStorage interface {
 	GetRollupExitLeavesByRoot(ctx context.Context, root common.Hash, dbTx interface{}) ([]etherman.RollupExitLeaf, error)
 	GetPendingDepositsToClaim(ctx context.Context, destAddress common.Address, destNetwork, leafType, limit, offset uint32, fromNetwork int8, dbTx interface{}) ([]*etherman.Deposit, uint64, error)
 	GetSyncStatus(ctx context.Context, dbTx interface{}) ([]*etherman.SyncStatus, error)
+	GetLastComputedRoot(ctx context.Context, networkID uint32, dbTx interface{}) (common.Hash, error)
 }
