@@ -238,6 +238,54 @@ func (_c *storageMock_AddDeposit_Call) RunAndReturn(run func(context.Context, *e
 	return _c
 }
 
+// AddForwardLET provides a mock function with given fields: ctx, forwardLET, dbTx
+func (_m *storageMock) AddForwardLET(ctx context.Context, forwardLET *etherman.ForwardLET, dbTx interface{}) error {
+	ret := _m.Called(ctx, forwardLET, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AddForwardLET")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *etherman.ForwardLET, interface{}) error); ok {
+		r0 = rf(ctx, forwardLET, dbTx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// storageMock_AddForwardLET_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AddForwardLET'
+type storageMock_AddForwardLET_Call struct {
+	*mock.Call
+}
+
+// AddForwardLET is a helper method to define mock.On call
+//   - ctx context.Context
+//   - forwardLET *etherman.ForwardLET
+//   - dbTx interface{}
+func (_e *storageMock_Expecter) AddForwardLET(ctx interface{}, forwardLET interface{}, dbTx interface{}) *storageMock_AddForwardLET_Call {
+	return &storageMock_AddForwardLET_Call{Call: _e.mock.On("AddForwardLET", ctx, forwardLET, dbTx)}
+}
+
+func (_c *storageMock_AddForwardLET_Call) Run(run func(ctx context.Context, forwardLET *etherman.ForwardLET, dbTx interface{})) *storageMock_AddForwardLET_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*etherman.ForwardLET), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *storageMock_AddForwardLET_Call) Return(_a0 error) *storageMock_AddForwardLET_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *storageMock_AddForwardLET_Call) RunAndReturn(run func(context.Context, *etherman.ForwardLET, interface{}) error) *storageMock_AddForwardLET_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AddGlobalExitRoot provides a mock function with given fields: ctx, exitRoot, dbTx
 func (_m *storageMock) AddGlobalExitRoot(ctx context.Context, exitRoot *etherman.GlobalExitRoot, dbTx interface{}) error {
 	ret := _m.Called(ctx, exitRoot, dbTx)

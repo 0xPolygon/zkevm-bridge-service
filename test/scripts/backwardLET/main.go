@@ -23,7 +23,7 @@ const (
 	l2AccHexPrivateKey = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
 	l2NetworkURL       = "http://localhost:8123"
 
-	indexToRemove = 2
+	indexToRemove = 1
 	l2NetworkID = 1
 )
 

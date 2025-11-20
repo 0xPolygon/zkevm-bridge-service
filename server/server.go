@@ -154,6 +154,7 @@ func runRestServer(ctx context.Context, grpcPort, httpPort string) error {
 			"/bridge":                 true,
 			"/tokenwrapped":           true,
 			"/pending-bridges":        true,
+			"/backward-let":           true,
 			"/v2/merkle-proof":        true,
 			"/healthz":                true, // Automatically added by runtime.WithHealthzEndpoint
 		}
