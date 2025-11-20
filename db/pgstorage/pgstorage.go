@@ -940,6 +940,14 @@ func (p *PostgresStorage) AddBackwardLET(ctx context.Context, backwardLET *ether
 	return err
 }
 
+// AddForwardLET adds a new ForwardLET event to the db.
+func (p *PostgresStorage) AddForwardLET(ctx context.Context, forwardLET *etherman.ForwardLET, dbTx interface{}) error {
+	const addExitRootSQL = "INSERT INTO sync.forward_let(block_id, previous_deposit_cnt, previous_root, new_deposit_cnt, new_root, new_raw_leaves) VALUES ($1, $2, $3, $4, $5, $6)"
+	e := p.getExecQuerier(dbTx)
+	_, err := e.Exec(ctx, addExitRootSQL, forwardLET.BlockID, forwardLET.PreviousDepositCount, forwardLET.PreviousRoot, forwardLET.NewDepositCount, forwardLET.NewRoot, forwardLET.NewRawLeaves)
+	return err
+}
+
 // AddSetClaim adds a new SetClaim event to the db.
 func (p *PostgresStorage) AddSetClaim(ctx context.Context, setClaim *etherman.SetClaim, dbTx interface{}) error {
 	return p.addSetUnsetClaim(ctx, "SET", setClaim.BlockID, setClaim.MainnetFlag, setClaim.RollupIndex, setClaim.Index, setClaim.GlobalIndex, dbTx)

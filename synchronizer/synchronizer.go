@@ -613,6 +613,14 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 				if err != nil {
 					return err
 				}
+			case etherman.ForwardLETOrder:
+				if len(blocks[i].ForwardLETs) < element.Pos+1 {
+					return fmt.Errorf("ForwardLET event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
+				err = s.processForwardLETSovereign(blocks[i].ForwardLETs[element.Pos], blockID, blocks[i].BlockNumber, dbTx)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		err = s.storage.Commit(s.ctx, dbTx)
@@ -960,6 +968,82 @@ func (s *ClientSynchronizer) processBackwardLETSovereign(backwardLET etherman.Ba
 	err = s.storage.AddBackwardLET(s.ctx, &backwardLET, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error adding BackwardLET to the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	return nil
+}
+
+func (s *ClientSynchronizer) processForwardLETSovereign(forwardLET etherman.ForwardLET, blockID, blockNumber uint64, dbTx interface{}) error {
+	forwardLET.BlockID = blockID
+	log.Debugf("networkID: %d, Full forwardLET event: %+v", s.networkID, forwardLET)
+	// First check the initial state of the MT
+	depositCnt, err := s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting GetNumberDeposits. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	let, err := s.bridgeCtrl.GetExitRoot(s.ctx, s.networkID, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting localExitTreeRoot from the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	localExitTreeRoot := common.BytesToHash(let)
+	if localExitTreeRoot != forwardLET.PreviousRoot || depositCnt != forwardLET.PreviousDepositCount {
+		err := fmt.Errorf("networkID: %d, error processing forwardLET. PreviousRoot or PreviousDepositCount do not match with the current state. Current localExitTreeRoot: %s, forwardLET.PrevLocalExitTreeRoot: %s, Current depositCnt: %d, forwardLET.PrevDepositCount: %d",
+			s.networkID, localExitTreeRoot.String(), forwardLET.PreviousRoot.String(), depositCnt, forwardLET.PreviousDepositCount)
+		log.Error(err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+
+	// ADD deposits to the MT + the db table
+	initialDepositCount, err := s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting the current depositCount from the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	for i := range forwardLET.NewLeaves {
+		deposit := etherman.Deposit {
+			LeafType:           forwardLET.NewLeaves[i].LeafType,
+			OriginalNetwork:    forwardLET.NewLeaves[i].OriginNetwork,
+			OriginalAddress:    forwardLET.NewLeaves[i].OriginAddress,
+			Amount:             forwardLET.NewLeaves[i].Amount,
+			DestinationNetwork: forwardLET.NewLeaves[i].DestinationNetwork,
+			DestinationAddress: forwardLET.NewLeaves[i].DestinationAddress,
+			DepositCount:       initialDepositCount + uint32(i) + 1,
+			BlockID:            forwardLET.BlockID,
+			NetworkID:          s.networkID,
+			TxHash:             forwardLET.TxHash,
+			Metadata:           forwardLET.NewLeaves[i].Metadata,
+		}
+		err = s.processDeposit(deposit, blockID, dbTx)
+		if err != nil {
+			log.Errorf("networkID: %d, error processing deposits. Error: %s. %+v", s.networkID, err.Error(), deposit)
+			return s.rollback(blockNumber, err, dbTx)
+		}
+	}
+
+	// Check again the state
+	depositCnt, err = s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting GetNumberDeposits. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	let, err = s.bridgeCtrl.GetExitRoot(s.ctx, s.networkID, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting localExitTreeRoot from the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	localExitTreeRoot = common.BytesToHash(let)
+	if localExitTreeRoot != forwardLET.NewRoot || depositCnt != forwardLET.NewDepositCount {
+		err := fmt.Errorf("networkID: %d, error processing forwardLET. NewRoot or NewDepositCount do not match with the current state after reseting the state. Current localExitTreeRoot: %s, forwardLET.NewRoot: %s, Current depositCnt: %d, forwardLET.NewDepositCount: %d",
+			s.networkID, localExitTreeRoot.String(), forwardLET.NewRoot.String(), depositCnt, forwardLET.NewDepositCount)
+		log.Error(err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// Store the forwardLET event in the db
+	err = s.storage.AddForwardLET(s.ctx, &forwardLET, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error adding forwardLET to the state. Error: %v", s.networkID, err)
 		return s.rollback(blockNumber, err, dbTx)
 	}
 	return nil
