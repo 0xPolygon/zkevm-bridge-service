@@ -976,7 +976,7 @@ func (p *PostgresStorage) DeleteClaimByGlobalIndex(ctx context.Context, globalIn
 func (p *PostgresStorage) GetLastComputedRoot(ctx context.Context, networkID uint32, dbTx interface{}) (common.Hash, error) {
 	const query = "SELECT root FROM mt.root WHERE network = $1 ORDER BY deposit_id desc LIMIT 1;"
 	var root common.Hash
-	err := p.getExecQuerier(dbTx).QueryRow(ctx, query, networkID).(pgx.Row).Scan(&root)
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, query, networkID).Scan(&root)
 	if err != nil {
 		return common.Hash{}, fmt.Errorf("error getting the root from db: %v", err)
 	}

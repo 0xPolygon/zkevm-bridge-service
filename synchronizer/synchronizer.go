@@ -1009,7 +1009,7 @@ func (s *ClientSynchronizer) processForwardLETSovereign(forwardLET etherman.Forw
 			Amount:             forwardLET.NewLeaves[i].Amount,
 			DestinationNetwork: forwardLET.NewLeaves[i].DestinationNetwork,
 			DestinationAddress: forwardLET.NewLeaves[i].DestinationAddress,
-			DepositCount:       initialDepositCount + uint32(i),
+			DepositCount:       initialDepositCount + uint32(i), // nolint:gosec
 			BlockID:            forwardLET.BlockID,
 			BlockNumber:        blockNumber,
 			NetworkID:          s.networkID,

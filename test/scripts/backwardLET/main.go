@@ -94,6 +94,9 @@ func main() {
 	}
 	var smcRoot common.Hash
 	smcRoot, err = br.GetRoot(&bind.CallOpts{Pending: false})
+	if err != nil {
+		log.Fatal("Error: ", err)
+	}
 	log.Debug("root from smc: ", root)
 	if smcRoot != root {
 		log.Fatalf("Error: invalid root from smart contract. StoredRoot: ", root, ". SmcRoot: ", smcRoot)
