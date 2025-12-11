@@ -18,10 +18,11 @@ type bridgeServiceStorage interface {
 	GetClaims(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Claim, error)
 	GetClaimCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error)
 	GetDeposit(ctx context.Context, depositCnt, networkID uint32, dbTx interface{}) (*etherman.Deposit, error)
-	GetDeposits(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error)
-	GetDepositCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error)
+	GetDeposits(ctx context.Context, destAddr string, networkID, destinationNetworkID *uint32, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error)
+	GetDepositCount(ctx context.Context, destAddr string, networkID, destinationNetworkID *uint32, dbTx interface{}) (uint64, error)
 	GetTokenWrapped(ctx context.Context, originalNetwork uint32, originalTokenAddress common.Address, dbTx interface{}) (*etherman.TokenWrapped, error)
 	GetRollupExitLeavesByRoot(ctx context.Context, root common.Hash, dbTx interface{}) ([]etherman.RollupExitLeaf, error)
 	GetPendingDepositsToClaim(ctx context.Context, destAddress common.Address, destNetwork, leafType, limit, offset uint32, fromNetwork int8, dbTx interface{}) ([]*etherman.Deposit, uint64, error)
 	GetSyncStatus(ctx context.Context, dbTx interface{}) ([]*etherman.SyncStatus, error)
+	GetLastComputedRoot(ctx context.Context, networkID uint32, dbTx interface{}) (common.Hash, error)
 }

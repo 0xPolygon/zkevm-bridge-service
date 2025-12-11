@@ -2,6 +2,7 @@ package pgstorage
 
 import (
 	"context"
+	"math"
 	"math/big"
 	"testing"
 	"time"
@@ -263,6 +264,182 @@ func TestGetPendingDepositsToClaim(t *testing.T) {
 	assert.Equal(t, true, deposits[0].ReadyForClaim)
 }
 
+func TestResetDeposits(t *testing.T) {
+	data := `INSERT INTO sync.block
+	(id, block_num, block_hash, network_id)
+	VALUES(1, 1, decode('5C7831','hex'), 0);
+	INSERT INTO sync.block
+	(id, block_num, block_hash, network_id)
+	VALUES(2, 1, decode('6C7831','hex'), 1);
+	
+	INSERT INTO sync.deposit
+	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
+	VALUES(0, 0, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 1, decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 1, 0, decode('CBE7A77275EE22780BB94EA900D42CEF88F5A2F0E1A7C76696556D7FF17767E6','hex'), decode('','hex'), 1, true);
+	INSERT INTO sync.deposit
+	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
+	VALUES(0, 0, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 1, decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 1, 1, decode('6282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F','hex'), decode('','hex'), 2, true);
+	INSERT INTO sync.deposit
+	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
+	VALUES(0, 0, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 1, decode('F38FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 1, 2, decode('6282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F','hex'), decode('','hex'), 3, true);
+	INSERT INTO sync.claim
+	(network_id, "index", orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag)
+	VALUES(1, 0, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 1, decode('BF2C816AB6F8A8F5F9DDA6EE97D433CC841E69B5669A5CDF499826FA4B99C179','hex'), 0, true);
+	INSERT INTO sync.claim
+	(network_id, "index", orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag)
+	VALUES(1, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 1, decode('BF2C816AB6F8A8F5F9DDA6EE97D433CC841E69B5669A5CDF499826FA4B99C179','hex'), 0, true);
+
+	INSERT INTO sync.deposit
+	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
+	VALUES(0, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 0, decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, 0, decode('ABE7A77275EE22780BB94EA900D42CEF88F5A2F0E1A7C76696556D7FF17767E6','hex'), decode('','hex'), 4, true);
+	INSERT INTO sync.deposit
+	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
+	VALUES(0, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 0, decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, 1, decode('A282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F','hex'), decode('','hex'), 5, true);
+	INSERT INTO sync.deposit
+	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
+	VALUES(0, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 0, decode('F38FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, 2, decode('B282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F','hex'), decode('','hex'), 6, true);
+	INSERT INTO sync.claim
+	(network_id, "index", orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag)
+	VALUES(0, 0, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, decode('CF2C816AB6F8A8F5F9DDA6EE97D433CC841E69B5669A5CDF499826FA4B99C179','hex'), 0, true);
+	INSERT INTO sync.claim
+	(network_id, "index", orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag)
+	VALUES(0, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 2, decode('DF2C816AB6F8A8F5F9DDA6EE97D433CC841E69B5669A5CDF499826FA4B99C179','hex'), 0, true);
+	`
+	dbCfg := NewConfigFromEnv()
+	ctx := context.Background()
+	err := InitOrReset(ctx, dbCfg)
+	require.NoError(t, err)
+
+	store, err := NewPostgresStorage(ctx, dbCfg)
+	require.NoError(t, err)
+
+	_, err = store.Exec(ctx, data)
+	require.NoError(t, err)
+
+
+	err = store.ResetDeposits(ctx, 1, 0, nil)
+	require.Error(t, err)
+	d, err := store.GetNumberDeposits(ctx, 1, 1, nil)
+	require.NoError(t, err)
+	assert.Equal(t, uint32(3), d)
+	err = store.ResetDeposits(ctx, 1, 1, nil)
+	require.NoError(t, err)
+	d, err = store.GetNumberDeposits(ctx, 1, 1, nil)
+	require.NoError(t, err)
+	assert.Equal(t, uint32(1), d)
+}
+
+func TestAddBackwardLET(t *testing.T) {
+	data := `INSERT INTO sync.block
+	(id, block_num, block_hash, network_id)
+	VALUES(1, 1, decode('5C7831','hex'), 0);
+	`
+	dbCfg := NewConfigFromEnv()
+	ctx := context.Background()
+	err := InitOrReset(ctx, dbCfg)
+	require.NoError(t, err)
+
+	store, err := NewPostgresStorage(ctx, dbCfg)
+	require.NoError(t, err)
+
+	_, err = store.Exec(ctx, data)
+	require.NoError(t, err)
+
+	bLET := &etherman.BackwardLET{
+		BlockID: 1,
+    	PreviousDepositCount: 3,
+    	PreviousRoot: common.HexToHash("0x6282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F"),
+    	NewDepositCount: 1,
+    	NewRoot: common.HexToHash("0xAA82FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEECC"),
+	}
+	err = store.AddBackwardLET(ctx, bLET, nil)
+	require.NoError(t, err)
+
+	var count uint32
+	selectCount := "SELECT count(*) FROM sync.backward_let"
+	err = store.QueryRow(ctx, selectCount).Scan(&count)
+	assert.NoError(t, err)
+	assert.Equal(t, uint32(1), count)
+}
+
+func TestAddForwardLET(t *testing.T) {
+	data := `INSERT INTO sync.block
+	(id, block_num, block_hash, network_id)
+	VALUES(1, 1, decode('5C7831','hex'), 0);
+	`
+	dbCfg := NewConfigFromEnv()
+	ctx := context.Background()
+	err := InitOrReset(ctx, dbCfg)
+	require.NoError(t, err)
+
+	store, err := NewPostgresStorage(ctx, dbCfg)
+	require.NoError(t, err)
+
+	_, err = store.Exec(ctx, data)
+	require.NoError(t, err)
+
+	fLET := &etherman.ForwardLET{
+		BlockID: 1,
+    	PreviousDepositCount: 3,
+    	PreviousRoot: common.HexToHash("0x6282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F"),
+    	NewDepositCount: 1,
+    	NewRoot: common.HexToHash("0xAA82FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEECC"),
+		NewRawLeaves: []byte("Random bytes to fill the db field"),
+	}
+	err = store.AddForwardLET(ctx, fLET, nil)
+	require.NoError(t, err)
+
+	var count uint32
+	selectCount := "SELECT count(*) FROM sync.forward_let"
+	err = store.QueryRow(ctx, selectCount).Scan(&count)
+	assert.NoError(t, err)
+	assert.Equal(t, uint32(1), count)
+}
+
+func TestAddSetUnsetClaim(t *testing.T) {
+	data := `INSERT INTO sync.block
+	(id, block_num, block_hash, network_id)
+	VALUES(1, 1, decode('5C7831','hex'), 0);
+	`
+	dbCfg := NewConfigFromEnv()
+	ctx := context.Background()
+	err := InitOrReset(ctx, dbCfg)
+	require.NoError(t, err)
+
+	store, err := NewPostgresStorage(ctx, dbCfg)
+	require.NoError(t, err)
+
+	_, err = store.Exec(ctx, data)
+	require.NoError(t, err)
+
+	globalIndex, _ := big.NewInt(0).SetString("18446744073709551615", 0)
+	setClaim := &etherman.SetClaim{
+		BlockID: 1,
+    	MainnetFlag: false,
+    	RollupIndex: math.MaxUint32,
+    	Index: math.MaxUint32,
+    	GlobalIndex: globalIndex,
+	}
+	err = store.AddSetClaim(ctx, setClaim, nil)
+	require.NoError(t, err)
+
+	globalIndex, _ = big.NewInt(0).SetString("18446744073709551627", 0)
+	unsetClaim := &etherman.UnsetClaim{
+		BlockID: 1,
+    	MainnetFlag: true,
+    	RollupIndex: 0,
+    	Index: 11,
+    	GlobalIndex: globalIndex,
+	}
+	err = store.AddUnsetClaim(ctx, unsetClaim, nil)
+	require.NoError(t, err)
+
+	var count uint32
+	selectCount := "SELECT count(*) FROM sync.set_unset_claim"
+	err = store.QueryRow(ctx, selectCount).Scan(&count)
+	assert.NoError(t, err)
+	assert.Equal(t, uint32(2), count)
+}
+
 func TestAddSyncStatus(t *testing.T) {
 	store := createStore(t)
 	ctx := context.Background()
@@ -313,4 +490,50 @@ func TestAddSyncStatus(t *testing.T) {
 	assert.Equal(t, uint32(100), status[2].Percentage)
 	assert.Equal(t, uint64(0), status[2].RemainingBlocks)
 	assert.Equal(t, true, status[2].Synced)
+}
+
+func TestDeleteClaimByGlobalIndex(t *testing.T) {
+	data := `INSERT INTO sync.block
+	(id, block_num, block_hash, network_id)
+	VALUES(1, 1, decode('5C7831','hex'), 0);
+	
+	INSERT INTO sync.deposit
+	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
+	VALUES(0, 0, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 1, decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 1, 0, decode('CBE7A77275EE22780BB94EA900D42CEF88F5A2F0E1A7C76696556D7FF17767E6','hex'), decode('','hex'), 1, true);
+	INSERT INTO sync.deposit
+	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
+	VALUES(0, 0, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 1, decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 1, 1, decode('6282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F','hex'), decode('','hex'), 2, true);
+	INSERT INTO sync.deposit
+	(leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, id, ready_for_claim)
+	VALUES(0, 0, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', 1, decode('F38FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 1, 2, decode('6282FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEE1F','hex'), decode('','hex'), 3, true);
+	INSERT INTO sync.claim
+	(network_id, "index", orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag, global_index)
+	VALUES(1, 0, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 1, decode('BF2C816AB6F8A8F5F9DDA6EE97D433CC841E69B5669A5CDF499826FA4B99C179','hex'), 0, true, 12331);
+	INSERT INTO sync.claim
+	(network_id, "index", orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag, global_index)
+	VALUES(1, 1, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 1, decode('BF2C816AB6F8A8F5F9DDA6EE97D433CC841E69B5669A5CDF499826FA4B99C179','hex'), 0, true, 18446744073709551616);
+	INSERT INTO sync.claim
+	(network_id, "index", orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag, global_index)
+	VALUES(1, 2, 0, decode('0000000000000000000000000000000000000000','hex'), '90000000000000000', decode('F39FD6E51AAD88F6F4CE6AB8827279CFFFB92266','hex'), 1, decode('BF2C816AB6F8A8F5F9DDA6EE97D433CC841E69B5669A5CDF499826FA4B99C179','hex'), 0, true, 5432312);
+	`
+	dbCfg := NewConfigFromEnv()
+	ctx := context.Background()
+	err := InitOrReset(ctx, dbCfg)
+	require.NoError(t, err)
+
+	store, err := NewPostgresStorage(ctx, dbCfg)
+	require.NoError(t, err)
+
+	_, err = store.Exec(ctx, data)
+	require.NoError(t, err)
+	
+	globalIndex, _ := big.NewInt(0).SetString("18446744073709551616", 0)
+	err = store.DeleteClaimByGlobalIndex(ctx, globalIndex, 1, nil)
+	require.NoError(t, err)
+
+	var count uint32
+	selectCount := "SELECT count(*) FROM sync.claim"
+	err = store.QueryRow(ctx, selectCount).Scan(&count)
+	assert.NoError(t, err)
+	assert.Equal(t, uint32(2), count)
 }

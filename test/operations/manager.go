@@ -1047,3 +1047,24 @@ func (m *Manager) RemoveL2GER(ctx context.Context, l2GERManagerAddr common.Addre
 	log.Info("Remove gers transaction: ", tx.Hash())
 	return m.WaitExitRootToBeSynced(ctx, globalExitRoot, 0, networkID)
 }
+
+func (m *Manager) GetBackwardLETData(ctx context.Context, depositCnt, networkID uint32) (common.Hash, common.Hash, [32][32]byte, [32][32]byte, error) {
+	data, err := m.bridgeService.GetBackwardLETData(ctx, &pb.GetBackwardLETDataRequest{
+		NetId:      networkID,
+		DepositCnt: depositCnt,
+	})
+	if err != nil {
+		return common.Hash{}, common.Hash{}, [32][32]byte{}, [32][32]byte{}, err
+	}
+	leafHash := common.HexToHash(data.LeafHash)
+	proof := [32][32]byte{}
+	for i, p := range data.RollupMerkleProof {
+		proof[i] = common.HexToHash(p)
+	}
+	frontier := [32][32]byte{}
+	for i, f := range data.Frontier {
+		frontier[i] = common.HexToHash(f)
+	}
+	root := common.HexToHash(data.Root)
+	return leafHash, root, proof, frontier, nil
+}

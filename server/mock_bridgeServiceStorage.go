@@ -328,9 +328,9 @@ func (_c *bridgeServiceStorageMock_GetDeposit_Call) RunAndReturn(run func(contex
 	return _c
 }
 
-// GetDepositCount provides a mock function with given fields: ctx, destAddr, dbTx
-func (_m *bridgeServiceStorageMock) GetDepositCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error) {
-	ret := _m.Called(ctx, destAddr, dbTx)
+// GetDepositCount provides a mock function with given fields: ctx, destAddr, networkID, destinationNetworkID, dbTx
+func (_m *bridgeServiceStorageMock) GetDepositCount(ctx context.Context, destAddr string, networkID *uint32, destinationNetworkID *uint32, dbTx interface{}) (uint64, error) {
+	ret := _m.Called(ctx, destAddr, networkID, destinationNetworkID, dbTx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetDepositCount")
@@ -338,17 +338,17 @@ func (_m *bridgeServiceStorageMock) GetDepositCount(ctx context.Context, destAdd
 
 	var r0 uint64
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, interface{}) (uint64, error)); ok {
-		return rf(ctx, destAddr, dbTx)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uint32, *uint32, interface{}) (uint64, error)); ok {
+		return rf(ctx, destAddr, networkID, destinationNetworkID, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, interface{}) uint64); ok {
-		r0 = rf(ctx, destAddr, dbTx)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uint32, *uint32, interface{}) uint64); ok {
+		r0 = rf(ctx, destAddr, networkID, destinationNetworkID, dbTx)
 	} else {
 		r0 = ret.Get(0).(uint64)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, interface{}) error); ok {
-		r1 = rf(ctx, destAddr, dbTx)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *uint32, *uint32, interface{}) error); ok {
+		r1 = rf(ctx, destAddr, networkID, destinationNetworkID, dbTx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -364,14 +364,16 @@ type bridgeServiceStorageMock_GetDepositCount_Call struct {
 // GetDepositCount is a helper method to define mock.On call
 //   - ctx context.Context
 //   - destAddr string
+//   - networkID *uint32
+//   - destinationNetworkID *uint32
 //   - dbTx interface{}
-func (_e *bridgeServiceStorageMock_Expecter) GetDepositCount(ctx interface{}, destAddr interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetDepositCount_Call {
-	return &bridgeServiceStorageMock_GetDepositCount_Call{Call: _e.mock.On("GetDepositCount", ctx, destAddr, dbTx)}
+func (_e *bridgeServiceStorageMock_Expecter) GetDepositCount(ctx interface{}, destAddr interface{}, networkID interface{}, destinationNetworkID interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetDepositCount_Call {
+	return &bridgeServiceStorageMock_GetDepositCount_Call{Call: _e.mock.On("GetDepositCount", ctx, destAddr, networkID, destinationNetworkID, dbTx)}
 }
 
-func (_c *bridgeServiceStorageMock_GetDepositCount_Call) Run(run func(ctx context.Context, destAddr string, dbTx interface{})) *bridgeServiceStorageMock_GetDepositCount_Call {
+func (_c *bridgeServiceStorageMock_GetDepositCount_Call) Run(run func(ctx context.Context, destAddr string, networkID *uint32, destinationNetworkID *uint32, dbTx interface{})) *bridgeServiceStorageMock_GetDepositCount_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(interface{}))
+		run(args[0].(context.Context), args[1].(string), args[2].(*uint32), args[3].(*uint32), args[4].(interface{}))
 	})
 	return _c
 }
@@ -381,7 +383,7 @@ func (_c *bridgeServiceStorageMock_GetDepositCount_Call) Return(_a0 uint64, _a1 
 	return _c
 }
 
-func (_c *bridgeServiceStorageMock_GetDepositCount_Call) RunAndReturn(run func(context.Context, string, interface{}) (uint64, error)) *bridgeServiceStorageMock_GetDepositCount_Call {
+func (_c *bridgeServiceStorageMock_GetDepositCount_Call) RunAndReturn(run func(context.Context, string, *uint32, *uint32, interface{}) (uint64, error)) *bridgeServiceStorageMock_GetDepositCount_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -445,9 +447,9 @@ func (_c *bridgeServiceStorageMock_GetDepositCountByRoot_Call) RunAndReturn(run 
 	return _c
 }
 
-// GetDeposits provides a mock function with given fields: ctx, destAddr, limit, offset, dbTx
-func (_m *bridgeServiceStorageMock) GetDeposits(ctx context.Context, destAddr string, limit uint32, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error) {
-	ret := _m.Called(ctx, destAddr, limit, offset, dbTx)
+// GetDeposits provides a mock function with given fields: ctx, destAddr, networkID, destinationNetworkID, limit, offset, dbTx
+func (_m *bridgeServiceStorageMock) GetDeposits(ctx context.Context, destAddr string, networkID *uint32, destinationNetworkID *uint32, limit uint32, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error) {
+	ret := _m.Called(ctx, destAddr, networkID, destinationNetworkID, limit, offset, dbTx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetDeposits")
@@ -455,19 +457,19 @@ func (_m *bridgeServiceStorageMock) GetDeposits(ctx context.Context, destAddr st
 
 	var r0 []*etherman.Deposit
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, uint32, uint32, interface{}) ([]*etherman.Deposit, error)); ok {
-		return rf(ctx, destAddr, limit, offset, dbTx)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uint32, *uint32, uint32, uint32, interface{}) ([]*etherman.Deposit, error)); ok {
+		return rf(ctx, destAddr, networkID, destinationNetworkID, limit, offset, dbTx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, uint32, uint32, interface{}) []*etherman.Deposit); ok {
-		r0 = rf(ctx, destAddr, limit, offset, dbTx)
+	if rf, ok := ret.Get(0).(func(context.Context, string, *uint32, *uint32, uint32, uint32, interface{}) []*etherman.Deposit); ok {
+		r0 = rf(ctx, destAddr, networkID, destinationNetworkID, limit, offset, dbTx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*etherman.Deposit)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, uint32, uint32, interface{}) error); ok {
-		r1 = rf(ctx, destAddr, limit, offset, dbTx)
+	if rf, ok := ret.Get(1).(func(context.Context, string, *uint32, *uint32, uint32, uint32, interface{}) error); ok {
+		r1 = rf(ctx, destAddr, networkID, destinationNetworkID, limit, offset, dbTx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -483,16 +485,18 @@ type bridgeServiceStorageMock_GetDeposits_Call struct {
 // GetDeposits is a helper method to define mock.On call
 //   - ctx context.Context
 //   - destAddr string
+//   - networkID *uint32
+//   - destinationNetworkID *uint32
 //   - limit uint32
 //   - offset uint32
 //   - dbTx interface{}
-func (_e *bridgeServiceStorageMock_Expecter) GetDeposits(ctx interface{}, destAddr interface{}, limit interface{}, offset interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetDeposits_Call {
-	return &bridgeServiceStorageMock_GetDeposits_Call{Call: _e.mock.On("GetDeposits", ctx, destAddr, limit, offset, dbTx)}
+func (_e *bridgeServiceStorageMock_Expecter) GetDeposits(ctx interface{}, destAddr interface{}, networkID interface{}, destinationNetworkID interface{}, limit interface{}, offset interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetDeposits_Call {
+	return &bridgeServiceStorageMock_GetDeposits_Call{Call: _e.mock.On("GetDeposits", ctx, destAddr, networkID, destinationNetworkID, limit, offset, dbTx)}
 }
 
-func (_c *bridgeServiceStorageMock_GetDeposits_Call) Run(run func(ctx context.Context, destAddr string, limit uint32, offset uint32, dbTx interface{})) *bridgeServiceStorageMock_GetDeposits_Call {
+func (_c *bridgeServiceStorageMock_GetDeposits_Call) Run(run func(ctx context.Context, destAddr string, networkID *uint32, destinationNetworkID *uint32, limit uint32, offset uint32, dbTx interface{})) *bridgeServiceStorageMock_GetDeposits_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(uint32), args[3].(uint32), args[4].(interface{}))
+		run(args[0].(context.Context), args[1].(string), args[2].(*uint32), args[3].(*uint32), args[4].(uint32), args[5].(uint32), args[6].(interface{}))
 	})
 	return _c
 }
@@ -502,7 +506,7 @@ func (_c *bridgeServiceStorageMock_GetDeposits_Call) Return(_a0 []*etherman.Depo
 	return _c
 }
 
-func (_c *bridgeServiceStorageMock_GetDeposits_Call) RunAndReturn(run func(context.Context, string, uint32, uint32, interface{}) ([]*etherman.Deposit, error)) *bridgeServiceStorageMock_GetDeposits_Call {
+func (_c *bridgeServiceStorageMock_GetDeposits_Call) RunAndReturn(run func(context.Context, string, *uint32, *uint32, uint32, uint32, interface{}) ([]*etherman.Deposit, error)) *bridgeServiceStorageMock_GetDeposits_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -563,6 +567,66 @@ func (_c *bridgeServiceStorageMock_GetL1ExitRootByGER_Call) Return(_a0 *etherman
 }
 
 func (_c *bridgeServiceStorageMock_GetL1ExitRootByGER_Call) RunAndReturn(run func(context.Context, common.Hash, interface{}) (*etherman.GlobalExitRoot, error)) *bridgeServiceStorageMock_GetL1ExitRootByGER_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetLastComputedRoot provides a mock function with given fields: ctx, networkID, dbTx
+func (_m *bridgeServiceStorageMock) GetLastComputedRoot(ctx context.Context, networkID uint32, dbTx interface{}) (common.Hash, error) {
+	ret := _m.Called(ctx, networkID, dbTx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLastComputedRoot")
+	}
+
+	var r0 common.Hash
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, interface{}) (common.Hash, error)); ok {
+		return rf(ctx, networkID, dbTx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uint32, interface{}) common.Hash); ok {
+		r0 = rf(ctx, networkID, dbTx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(common.Hash)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uint32, interface{}) error); ok {
+		r1 = rf(ctx, networkID, dbTx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// bridgeServiceStorageMock_GetLastComputedRoot_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLastComputedRoot'
+type bridgeServiceStorageMock_GetLastComputedRoot_Call struct {
+	*mock.Call
+}
+
+// GetLastComputedRoot is a helper method to define mock.On call
+//   - ctx context.Context
+//   - networkID uint32
+//   - dbTx interface{}
+func (_e *bridgeServiceStorageMock_Expecter) GetLastComputedRoot(ctx interface{}, networkID interface{}, dbTx interface{}) *bridgeServiceStorageMock_GetLastComputedRoot_Call {
+	return &bridgeServiceStorageMock_GetLastComputedRoot_Call{Call: _e.mock.On("GetLastComputedRoot", ctx, networkID, dbTx)}
+}
+
+func (_c *bridgeServiceStorageMock_GetLastComputedRoot_Call) Run(run func(ctx context.Context, networkID uint32, dbTx interface{})) *bridgeServiceStorageMock_GetLastComputedRoot_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint32), args[2].(interface{}))
+	})
+	return _c
+}
+
+func (_c *bridgeServiceStorageMock_GetLastComputedRoot_Call) Return(_a0 common.Hash, _a1 error) *bridgeServiceStorageMock_GetLastComputedRoot_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *bridgeServiceStorageMock_GetLastComputedRoot_Call) RunAndReturn(run func(context.Context, uint32, interface{}) (common.Hash, error)) *bridgeServiceStorageMock_GetLastComputedRoot_Call {
 	_c.Call.Return(run)
 	return _c
 }

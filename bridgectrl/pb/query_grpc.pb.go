@@ -31,6 +31,7 @@ const (
 	BridgeService_GetClaims_FullMethodName                = "/bridge.v1.BridgeService/GetClaims"
 	BridgeService_GetTokenWrapped_FullMethodName          = "/bridge.v1.BridgeService/GetTokenWrapped"
 	BridgeService_GetPendingBridgesToClaim_FullMethodName = "/bridge.v1.BridgeService/GetPendingBridgesToClaim"
+	BridgeService_GetBackwardLETData_FullMethodName       = "/bridge.v1.BridgeService/GetBackwardLETData"
 	BridgeService_GetProofV2_FullMethodName               = "/bridge.v1.BridgeService/GetProofV2"
 )
 
@@ -57,6 +58,8 @@ type BridgeServiceClient interface {
 	GetTokenWrapped(ctx context.Context, in *GetTokenWrappedRequest, opts ...grpc.CallOption) (*GetTokenWrappedResponse, error)
 	// / Get pending bridges to claim by the destination address, destination network and leaf type in L1 and L2's
 	GetPendingBridgesToClaim(ctx context.Context, in *GetPendingBridgesRequest, opts ...grpc.CallOption) (*GetBridgesResponse, error)
+	// / Get BackwardLET data for L2 sovereign networks
+	GetBackwardLETData(ctx context.Context, in *GetBackwardLETDataRequest, opts ...grpc.CallOption) (*GetBackwardLETDataResponse, error)
 	// / Get the merkle proof for the specific deposit. It is compatible with Apps Team bridge
 	GetProofV2(ctx context.Context, in *GetProofV2Request, opts ...grpc.CallOption) (*GetProofResponse, error)
 }
@@ -150,6 +153,15 @@ func (c *bridgeServiceClient) GetPendingBridgesToClaim(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *bridgeServiceClient) GetBackwardLETData(ctx context.Context, in *GetBackwardLETDataRequest, opts ...grpc.CallOption) (*GetBackwardLETDataResponse, error) {
+	out := new(GetBackwardLETDataResponse)
+	err := c.cc.Invoke(ctx, BridgeService_GetBackwardLETData_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *bridgeServiceClient) GetProofV2(ctx context.Context, in *GetProofV2Request, opts ...grpc.CallOption) (*GetProofResponse, error) {
 	out := new(GetProofResponse)
 	err := c.cc.Invoke(ctx, BridgeService_GetProofV2_FullMethodName, in, out, opts...)
@@ -182,6 +194,8 @@ type BridgeServiceServer interface {
 	GetTokenWrapped(context.Context, *GetTokenWrappedRequest) (*GetTokenWrappedResponse, error)
 	// / Get pending bridges to claim by the destination address, destination network and leaf type in L1 and L2's
 	GetPendingBridgesToClaim(context.Context, *GetPendingBridgesRequest) (*GetBridgesResponse, error)
+	// / Get BackwardLET data for L2 sovereign networks
+	GetBackwardLETData(context.Context, *GetBackwardLETDataRequest) (*GetBackwardLETDataResponse, error)
 	// / Get the merkle proof for the specific deposit. It is compatible with Apps Team bridge
 	GetProofV2(context.Context, *GetProofV2Request) (*GetProofResponse, error)
 	mustEmbedUnimplementedBridgeServiceServer()
@@ -217,6 +231,9 @@ func (UnimplementedBridgeServiceServer) GetTokenWrapped(context.Context, *GetTok
 }
 func (UnimplementedBridgeServiceServer) GetPendingBridgesToClaim(context.Context, *GetPendingBridgesRequest) (*GetBridgesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetPendingBridgesToClaim not implemented")
+}
+func (UnimplementedBridgeServiceServer) GetBackwardLETData(context.Context, *GetBackwardLETDataRequest) (*GetBackwardLETDataResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetBackwardLETData not implemented")
 }
 func (UnimplementedBridgeServiceServer) GetProofV2(context.Context, *GetProofV2Request) (*GetProofResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetProofV2 not implemented")
@@ -396,6 +413,24 @@ func _BridgeService_GetPendingBridgesToClaim_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _BridgeService_GetBackwardLETData_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetBackwardLETDataRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(BridgeServiceServer).GetBackwardLETData(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: BridgeService_GetBackwardLETData_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(BridgeServiceServer).GetBackwardLETData(ctx, req.(*GetBackwardLETDataRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _BridgeService_GetProofV2_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetProofV2Request)
 	if err := dec(in); err != nil {
@@ -456,6 +491,10 @@ var BridgeService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetPendingBridgesToClaim",
 			Handler:    _BridgeService_GetPendingBridgesToClaim_Handler,
+		},
+		{
+			MethodName: "GetBackwardLETData",
+			Handler:    _BridgeService_GetBackwardLETData_Handler,
 		},
 		{
 			MethodName: "GetProofV2",

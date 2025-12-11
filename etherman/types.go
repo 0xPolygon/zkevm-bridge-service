@@ -18,7 +18,10 @@ type Block struct {
 	Claims          []Claim
 	Tokens          []TokenWrapped
 	VerifiedBatches []VerifiedBatch
-	ActivateEtrog   []bool
+	UnsetClaims     []UnsetClaim
+	SetClaims       []SetClaim
+	BackwardLETs    []BackwardLET
+	ForwardLETs     []ForwardLET
 }
 
 // GlobalExitRoot struct
@@ -110,3 +113,56 @@ type SyncStatus struct {
 	RemainingBlocks uint64
 	Synced          bool
 }
+
+// UnsetClaim struct
+type UnsetClaim struct {
+	BlockID     uint64
+	MainnetFlag bool
+	RollupIndex uint32
+	Index       uint32
+	GlobalIndex *big.Int
+}
+
+// SetClaim struct
+type SetClaim struct {
+	BlockID     uint64
+	MainnetFlag bool
+	RollupIndex uint32
+	Index       uint32
+	GlobalIndex *big.Int
+	TxHash      common.Hash
+}
+
+// BackwardLET struct
+type BackwardLET struct {
+	BlockID              uint64
+	PreviousDepositCount uint32
+	PreviousRoot         common.Hash
+	NewDepositCount      uint32
+	NewRoot              common.Hash
+}
+
+// ForwardLET struct
+type ForwardLET struct {
+	BlockID              uint64
+	PreviousDepositCount uint32
+	PreviousRoot         common.Hash
+	NewDepositCount      uint32
+	NewRoot              common.Hash
+	NewRawLeaves         []byte
+	NewLeaves            []LeafData
+	TxHash               common.Hash
+
+}
+
+// LeafData struct
+type LeafData struct {
+	LeafType           uint8
+	OriginNetwork      uint32
+	OriginAddress      common.Address
+	DestinationNetwork uint32
+	DestinationAddress common.Address
+	Amount             *big.Int
+	Metadata           []byte
+}
+

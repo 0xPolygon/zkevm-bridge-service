@@ -601,8 +601,15 @@ func (p *PostgresStorage) GetClaims(ctx context.Context, destAddr string, limit,
 }
 
 // GetDeposits gets the deposit list which be smaller than depositCount.
-func (p *PostgresStorage) GetDeposits(ctx context.Context, destAddr string, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error) {
-	const getDepositsSQL = "SELECT d.id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE dest_addr = $1 ORDER BY d.block_id DESC, d.deposit_cnt DESC LIMIT $2 OFFSET $3"
+func (p *PostgresStorage) GetDeposits(ctx context.Context, destAddr string, networkID, destinationNetworkID *uint32, limit, offset uint32, dbTx interface{}) ([]*etherman.Deposit, error) {
+	var netID, destNetId string
+	if networkID != nil {
+		netID = fmt.Sprintf(" AND d.network_id = %d ", *networkID)
+	}
+	if destinationNetworkID != nil {
+		destNetId = fmt.Sprintf(" AND dest_net = %d ", *destinationNetworkID)
+	}
+	getDepositsSQL := "SELECT d.id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, b.block_num, d.network_id, tx_hash, metadata, ready_for_claim FROM sync.deposit as d INNER JOIN sync.block as b ON d.network_id = b.network_id AND d.block_id = b.id WHERE dest_addr = $1 " + netID + destNetId + "ORDER BY d.block_id DESC, d.deposit_cnt DESC LIMIT $2 OFFSET $3"
 	rows, err := p.getExecQuerier(dbTx).Query(ctx, getDepositsSQL, common.FromHex(destAddr), limit, offset)
 	if err != nil {
 		return nil, err
@@ -613,8 +620,15 @@ func (p *PostgresStorage) GetDeposits(ctx context.Context, destAddr string, limi
 }
 
 // GetDepositCount gets the deposit count for the destination address.
-func (p *PostgresStorage) GetDepositCount(ctx context.Context, destAddr string, dbTx interface{}) (uint64, error) {
-	const getDepositCountSQL = "SELECT COUNT(*) FROM sync.deposit WHERE dest_addr = $1"
+func (p *PostgresStorage) GetDepositCount(ctx context.Context, destAddr string, networkID, destinationNetworkID *uint32, dbTx interface{}) (uint64, error) {
+	var netID, destNetId string
+	if networkID != nil {
+		netID = fmt.Sprintf(" AND network_id = %d ", *networkID)
+	}
+	if destinationNetworkID != nil {
+		destNetId = fmt.Sprintf(" AND dest_net = %d ", *destinationNetworkID)
+	}
+	getDepositCountSQL := "SELECT COUNT(*) FROM sync.deposit WHERE dest_addr = $1" + netID + destNetId
 	var depositCount uint64
 	err := p.getExecQuerier(dbTx).QueryRow(ctx, getDepositCountSQL, common.FromHex(destAddr)).Scan(&depositCount)
 	return depositCount, err
@@ -905,6 +919,68 @@ func (p *PostgresStorage) GetSyncStatus(ctx context.Context, dbTx interface{}) (
 		status = append(status, &s)
 	}
 	return status, nil
+}
+
+// ResetDeposits resets the state to a depositCount.
+func (p *PostgresStorage) ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{}) error {
+	if networkID == 0 {
+		return errors.New("cannot reset L1 deposits")
+	}
+	const resetSQL = "DELETE FROM sync.deposit WHERE deposit_cnt >= $1 AND network_id = $2"
+	e := p.getExecQuerier(dbTx)
+	_, err := e.Exec(ctx, resetSQL, depositCount, networkID)
+	return err
+}
+
+// AddBackwardLET adds a new BackwardLET event to the db.
+func (p *PostgresStorage) AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) error {
+	const addExitRootSQL = "INSERT INTO sync.backward_let(block_id, previous_deposit_cnt, previous_root, new_deposit_cnt, new_root) VALUES ($1, $2, $3, $4, $5)"
+	e := p.getExecQuerier(dbTx)
+	_, err := e.Exec(ctx, addExitRootSQL, backwardLET.BlockID, backwardLET.PreviousDepositCount, backwardLET.PreviousRoot, backwardLET.NewDepositCount, backwardLET.NewRoot)
+	return err
+}
+
+// AddForwardLET adds a new ForwardLET event to the db.
+func (p *PostgresStorage) AddForwardLET(ctx context.Context, forwardLET *etherman.ForwardLET, dbTx interface{}) error {
+	const addExitRootSQL = "INSERT INTO sync.forward_let(block_id, previous_deposit_cnt, previous_root, new_deposit_cnt, new_root, new_raw_leaves) VALUES ($1, $2, $3, $4, $5, $6)"
+	e := p.getExecQuerier(dbTx)
+	_, err := e.Exec(ctx, addExitRootSQL, forwardLET.BlockID, forwardLET.PreviousDepositCount, forwardLET.PreviousRoot, forwardLET.NewDepositCount, forwardLET.NewRoot, forwardLET.NewRawLeaves)
+	return err
+}
+
+// AddSetClaim adds a new SetClaim event to the db.
+func (p *PostgresStorage) AddSetClaim(ctx context.Context, setClaim *etherman.SetClaim, dbTx interface{}) error {
+	return p.addSetUnsetClaim(ctx, "SET", setClaim.BlockID, setClaim.MainnetFlag, setClaim.RollupIndex, setClaim.Index, setClaim.GlobalIndex, dbTx)
+}
+
+// AddUnsetClaim adds a new UnsetClaim event to the db.
+func (p *PostgresStorage) AddUnsetClaim(ctx context.Context, unsetClaim *etherman.UnsetClaim, dbTx interface{}) error {
+	return p.addSetUnsetClaim(ctx, "UNSET", unsetClaim.BlockID, unsetClaim.MainnetFlag, unsetClaim.RollupIndex, unsetClaim.Index, unsetClaim.GlobalIndex, dbTx)
+}
+
+func (p *PostgresStorage) addSetUnsetClaim(ctx context.Context, eventType string, blockID uint64, mainnetFlag bool, rollupIndex, index uint32, globalIndex *big.Int, dbTx interface{}) error {
+	const addExitRootSQL = "INSERT INTO sync.set_unset_claim(block_id, mainnet_flag, rollup_index, index, global_index, type) VALUES($1, $2, $3, $4, $5, $6)"
+	e := p.getExecQuerier(dbTx)
+	_, err := e.Exec(ctx, addExitRootSQL, blockID, mainnetFlag, rollupIndex, index, globalIndex.String(), eventType)
+	return err
+}
+
+// DeleteClaimByGlobalIndex resets the state to a depositCount.
+func (p *PostgresStorage) DeleteClaimByGlobalIndex(ctx context.Context, globalIndex *big.Int, networkID uint32, dbTx interface{}) error {
+	const resetSQL = "DELETE FROM sync.claim WHERE global_index = $1 AND network_id = $2"
+	e := p.getExecQuerier(dbTx)
+	_, err := e.Exec(ctx, resetSQL, globalIndex.String(), networkID)
+	return err
+}
+
+func (p *PostgresStorage) GetLastComputedRoot(ctx context.Context, networkID uint32, dbTx interface{}) (common.Hash, error) {
+	const query = "SELECT root FROM mt.root WHERE network = $1 ORDER BY deposit_id desc LIMIT 1;"
+	var root common.Hash
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, query, networkID).Scan(&root)
+	if err != nil {
+		return common.Hash{}, fmt.Errorf("error getting the root from db: %v", err)
+	}
+	return root, nil
 }
 
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.

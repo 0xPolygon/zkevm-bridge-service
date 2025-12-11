@@ -8,6 +8,7 @@ import (
 
 	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonzkevm"
 	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/polygonzkevmbridgev2"
+	"github.com/0xPolygon/zkevm-bridge-service/etherman/smartcontracts/bridgel2sovereignchain"
 	"github.com/0xPolygon/zkevm-bridge-service/log"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
@@ -25,7 +26,7 @@ func init() {
 }
 
 // This function prepare the blockchain, the wallet with funds and deploy the smc
-func newTestingEnv(ctx context.Context) (*Client, *simulated.Backend, *bind.TransactOpts, common.Address, *polygonzkevmbridgev2.Polygonzkevmbridgev2, *polygonzkevm.Polygonzkevm) {
+func newTestingEnv(ctx context.Context) (*Client, *simulated.Backend, *bind.TransactOpts, common.Address, *polygonzkevmbridgev2.Polygonzkevmbridgev2, *polygonzkevm.Polygonzkevm, *bridgel2sovereignchain.Bridgel2sovereignchain) {
 	privateKey, err := crypto.GenerateKey()
 	if err != nil {
 		log.Fatal(err)
@@ -34,17 +35,17 @@ func newTestingEnv(ctx context.Context) (*Client, *simulated.Backend, *bind.Tran
 	if err != nil {
 		log.Fatal(err)
 	}
-	ethman, ethBackend, polAddr, bridge, zkevm, err := NewSimulatedEtherman(ctx, Config{}, auth)
+	ethman, ethBackend, polAddr, bridge, zkevm, l2BridgeSovereign, err := NewSimulatedEtherman(ctx, Config{}, auth)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return ethman, ethBackend, auth, polAddr, bridge, zkevm
+	return ethman, ethBackend, auth, polAddr, bridge, zkevm, l2BridgeSovereign
 }
 
 func TestGEREvent(t *testing.T) {
 	ctx := t.Context()
 	// Set up testing environment
-	etherman, ethBackend, auth, _, _, _ := newTestingEnv(ctx)
+	etherman, ethBackend, auth, _, _, _, _ := newTestingEnv(ctx)
 
 	// Read currentBlock
 	initBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
@@ -72,7 +73,7 @@ func TestGEREvent(t *testing.T) {
 func TestBridgeEvents(t *testing.T) {
 	ctx := t.Context()
 	// Set up testing environment
-	etherman, ethBackend, auth, polAddr, bridge, _ := newTestingEnv(ctx)
+	etherman, ethBackend, auth, polAddr, bridge, _, _ := newTestingEnv(ctx)
 
 	// Read currentBlock
 	initBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
@@ -199,7 +200,7 @@ func TestDecodeGlobalIndex(t *testing.T) {
 func TestVerifyBatchEvent(t *testing.T) {
 	ctx := t.Context()
 	// Set up testing environment
-	etherman, ethBackend, auth, _, _, zkevm := newTestingEnv(ctx)
+	etherman, ethBackend, auth, _, _, zkevm, _ := newTestingEnv(ctx)
 
 	// Read currentBlock
 	initBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
@@ -303,4 +304,139 @@ func TestGenerateGlobalIndex(t *testing.T) {
 		t.Logf("%08b ", n)
 	}
 	assert.Equal(t, globalIndex, globalIndexGenerated)
+}
+
+func TestBackwardLETSovereignEvent(t *testing.T) {
+	ctx := t.Context()
+	// Set up testing environment
+	etherman, ethBackend, auth, _, _, _, l2BridgeSovereign := newTestingEnv(ctx)
+
+	// Read currentBlock
+	initBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
+	require.NoError(t, err)
+
+	_, err = l2BridgeSovereign.BackwardLET(auth, big.NewInt(1), [32][32]byte{}, common.Hash{}, [32][32]byte{})
+	require.NoError(t, err)
+
+	// Mine the tx in a block
+	ethBackend.Commit()
+
+	// Now read the event
+	finalBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
+	require.NoError(t, err)
+	finalBlockNumber := finalBlock.NumberU64()
+	blocks, _, err := etherman.GetRollupInfoByBlockRange(ctx, initBlock.NumberU64(), &finalBlockNumber)
+	require.NoError(t, err)
+
+	assert.Equal(t, uint32(1), blocks[0].BackwardLETs[0].NewDepositCount)
+	assert.Equal(t, "0x27ae5ba08d7291c96c8cbddcc148bf48a6d68c7974b94356f53754ef6171d757", blocks[0].BackwardLETs[0].NewRoot.String())
+	assert.Equal(t, uint32(0), blocks[0].BackwardLETs[0].PreviousDepositCount)
+	assert.Equal(t, "0x27ae5ba08d7291c96c8cbddcc148bf48a6d68c7974b94356f53754ef6171d757", blocks[0].BackwardLETs[0].PreviousRoot.String())
+}
+
+func TestUnsetMultipleClaimsSovereignEvent(t *testing.T) {
+	ctx := t.Context()
+	// Set up testing environment
+	etherman, ethBackend, auth, _, _, _, l2BridgeSovereign := newTestingEnv(ctx)
+
+	// Read currentBlock
+	initBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
+	require.NoError(t, err)
+
+	globalIndex, _ := big.NewInt(0).SetString("8589934604", 0)
+	_, err = l2BridgeSovereign.UnsetMultipleClaims(auth, []*big.Int{globalIndex})
+	require.NoError(t, err)
+
+	// Mine the tx in a block
+	ethBackend.Commit()
+
+	// Now read the event
+	finalBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
+	require.NoError(t, err)
+	finalBlockNumber := finalBlock.NumberU64()
+	blocks, _, err := etherman.GetRollupInfoByBlockRange(ctx, initBlock.NumberU64(), &finalBlockNumber)
+	require.NoError(t, err)
+
+	assert.Equal(t, "8589934604", blocks[0].UnsetClaims[0].GlobalIndex.String())
+	assert.Equal(t, uint32(12), blocks[0].UnsetClaims[0].Index)
+	assert.Equal(t, false, blocks[0].UnsetClaims[0].MainnetFlag)
+	assert.Equal(t, uint32(2), blocks[0].UnsetClaims[0].RollupIndex)
+}
+
+func TestSetMultipleClaimsSovereignEvent(t *testing.T) {
+	ctx := t.Context()
+	// Set up testing environment
+	etherman, ethBackend, auth, _, _, _, l2BridgeSovereign := newTestingEnv(ctx)
+
+	// Read currentBlock
+	initBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
+	require.NoError(t, err)
+
+	globalIndex, _ := big.NewInt(0).SetString("8589934604", 0)
+	_, err = l2BridgeSovereign.SetMultipleClaims(auth, []*big.Int{globalIndex})
+	require.NoError(t, err)
+
+	// Mine the tx in a block
+	ethBackend.Commit()
+
+	// Now read the event
+	finalBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
+	require.NoError(t, err)
+	finalBlockNumber := finalBlock.NumberU64()
+	blocks, _, err := etherman.GetRollupInfoByBlockRange(ctx, initBlock.NumberU64(), &finalBlockNumber)
+	require.NoError(t, err)
+
+	assert.Equal(t, "8589934604", blocks[0].SetClaims[0].GlobalIndex.String())
+	assert.Equal(t, uint32(12), blocks[0].SetClaims[0].Index)
+	assert.Equal(t, false, blocks[0].SetClaims[0].MainnetFlag)
+	assert.Equal(t, uint32(2), blocks[0].SetClaims[0].RollupIndex)
+}
+
+func TestForwardLETSovereignEvent(t *testing.T) {
+	ctx := t.Context()
+	// Set up testing environment
+	etherman, ethBackend, auth, _, _, _, l2BridgeSovereign := newTestingEnv(ctx)
+
+	// Read currentBlock
+	initBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
+	require.NoError(t, err)
+
+	leaves := []bridgel2sovereignchain.AgglayerBridgeL2LeafData {
+		{
+			LeafType: 0,
+			OriginNetwork: 0,
+			OriginAddress: common.Address{},
+			DestinationNetwork: 1,
+			DestinationAddress: common.HexToAddress("0x61A1d716a74fb45d29f148C6C20A2eccabaFD753"),
+			Amount: big.NewInt(1),
+			Metadata: []byte{},
+		},
+		{
+			LeafType: 0,
+			OriginNetwork: 0,
+			OriginAddress: common.Address{},
+			DestinationNetwork: 1,
+			DestinationAddress: common.HexToAddress("0x61A1d716a74fb45d29f148C6C20A2eccabaFD753"),
+			Amount: big.NewInt(1),
+			Metadata: []byte{},
+		},
+	}
+	_, err = l2BridgeSovereign.ForwardLET(auth, leaves, common.Hash{})
+	require.NoError(t, err)
+
+	// Mine the tx in a block
+	ethBackend.Commit()
+
+	// Now read the event
+	finalBlock, err := etherman.EtherClient.BlockByNumber(ctx, nil)
+	require.NoError(t, err)
+	finalBlockNumber := finalBlock.NumberU64()
+	blocks, _, err := etherman.GetRollupInfoByBlockRange(ctx, initBlock.NumberU64(), &finalBlockNumber)
+	require.NoError(t, err)
+
+	assert.Equal(t, uint32(2), blocks[0].ForwardLETs[0].NewDepositCount)
+	assert.Equal(t, "0x143bf21923fc84104de314e92b560216e80c77c7e50e35d64968fcbc16780987", blocks[0].ForwardLETs[0].NewRoot.String())
+	assert.Equal(t, uint32(0), blocks[0].ForwardLETs[0].PreviousDepositCount)
+	assert.Equal(t, "0x27ae5ba08d7291c96c8cbddcc148bf48a6d68c7974b94356f53754ef6171d757", blocks[0].ForwardLETs[0].PreviousRoot.String())
+	assert.NotEqual(t, common.Hash{}, blocks[0].ForwardLETs[0].TxHash)	
 }

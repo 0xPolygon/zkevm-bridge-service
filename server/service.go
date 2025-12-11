@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"time"
 
@@ -350,11 +351,23 @@ func (s *bridgeService) GetBridges(ctx context.Context, req *pb.GetBridgesReques
 	if limit > s.maxPageLimit {
 		limit = s.maxPageLimit
 	}
-	totalCount, err := s.storage.GetDepositCount(ctx, req.DestAddr, nil)
+	// Check if the user actually provided these fields
+    var networkID, destinationNetworkID *uint32
+    if req.NetId != nil {
+        networkID = req.NetId  // User explicitly provided this value (could be 0 or any positive number)
+        log.Infof("User provided net_id: %d", *networkID)
+    }
+
+    if req.DestNet != nil {
+        destinationNetworkID = req.DestNet  // User explicitly provided this value
+        log.Infof("User provided dest_net: %d", *destinationNetworkID)
+    }
+
+	totalCount, err := s.storage.GetDepositCount(ctx, req.DestAddr, networkID, destinationNetworkID, nil)
 	if err != nil {
 		return nil, err
 	}
-	deposits, err := s.storage.GetDeposits(ctx, req.DestAddr, limit, req.Offset, nil)
+	deposits, err := s.storage.GetDeposits(ctx, req.DestAddr, networkID, destinationNetworkID, limit, req.Offset, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -690,4 +703,73 @@ func (s *bridgeService) GetSyncStatus(ctx context.Context, req *pb.GetSyncStatus
 	return &pb.GetSyncStatusResponse{
 		Sync: returnSyncStatus,
 	}, nil
+}
+
+// GetBackwardLETData returns the data needed to backwardLET in the smc.
+// Bridge rest API endpoint
+func (s *bridgeService) GetBackwardLETData(ctx context.Context, req *pb.GetBackwardLETDataRequest) (*pb.GetBackwardLETDataResponse, error) {
+	indexToRemove := req.DepositCnt
+	networkID := req.NetId
+	if networkID == 0 {
+		return nil, fmt.Errorf("networkID cannot be 0 for backward LET")
+	}
+	leafHash, err := s.getLeaf(ctx, indexToRemove, networkID)
+	if err != nil {
+		return nil, err
+	}
+	root, err := s.storage.GetLastComputedRoot(ctx, networkID, nil)
+	if err != nil {
+		return nil, err
+	}
+	rollupMerkleProof, err := s.getProof(ctx, indexToRemove, root, nil)
+	if err != nil {
+		return nil, err
+	}
+	frontier, err := s.computeFrontierFromProof(indexToRemove, rollupMerkleProof)
+	if err != nil {
+		return nil, err
+	}
+	var rollupProof, frontierString []string
+	for i := range rollupMerkleProof {
+		rollupProof = append(rollupProof, "0x"+hex.EncodeToString(rollupMerkleProof[i][:]))
+	}
+	for i := range frontier {
+		frontierString = append(frontierString, "0x"+hex.EncodeToString(frontier[i][:]))
+	}
+	return &pb.GetBackwardLETDataResponse{
+		Root: 			   root.String(),
+		LeafHash:          leafHash.String(),
+		RollupMerkleProof: rollupProof,
+		Frontier:          frontierString,
+	}, nil
+}
+
+// ComputeFrontierFromProof build the frontier for backwardLET.
+// Rule: in each level i, if the bit i of n is 1 => frontier[i] = proof[i],
+// If it is 0 => frontier[i] = 0x00..00.
+func (s *bridgeService) computeFrontierFromProof(n uint32, proof [][bridgectrl.KeyLen]byte) ([][bridgectrl.KeyLen]byte, error) {
+	if len(proof) != int(s.height) {
+		return [][bridgectrl.KeyLen]byte{}, fmt.Errorf("proof length %d does not match tree height %d", len(proof), s.height)
+	}
+	var zero [32]byte
+	var frontier [][bridgectrl.KeyLen]byte
+	for i := uint(0); i < uint(s.height); i++ {
+		if ((n >> i) & 1) == 1 {
+			frontier = append(frontier, proof[i])
+		} else {
+			frontier = append(frontier, zero)
+		}
+	}
+	return frontier, nil
+}
+
+func (s *bridgeService) getLeaf(ctx context.Context, index uint32, networkID uint32) (common.Hash, error) {
+	deposit, err := s.storage.GetDeposit(ctx, index, networkID, nil)
+	if err != nil {
+		if errors.Is(err, gerror.ErrStorageNotFound) {
+			return common.Hash{}, nil
+		}
+		return common.Hash{}, err
+	}
+	return bridgectrl.HashDeposit(deposit), nil
 }

@@ -589,6 +589,38 @@ func (s *ClientSynchronizer) processBlockRange(blocks []etherman.Block, order ma
 					return err
 				}
 				s.metrics.VerifyBatchCounter()
+			case etherman.BackwardLETOrder:
+				if len(blocks[i].BackwardLETs) < element.Pos+1 {
+					return fmt.Errorf("BackwardLET event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
+				err = s.processBackwardLETSovereign(blocks[i].BackwardLETs[element.Pos], blockID, blocks[i].BlockNumber, dbTx)
+				if err != nil {
+					return err
+				}
+			case etherman.UnsetClaimOrder:
+				if len(blocks[i].UnsetClaims) < element.Pos+1 {
+					return fmt.Errorf("UnsetClaim event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
+				err = s.processUnsetClaimSovereign(blocks[i].UnsetClaims[element.Pos], blockID, blocks[i].BlockNumber, dbTx)
+				if err != nil {
+					return err
+				}
+			case etherman.SetClaimOrder:
+				if len(blocks[i].SetClaims) < element.Pos+1 {
+					return fmt.Errorf("SetClaim event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
+				err = s.processSetClaimSovereign(blocks[i].SetClaims[element.Pos], blockID, blocks[i].BlockNumber, dbTx)
+				if err != nil {
+					return err
+				}
+			case etherman.ForwardLETOrder:
+				if len(blocks[i].ForwardLETs) < element.Pos+1 {
+					return fmt.Errorf("ForwardLET event error: invalid data received from the RPC. Probably, messy events were received from the RPC. Block: %+v. Order: %+v", blocks[i], order[blocks[i].BlockHash])
+				}
+				err = s.processForwardLETSovereign(blocks[i].ForwardLETs[element.Pos], blockID, blocks[i].BlockNumber, dbTx)
+				if err != nil {
+					return err
+				}
 			}
 		}
 		err = s.storage.Commit(s.ctx, dbTx)
@@ -877,6 +909,216 @@ func (s *ClientSynchronizer) processRemoveL2GlobalExitRoot(ger etherman.GlobalEx
 		log.Errorf("networkID: %d, error storing removeL2Ger in Block:  %d, GER: %+v, err: %v", s.networkID, ger.BlockNumber, ger, err)
 		return s.rollback(ger.BlockNumber, err, dbTx)
 	}
+	return nil
+}
+
+func (s *ClientSynchronizer) processBackwardLETSovereign(backwardLET etherman.BackwardLET, blockID, blockNumber uint64, dbTx interface{}) error {
+	backwardLET.BlockID = blockID
+	log.Debugf("networkID: %d, Full BackwardLET event: %+v", s.networkID, backwardLET)
+	// First check the initial state of the MT
+	depositCnt, err := s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting GetNumberDeposits. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	let, err := s.bridgeCtrl.GetExitRoot(s.ctx, s.networkID, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting localExitTreeRoot from the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	localExitTreeRoot := common.BytesToHash(let)
+	if localExitTreeRoot != backwardLET.PreviousRoot || depositCnt != backwardLET.PreviousDepositCount {
+		err := fmt.Errorf("networkID: %d, error processing BackwardLET. PreviousRoot or PreviousDepositCount do not match with the current state. Current localExitTreeRoot: %s, BackwardLET.PrevLocalExitTreeRoot: %s, Current depositCnt: %d, BackwardLET.PrevDepositCount: %d",
+			s.networkID, localExitTreeRoot.String(), backwardLET.PreviousRoot.String(), depositCnt, backwardLET.PreviousDepositCount)
+		log.Error(err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// MT entries are deleted in cascade when invalid deposits are deleted.
+	// Remove the deposits that are no longer valid (deposit_cnt >= backwardLET.NewDepositCount)
+	err = s.storage.ResetDeposits(s.ctx, backwardLET.NewDepositCount, s.networkID, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error reseting deposits in processBackwardLETSovereign. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// Revert the state of the MT
+	err = s.bridgeCtrl.ReorgMT(s.ctx, backwardLET.NewDepositCount, s.networkID, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error resetting MT in processBackwardLETSovereign. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// Check again the state
+	depositCnt, err = s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting GetNumberDeposits. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	let, err = s.bridgeCtrl.GetExitRoot(s.ctx, s.networkID, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting localExitTreeRoot from the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	localExitTreeRoot = common.BytesToHash(let)
+	if localExitTreeRoot != backwardLET.NewRoot || depositCnt != backwardLET.NewDepositCount {
+		err := fmt.Errorf("networkID: %d, error processing BackwardLET. NewRoot or NewDepositCount do not match with the current state after reseting the state. Current localExitTreeRoot: %s, BackwardLET.NewRoot: %s, Current depositCnt: %d, BackwardLET.NewDepositCount: %d",
+			s.networkID, localExitTreeRoot.String(), backwardLET.NewRoot.String(), depositCnt, backwardLET.NewDepositCount)
+		log.Error(err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// Store the backwardLET event in the db
+	err = s.storage.AddBackwardLET(s.ctx, &backwardLET, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error adding BackwardLET to the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	return nil
+}
+
+func (s *ClientSynchronizer) processForwardLETSovereign(forwardLET etherman.ForwardLET, blockID, blockNumber uint64, dbTx interface{}) error {
+	forwardLET.BlockID = blockID
+	log.Debugf("networkID: %d, Full forwardLET event: %+v", s.networkID, forwardLET)
+	// First check the initial state of the MT
+	depositCnt, err := s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting GetNumberDeposits. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	let, err := s.bridgeCtrl.GetExitRoot(s.ctx, s.networkID, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting localExitTreeRoot from the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	localExitTreeRoot := common.BytesToHash(let)
+	if localExitTreeRoot != forwardLET.PreviousRoot || depositCnt != forwardLET.PreviousDepositCount {
+		err := fmt.Errorf("networkID: %d, error processing forwardLET. PreviousRoot or PreviousDepositCount do not match with the current state. Current localExitTreeRoot: %s, forwardLET.PrevLocalExitTreeRoot: %s, Current depositCnt: %d, forwardLET.PrevDepositCount: %d",
+			s.networkID, localExitTreeRoot.String(), forwardLET.PreviousRoot.String(), depositCnt, forwardLET.PreviousDepositCount)
+		log.Error(err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+
+	// ADD deposits to the MT + the db table
+	initialDepositCount, err := s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting the current depositCount from the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	for i := range forwardLET.NewLeaves {
+		deposit := etherman.Deposit {
+			LeafType:           forwardLET.NewLeaves[i].LeafType,
+			OriginalNetwork:    forwardLET.NewLeaves[i].OriginNetwork,
+			OriginalAddress:    forwardLET.NewLeaves[i].OriginAddress,
+			Amount:             forwardLET.NewLeaves[i].Amount,
+			DestinationNetwork: forwardLET.NewLeaves[i].DestinationNetwork,
+			DestinationAddress: forwardLET.NewLeaves[i].DestinationAddress,
+			DepositCount:       initialDepositCount + uint32(i), // nolint:gosec
+			BlockID:            forwardLET.BlockID,
+			BlockNumber:        blockNumber,
+			NetworkID:          s.networkID,
+			TxHash:             forwardLET.TxHash,
+			Metadata:           forwardLET.NewLeaves[i].Metadata,
+		}
+		depositID, err := s.storage.AddDeposit(s.ctx, &deposit, dbTx)
+		if err != nil {
+			log.Errorf("networkID: %d, failed to store new deposit locally, BlockNumber: %d, Deposit: %+v err: %v", s.networkID, deposit.BlockNumber, deposit, err)
+			return s.rollback(deposit.BlockNumber, err, dbTx)
+		}
+		deposit.Id = depositID
+		err = s.bridgeCtrl.AddDeposit(s.ctx, &deposit, dbTx)
+		if err != nil {
+			log.Errorf("networkID: %d, failed to store new deposit in the bridge tree, BlockNumber: %d, Deposit: %+v err: %v", s.networkID, deposit.BlockNumber, deposit, err)
+			return s.rollback(deposit.BlockNumber, err, dbTx)
+		}
+		s.metrics.DepositAmount(deposit.Amount)
+	}
+
+	// Check again the state
+	depositCnt, err = s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting GetNumberDeposits. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	let, err = s.bridgeCtrl.GetExitRoot(s.ctx, s.networkID, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting localExitTreeRoot from the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	localExitTreeRoot = common.BytesToHash(let)
+	if localExitTreeRoot != forwardLET.NewRoot || depositCnt != forwardLET.NewDepositCount {
+		err := fmt.Errorf("networkID: %d, error processing forwardLET. NewRoot or NewDepositCount do not match with the current state after reseting the state. Current localExitTreeRoot: %s, forwardLET.NewRoot: %s, Current depositCnt: %d, forwardLET.NewDepositCount: %d",
+			s.networkID, localExitTreeRoot.String(), forwardLET.NewRoot.String(), depositCnt, forwardLET.NewDepositCount)
+		log.Error(err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// Store the forwardLET event in the db
+	err = s.storage.AddForwardLET(s.ctx, &forwardLET, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error adding forwardLET to the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	return nil
+}
+
+func (s *ClientSynchronizer) processUnsetClaimSovereign(unsetClaim etherman.UnsetClaim, blockID, blockNumber uint64, dbTx interface{}) error {
+	unsetClaim.BlockID = blockID
+	// Add event to the db
+	err := s.storage.AddUnsetClaim(s.ctx, &unsetClaim, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error adding UnsetClaim to the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// Delete claim by global index
+	err = s.storage.DeleteClaimByGlobalIndex(s.ctx, unsetClaim.GlobalIndex, s.networkID, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error deleting claim by global index in processUnsetClaimSovereign. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	return nil
+}
+
+func (s *ClientSynchronizer) processSetClaimSovereign(setClaim etherman.SetClaim, blockID, blockNumber uint64, dbTx interface{}) error {
+	setClaim.BlockID = blockID
+	// Add event to the db
+	err := s.storage.AddSetClaim(s.ctx, &setClaim, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error adding setClaim to the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// Read deposit information
+	var depositNetwork uint32
+	if !setClaim.MainnetFlag {
+		depositNetwork = setClaim.RollupIndex + 1
+	}
+	deposit, err := s.storage.GetDeposit(s.ctx, setClaim.Index, depositNetwork, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting deposit from the state. DepositCount: %d, depositNetwork: %d, Error: %v", s.networkID, setClaim.Index, depositNetwork, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	if s.networkID != deposit.DestinationNetwork {
+		err := fmt.Errorf("networkID: %d, error processing SetClaim. Deposit destination network (%d) does not match with the current networkID (%d)",
+			s.networkID, deposit.DestinationNetwork, s.networkID)
+		log.Error(err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	// Store the claim
+	claim := etherman.Claim{
+		MainnetFlag: setClaim.MainnetFlag,
+		RollupIndex: setClaim.RollupIndex,
+		Index: setClaim.Index,
+		OriginalNetwork: deposit.OriginalNetwork,
+		OriginalAddress: deposit.OriginalAddress,
+		Amount: deposit.Amount,
+		DestinationAddress: deposit.DestinationAddress,
+		BlockID: setClaim.BlockID,
+		BlockNumber: blockNumber,
+		NetworkID: s.networkID,
+		TxHash: setClaim.TxHash,
+		GlobalIndex: setClaim.GlobalIndex.String(),
+	}
+	err = s.storage.AddClaim(s.ctx, &claim, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error storing new Claim in Block:  %d, Claim: %+v, err: %v", s.networkID, claim.BlockNumber, claim, err)
+		return s.rollback(claim.BlockNumber, err, dbTx)
+	}
+	s.metrics.ClaimAmount(claim.Amount)
 	return nil
 }
 

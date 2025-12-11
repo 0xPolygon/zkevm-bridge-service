@@ -18,18 +18,18 @@ const (
 type BridgeController struct {
 	exitTrees     []*MerkleTree
 	rollupsTree   *MerkleTree
-	merkleTreeIDs map[uint32]uint8
+	merkleTreeIDs map[uint32]uint32
 }
 
 // NewBridgeController creates new BridgeController.
 func NewBridgeController(ctx context.Context, cfg Config, networkIDs []uint32, mtStore interface{}) (*BridgeController, error) {
 	var (
-		merkleTreeIDs = make(map[uint32]uint8)
+		merkleTreeIDs = make(map[uint32]uint32)
 		exitTrees     []*MerkleTree
 	)
 
 	for i, networkID := range networkIDs {
-		merkleTreeIDs[networkID] = uint8(i) // nolint:gosec
+		merkleTreeIDs[networkID] = uint32(i) // nolint:gosec
 		mt, err := NewMerkleTree(ctx, mtStore.(merkleTreeStore), cfg.Height, networkID)
 		if err != nil {
 			return nil, err
@@ -49,7 +49,7 @@ func NewBridgeController(ctx context.Context, cfg Config, networkIDs []uint32, m
 	}, nil
 }
 
-func (bt *BridgeController) GetMerkleTreeID(networkID uint32) (uint8, error) {
+func (bt *BridgeController) GetMerkleTreeID(networkID uint32) (uint32, error) {
 	tID, found := bt.merkleTreeIDs[networkID]
 	if !found {
 		return 0, gerror.ErrNetworkNotRegister
@@ -59,7 +59,7 @@ func (bt *BridgeController) GetMerkleTreeID(networkID uint32) (uint8, error) {
 
 // AddDeposit adds deposit information to the bridge tree.
 func (bt *BridgeController) AddDeposit(ctx context.Context, deposit *etherman.Deposit, dbTx interface{}) error {
-	leaf := hashDeposit(deposit)
+	leaf := HashDeposit(deposit)
 	tID, err := bt.GetMerkleTreeID(deposit.NetworkID)
 	if err != nil {
 		return err
@@ -85,9 +85,12 @@ func (bt *BridgeController) RollbackMT(ctx context.Context, networkID uint32, db
 	return bt.exitTrees[tID].rollbackMT(ctx, networkID, dbTx)
 }
 
-// GetExitRoot returns the dedicated merkle tree's root.
-// only use for the test purpose
-func (bt *BridgeController) GetExitRoot(ctx context.Context, tID uint8, dbTx interface{}) ([]byte, error) {
+// GetExitRoot returns the dedicated merkle tree's root given the networkID.
+func (bt *BridgeController) GetExitRoot(ctx context.Context, networkID uint32, dbTx interface{}) ([]byte, error) {
+	tID, err := bt.GetMerkleTreeID(networkID)
+	if err != nil {
+		return nil, err
+	}
 	return bt.exitTrees[tID].getRoot(ctx, dbTx)
 }
 

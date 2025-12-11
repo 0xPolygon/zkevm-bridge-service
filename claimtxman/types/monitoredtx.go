@@ -365,7 +365,7 @@ func (mTx *MonitoredTx) HistoryHashesString() string {
 	return fullHistory
 }
 
-// IsCandidateForGroup returns true if the tx is a candidate to be grouped
+// IsCandidateToBeGrouped returns true if the tx is a candidate to be grouped
 func (mTx *MonitoredTx) IsCandidateToBeGrouped(ger common.Hash) bool {
 	return mTx.Status == MonitoredTxStatusCreated && len(mTx.History) == 0 && mTx.GroupID == nil && mTx.GlobalExitRoot == ger
 }
