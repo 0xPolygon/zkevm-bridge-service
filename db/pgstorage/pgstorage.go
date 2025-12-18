@@ -847,7 +847,7 @@ func (p *PostgresStorage) AddRemoveL2GER(ctx context.Context, globalExitRoot eth
 	CurrentDepositID, _, err := p.GetDepositCountByGER(ctx, globalExitRoot.GlobalExitRoot, globalExitRoot.NetworkID, false, dbTx)
 	if errors.Is(err, gerror.ErrStorageNotFound) {
 		log.Warnf("No deposit found for this GER: %s in L1, NetworkID: %d", globalExitRoot.GlobalExitRoot.String(), globalExitRoot.NetworkID)
-		CurrentDepositID = math.MaxUint64
+		CurrentDepositID = math.MaxInt64
 	} else if err != nil {
 		return err
 	}
