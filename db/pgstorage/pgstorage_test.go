@@ -316,12 +316,12 @@ func TestResetDeposits(t *testing.T) {
 	require.NoError(t, err)
 
 
-	err = store.ResetDeposits(ctx, 1, 0, nil)
+	err = store.ResetDeposits(ctx, 1, 0, 1, nil)
 	require.Error(t, err)
 	d, err := store.GetNumberDeposits(ctx, 1, 1, nil)
 	require.NoError(t, err)
 	assert.Equal(t, uint32(3), d)
-	err = store.ResetDeposits(ctx, 1, 1, nil)
+	err = store.ResetDeposits(ctx, 1, 1, 1, nil)
 	require.NoError(t, err)
 	d, err = store.GetNumberDeposits(ctx, 1, 1, nil)
 	require.NoError(t, err)
@@ -351,8 +351,9 @@ func TestAddBackwardLET(t *testing.T) {
     	NewDepositCount: 1,
     	NewRoot: common.HexToHash("0xAA82FACE883070640F802CE8A2C42593AA18D3A691C61BA006EC477D6E5FEECC"),
 	}
-	err = store.AddBackwardLET(ctx, bLET, nil)
+	id, err := store.AddBackwardLET(ctx, bLET, nil)
 	require.NoError(t, err)
+	assert.NotZero(t, id)
 
 	var count uint32
 	selectCount := "SELECT count(*) FROM sync.backward_let"

@@ -30,7 +30,7 @@ type storageInterface interface {
 	Reset(ctx context.Context, blockNumber uint64, networkID uint32, dbTx interface{}) error
 	GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx interface{}) (etherman.Block, error)
 	GetNumberDeposits(ctx context.Context, origNetworkID uint32, blockNumber uint64, dbTx interface{}) (uint32, error)
-	ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{}) error
+	ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, backwardLETID uint64, dbTx interface{}) error
 	AddTrustedGlobalExitRoot(ctx context.Context, trustedExitRoot *etherman.GlobalExitRoot, dbTx interface{}) (bool, error)
 	GetLatestL1SyncedExitRoot(ctx context.Context, dbTx interface{}) (*etherman.GlobalExitRoot, error)
 	GetLatestTrustedExitRoot(ctx context.Context, networkID uint32, dbTx interface{}) (*etherman.GlobalExitRoot, error)
@@ -40,7 +40,7 @@ type storageInterface interface {
 	UpdateL2GER(ctx context.Context, ger etherman.GlobalExitRoot, dbTx interface{}) error
 	AddRemoveL2GER(ctx context.Context, globalExitRoot etherman.GlobalExitRoot, dbTx interface{}) error
 	AddSyncStatus(ctx context.Context, syncStatus etherman.SyncStatus, dbTx interface{}) error
-	AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) error
+	AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) (uint64, error)
 	AddForwardLET(ctx context.Context, forwardLET *etherman.ForwardLET, dbTx interface{}) error
 	DeleteClaimByGlobalIndex(ctx context.Context, globalIndex *big.Int, networkID uint32, dbTx interface{}) error
 	AddUnsetClaim(ctx context.Context, unsetClaim *etherman.UnsetClaim, dbTx interface{}) error

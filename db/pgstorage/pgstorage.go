@@ -922,22 +922,39 @@ func (p *PostgresStorage) GetSyncStatus(ctx context.Context, dbTx interface{}) (
 }
 
 // ResetDeposits resets the state to a depositCount.
-func (p *PostgresStorage) ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{}) error {
+func (p *PostgresStorage) ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, backwardLETID uint64, dbTx interface{}) error {
 	if networkID == 0 {
 		return errors.New("cannot reset L1 deposits")
 	}
-	const resetSQL = "DELETE FROM sync.deposit WHERE deposit_cnt >= $1 AND network_id = $2"
+	// Store the deposits in other table and remove from deposit table
+	const resetSQL = "DELETE FROM sync.deposit WHERE deposit_cnt >= $1 AND network_id = $2 RETURNING id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, network_id, tx_hash, metadata, ready_for_claim"
 	e := p.getExecQuerier(dbTx)
 	_, err := e.Exec(ctx, resetSQL, depositCount, networkID)
-	return err
+	rows, err := e.Query(ctx, resetSQL, depositCount, networkID)
+    if err != nil {
+        return err
+    }
+    defer rows.Close()
+	deposits, err := parseDeposits(rows, false)
+	if err != nil {
+		return err
+	}
+	const addDepositSQL = "INSERT INTO sync.deposit_backup (leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, ready_for_claim, backward_let_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"
+	for _, deposit := range deposits {
+		_, err = e.Exec(ctx, addDepositSQL, deposit.LeafType, deposit.NetworkID, deposit.OriginalNetwork, deposit.OriginalAddress, deposit.Amount.String(), deposit.DestinationNetwork, deposit.DestinationAddress, deposit.BlockID, deposit.DepositCount, deposit.TxHash, deposit.Metadata, deposit.ReadyForClaim, backwardLETID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // AddBackwardLET adds a new BackwardLET event to the db.
-func (p *PostgresStorage) AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) error {
-	const addExitRootSQL = "INSERT INTO sync.backward_let(block_id, previous_deposit_cnt, previous_root, new_deposit_cnt, new_root) VALUES ($1, $2, $3, $4, $5)"
-	e := p.getExecQuerier(dbTx)
-	_, err := e.Exec(ctx, addExitRootSQL, backwardLET.BlockID, backwardLET.PreviousDepositCount, backwardLET.PreviousRoot, backwardLET.NewDepositCount, backwardLET.NewRoot)
-	return err
+func (p *PostgresStorage) AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) (uint64, error) {
+	const addExitRootSQL = "INSERT INTO sync.backward_let(block_id, previous_deposit_cnt, previous_root, new_deposit_cnt, new_root) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+	var id uint64
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, addExitRootSQL, backwardLET.BlockID, backwardLET.PreviousDepositCount, backwardLET.PreviousRoot, backwardLET.NewDepositCount, backwardLET.NewRoot).Scan(&id)
+	return id, err
 }
 
 // AddForwardLET adds a new ForwardLET event to the db.
