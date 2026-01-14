@@ -28,6 +28,7 @@ type storageInterface interface {
 	AddClaim(ctx context.Context, claim *etherman.Claim, dbTx interface{}) error
 	AddTokenWrapped(ctx context.Context, tokenWrapped *etherman.TokenWrapped, dbTx interface{}) error
 	Reset(ctx context.Context, blockNumber uint64, networkID uint32, dbTx interface{}) error
+	GetAndDeleteOrphanDepositBackups(ctx context.Context, dbTx interface{}) ([]*etherman.Deposit, error)
 	GetPreviousBlock(ctx context.Context, networkID uint32, offset uint64, dbTx interface{}) (etherman.Block, error)
 	GetNumberDeposits(ctx context.Context, origNetworkID uint32, blockNumber uint64, dbTx interface{}) (uint32, error)
 	ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, backwardLETID uint64, dbTx interface{}) error

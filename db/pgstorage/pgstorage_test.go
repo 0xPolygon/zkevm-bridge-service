@@ -326,6 +326,27 @@ func TestResetDeposits(t *testing.T) {
 	d, err = store.GetNumberDeposits(ctx, 1, 1, nil)
 	require.NoError(t, err)
 	assert.Equal(t, uint32(1), d)
+
+	// Verify that deposits were stored in order in deposit_backup table
+	var depositCounts []uint32
+	rows, err := store.Query(ctx, "SELECT deposit_cnt FROM sync.deposit_backup WHERE backward_let_id = 1 ORDER BY id ASC")
+	require.NoError(t, err)
+	defer rows.Close()
+
+	for rows.Next() {
+		var depositCnt uint32
+		err = rows.Scan(&depositCnt)
+		require.NoError(t, err)
+		depositCounts = append(depositCounts, depositCnt)
+	}
+	require.NoError(t, rows.Err())
+
+	// Check that we have 2 deposits (deposit_cnt 1 and 2)
+	require.Len(t, depositCounts, 2)
+
+	// Verify they are in ascending order
+	assert.Equal(t, uint32(1), depositCounts[0], "First deposit should have deposit_cnt = 1")
+	assert.Equal(t, uint32(2), depositCounts[1], "Second deposit should have deposit_cnt = 2")
 }
 
 func TestAddBackwardLET(t *testing.T) {

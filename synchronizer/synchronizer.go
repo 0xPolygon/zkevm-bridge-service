@@ -686,6 +686,21 @@ func (s *ClientSynchronizer) resetState(blockNumber uint64) error {
 		log.Errorf("networkID: %d, error resetting ReorgMT the state. Error: %v", s.networkID, err)
 		return s.rollback(blockNumber, err, dbTx)
 	}
+
+	// Read orphan depositBackups and process them
+	depositsToRestore, err := s.storage.GetAndDeleteOrphanDepositBackups(s.ctx, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting orphan deposit backups. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	for _, deposit := range depositsToRestore {
+		err := s.processDeposit(*deposit, deposit.BlockID, dbTx)
+		if err != nil {
+			log.Errorf("networkID: %d, error processing orphan deposit: %+v Error: %s", s.networkID, deposit, err.Error())
+			return s.rollback(blockNumber, err, dbTx)
+		}
+	}
+
 	err = s.storage.Commit(s.ctx, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error committing the resetted state. Error: %v", s.networkID, err)

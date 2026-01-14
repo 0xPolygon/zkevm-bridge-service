@@ -927,9 +927,17 @@ func (p *PostgresStorage) ResetDeposits(ctx context.Context, depositCount uint32
 		return errors.New("cannot reset L1 deposits")
 	}
 	// Store the deposits in other table and remove from deposit table
-	const resetSQL = "DELETE FROM sync.deposit WHERE deposit_cnt >= $1 AND network_id = $2 RETURNING id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, network_id, tx_hash, metadata, ready_for_claim"
+	// Using CTE to ensure deposits are returned in ascending order by deposit_cnt
+	const resetSQL = `
+		WITH deleted_deposits AS (
+			DELETE FROM sync.deposit
+			WHERE deposit_cnt >= $1 AND network_id = $2
+			RETURNING id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, network_id, tx_hash, metadata, ready_for_claim
+		)
+		SELECT id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, network_id, tx_hash, metadata, ready_for_claim
+		FROM deleted_deposits
+		ORDER BY deposit_cnt ASC`
 	e := p.getExecQuerier(dbTx)
-	_, err := e.Exec(ctx, resetSQL, depositCount, networkID)
 	rows, err := e.Query(ctx, resetSQL, depositCount, networkID)
     if err != nil {
         return err
@@ -1013,6 +1021,7 @@ func (p *PostgresStorage) GetAndDeleteOrphanDepositBackups(ctx context.Context, 
 			FROM sync.deposit_backup AS db2
 			LEFT JOIN sync.backward_let AS bl ON bl.id = db2.backward_let_id
 			WHERE bl.id IS NULL
+			ORDER BY db2.deposit_cnt ASC
 		) AS orphans
 		WHERE db.id = orphans.id
 		RETURNING db.id, db.leaf_type, db.orig_net, db.orig_addr, db.amount, db.dest_net,
