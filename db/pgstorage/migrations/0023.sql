@@ -22,15 +22,13 @@ ON sync.deposit(network_id, deposit_cnt);
 CREATE INDEX IF NOT EXISTS idx_deposit_dest_addr
 ON sync.deposit(dest_addr);
 
--- Index for pending deposits query: WHERE dest_net = $1 AND ready_for_claim = true AND ignore = false
--- Supports GetPendingDepositsToClaim with multiple conditions
+-- Index for pending deposits query: WHERE dest_net = $1 AND ready_for_claim = true/false AND ignore = false
+-- Supports GetPendingDepositsToClaim and UpdateL1DepositsStatus/UpdateL2DepositsStatus queries
+-- This composite index covers all query patterns:
+--   1. dest_net = $X AND ready_for_claim = true AND ignore = false  (GetPendingDepositsToClaim)
+--   2. dest_net = $X AND ready_for_claim = false                    (UpdateL1/L2DepositsStatus)
 CREATE INDEX IF NOT EXISTS idx_deposit_dest_net_ready_ignore
 ON sync.deposit(dest_net, ready_for_claim, ignore);
-
--- Index for deposits ready to claim: WHERE ready_for_claim = true AND dest_net = $1
--- Supports UpdateL1DepositsStatus and UpdateL2DepositsStatus queries
-CREATE INDEX IF NOT EXISTS idx_deposit_ready_dest_net
-ON sync.deposit(ready_for_claim, dest_net) WHERE ready_for_claim = true;
 
 -- Index for deposit metadata lookups: WHERE network_id = $1 AND orig_addr = $2 AND dest_net = $3
 -- Used in GetTokenMetadata
@@ -316,7 +314,6 @@ DROP INDEX IF EXISTS sync.idx_deposit_network_id_block_id;
 DROP INDEX IF EXISTS sync.idx_deposit_network_id_deposit_cnt;
 DROP INDEX IF EXISTS sync.idx_deposit_dest_addr;
 DROP INDEX IF EXISTS sync.idx_deposit_dest_net_ready_ignore;
-DROP INDEX IF EXISTS sync.idx_deposit_ready_dest_net;
 DROP INDEX IF EXISTS sync.idx_deposit_metadata_lookup;
 DROP INDEX IF EXISTS sync.idx_deposit_l2_claim_status;
 DROP INDEX IF EXISTS sync.idx_deposit_id_network_dest;

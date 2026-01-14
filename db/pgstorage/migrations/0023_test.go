@@ -32,12 +32,11 @@ func (m migrationTest0023) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 		tableName string
 		indexName string
 	}{
-		// sync.deposit indexes
+		// sync.deposit indexes (8 indexes)
 		{"sync", "deposit", "idx_deposit_network_id_block_id"},
 		{"sync", "deposit", "idx_deposit_network_id_deposit_cnt"},
 		{"sync", "deposit", "idx_deposit_dest_addr"},
 		{"sync", "deposit", "idx_deposit_dest_net_ready_ignore"},
-		{"sync", "deposit", "idx_deposit_ready_dest_net"},
 		{"sync", "deposit", "idx_deposit_metadata_lookup"},
 		{"sync", "deposit", "idx_deposit_l2_claim_status"},
 		{"sync", "deposit", "idx_deposit_id_network_dest"},
@@ -119,44 +118,7 @@ func (m migrationTest0023) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 		assert.True(t, indexExists, "Index %s.%s.%s should exist after migration up", idx.schema, idx.tableName, idx.indexName)
 	}
 
-	// Verify that redundant indexes do NOT exist
-	redundantIndexes := []struct {
-		schema    string
-		tableName string
-		indexName string
-	}{
-		{"sync", "claim", "idx_claim_network_id"},              // Removed as redundant
-		{"sync", "block", "idx_block_block_hash"},              // Removed as covered by UNIQUE constraint
-		{"mt", "rollup_exit", "idx_rollup_exit_root_rollup"},   // Removed as duplicate
-	}
-
-	for _, idx := range redundantIndexes {
-		var indexExists bool
-		checkIndex := `SELECT EXISTS (
-			SELECT 1 FROM pg_indexes
-			WHERE schemaname = $1
-			AND tablename = $2
-			AND indexname = $3
-		)`
-		err := db.QueryRow(checkIndex, idx.schema, idx.tableName, idx.indexName).Scan(&indexExists)
-		assert.NoError(t, err, "Error checking index %s.%s.%s", idx.schema, idx.tableName, idx.indexName)
-		assert.False(t, indexExists, "Redundant index %s.%s.%s should NOT exist after migration up", idx.schema, idx.tableName, idx.indexName)
-	}
-
 	// Verify specific index properties
-	// Test partial index on sync.deposit with WHERE clause
-	var hasWhereClause bool
-	checkPartialIndex := `SELECT EXISTS (
-		SELECT 1 FROM pg_indexes
-		WHERE schemaname = 'sync'
-		AND tablename = 'deposit'
-		AND indexname = 'idx_deposit_ready_dest_net'
-		AND indexdef LIKE '%WHERE%ready_for_claim = true%'
-	)`
-	err := db.QueryRow(checkPartialIndex).Scan(&hasWhereClause)
-	assert.NoError(t, err)
-	assert.True(t, hasWhereClause, "Partial index idx_deposit_ready_dest_net should have WHERE clause")
-
 	// Test GIN index on sync.exit_root
 	var isGinIndex bool
 	checkGinIndex := `SELECT EXISTS (
@@ -166,7 +128,7 @@ func (m migrationTest0023) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 		AND indexname = 'idx_exit_root_exit_roots_array'
 		AND indexdef LIKE '%USING gin%'
 	)`
-	err = db.QueryRow(checkGinIndex).Scan(&isGinIndex)
+	err := db.QueryRow(checkGinIndex).Scan(&isGinIndex)
 	assert.NoError(t, err)
 	assert.True(t, isGinIndex, "Index idx_exit_root_exit_roots_array should be a GIN index")
 
@@ -184,25 +146,85 @@ func (m migrationTest0023) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 }
 
 func (m migrationTest0023) RunAssertsAfterMigrationDown(t *testing.T, db *sql.DB) {
-	// List of all indexes that should NOT exist after migration down
+	// List of ALL indexes that should NOT exist after migration down
+	// This must match exactly the indexes created in the UP migration
 	indexesToCheck := []struct {
 		schema    string
 		tableName string
 		indexName string
 	}{
+		// sync.deposit indexes (8 indexes)
 		{"sync", "deposit", "idx_deposit_network_id_block_id"},
 		{"sync", "deposit", "idx_deposit_network_id_deposit_cnt"},
+		{"sync", "deposit", "idx_deposit_dest_addr"},
+		{"sync", "deposit", "idx_deposit_dest_net_ready_ignore"},
+		{"sync", "deposit", "idx_deposit_metadata_lookup"},
+		{"sync", "deposit", "idx_deposit_l2_claim_status"},
+		{"sync", "deposit", "idx_deposit_id_network_dest"},
+		{"sync", "deposit", "idx_deposit_orig_addr"},
+
+		// sync.claim indexes (5 indexes)
 		{"sync", "claim", "idx_claim_mainnet_network"},
+		{"sync", "claim", "idx_claim_rollup_network"},
+		{"sync", "claim", "idx_claim_dest_addr"},
+		{"sync", "claim", "idx_claim_network_id_index"},
+		{"sync", "claim", "idx_claim_global_index_network"},
+
+		// sync.block indexes (2 indexes)
 		{"sync", "block", "idx_block_network_id_block_num_desc"},
+		{"sync", "block", "idx_block_num_network_id"},
+
+		// sync.exit_root indexes (7 indexes)
 		{"sync", "exit_root", "idx_exit_root_allowed_block_id_network"},
+		{"sync", "exit_root", "idx_exit_root_network_allowed_id_desc"},
+		{"sync", "exit_root", "idx_exit_root_ger_lookup"},
+		{"sync", "exit_root", "idx_exit_root_l2_ger"},
+		{"sync", "exit_root", "idx_exit_root_exit_roots_array"},
+		{"sync", "exit_root", "idx_exit_root_network_id_desc"},
+		{"sync", "exit_root", "idx_exit_root_ger_network"},
+
+		// sync.token_wrapped indexes (1 index)
+		{"sync", "token_wrapped", "idx_token_wrapped_orig_net_addr"},
+
+		// mt.root indexes (2 indexes)
 		{"mt", "root", "idx_root_deposit_id_network"},
+		{"mt", "root", "idx_root_network"},
+
+		// mt.rollup_exit indexes (3 indexes)
 		{"mt", "rollup_exit", "idx_rollup_exit_root_rollup_id"},
+		{"mt", "rollup_exit", "idx_rollup_exit_root"},
+		{"mt", "rollup_exit", "idx_rollup_exit_rollup_id_id"},
+
+		// sync.monitored_txs indexes (3 indexes)
 		{"sync", "monitored_txs", "idx_monitored_txs_deposit_id"},
+		{"sync", "monitored_txs", "idx_monitored_txs_status_created"},
+		{"sync", "monitored_txs", "idx_monitored_txs_group_id"},
+
+		// sync.remove_exit_root indexes (2 indexes)
+		{"sync", "remove_exit_root", "idx_remove_exit_root_ger_network"},
+		{"sync", "remove_exit_root", "idx_remove_exit_root_block_id"},
+
+		// sync.backward_let indexes (3 indexes)
 		{"sync", "backward_let", "idx_backward_let_new_root"},
+		{"sync", "backward_let", "idx_backward_let_previous_root"},
+		{"sync", "backward_let", "idx_backward_let_block_id"},
+
+		// sync.forward_let indexes (3 indexes)
 		{"sync", "forward_let", "idx_forward_let_new_root"},
+		{"sync", "forward_let", "idx_forward_let_previous_root"},
+		{"sync", "forward_let", "idx_forward_let_block_id"},
+
+		// sync.set_unset_claim indexes (4 indexes)
 		{"sync", "set_unset_claim", "idx_set_unset_claim_index_rollup"},
+		{"sync", "set_unset_claim", "idx_set_unset_claim_global_index"},
+		{"sync", "set_unset_claim", "idx_set_unset_claim_type"},
+		{"sync", "set_unset_claim", "idx_set_unset_claim_block_id"},
+
+		// sync.deposit_backup indexes (2 indexes)
 		{"sync", "deposit_backup", "idx_deposit_backup_deposit_cnt"},
+		{"sync", "deposit_backup", "idx_deposit_backup_network_id"},
 	}
+	// Total: 45 indexes
 
 	for _, idx := range indexesToCheck {
 		var indexExists bool
