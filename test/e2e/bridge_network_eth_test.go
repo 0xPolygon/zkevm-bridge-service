@@ -18,7 +18,7 @@ func TestClaimAlreadyClaimedDepositL2toL1(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := context.TODO()
+	ctx := context.Background()
 	testData, err := NewBridge2e2TestData(ctx, nil)
 	require.NoError(t, err)
 	checkBridgeServiceIsAliveAndExpectedVersion(t, testData)
@@ -52,7 +52,7 @@ func TestEthTransferL1toL2(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := context.TODO()
+	ctx := context.Background()
 	testData, err := NewBridge2e2TestData(ctx, nil)
 	require.NoError(t, err)
 	checkBridgeServiceIsAliveAndExpectedVersion(t, testData)
@@ -82,7 +82,7 @@ func TestEthTransferL2toL1(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	testData, err := NewBridge2e2TestData(ctx, nil)
 	require.NoError(t, err)
 

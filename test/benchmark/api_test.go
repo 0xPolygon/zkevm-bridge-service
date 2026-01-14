@@ -78,19 +78,19 @@ func initServer(b *testing.B, bench benchmark) *bridgectrl.BridgeController {
 		networkID := uint32(rand.Intn(2)) //nolint: gosec
 		dbTx, err := store.BeginDBTransaction(context.Background())
 		require.NoError(b, err)
-		id, err := store.AddBlock(context.TODO(), &etherman.Block{
+		id, err := store.AddBlock(ctx, &etherman.Block{
 			BlockNumber: uint64(i), // nolint:gosec
 			BlockHash:   utils.GenerateRandomHash(),
 		}, dbTx)
 		require.NoError(b, err)
 		deposit := randDeposit(r, counts[networkID], id, networkID)
 		counts[networkID]++
-		depositID, err := store.AddDeposit(context.TODO(), deposit, dbTx)
+		depositID, err := store.AddDeposit(ctx, deposit, dbTx)
 		require.NoError(b, err)
 		deposit.Id = depositID
 		require.NoError(b, bt.AddDeposit(ctx, deposit, dbTx))
 		if i > bench.initSize {
-			require.NoError(b, store.Commit(context.TODO(), dbTx))
+			require.NoError(b, store.Commit(ctx, dbTx))
 			continue
 		}
 		var roots [2][]byte
@@ -100,14 +100,14 @@ func initServer(b *testing.B, bench benchmark) *bridgectrl.BridgeController {
 		require.NoError(b, err)
 
 		if networkID == 0 {
-			err = store.AddGlobalExitRoot(context.TODO(), &etherman.GlobalExitRoot{
+			err = store.AddGlobalExitRoot(ctx, &etherman.GlobalExitRoot{
 				GlobalExitRoot: bridgectrl.Hash(common.BytesToHash(roots[0]), common.BytesToHash(roots[1])),
 				ExitRoots:      []common.Hash{common.BytesToHash(roots[0]), common.BytesToHash(roots[1])},
 				BlockID:        id,
 			}, dbTx)
 		} else {
 			var isUpdated bool
-			isUpdated, err = store.AddTrustedGlobalExitRoot(context.TODO(), &etherman.GlobalExitRoot{
+			isUpdated, err = store.AddTrustedGlobalExitRoot(ctx, &etherman.GlobalExitRoot{
 				NetworkID:      1,
 				GlobalExitRoot: bridgectrl.Hash(common.BytesToHash(roots[0]), common.BytesToHash(roots[1])),
 				ExitRoots:      []common.Hash{common.BytesToHash(roots[0]), common.BytesToHash(roots[1])},
@@ -115,7 +115,7 @@ func initServer(b *testing.B, bench benchmark) *bridgectrl.BridgeController {
 			require.True(b, isUpdated)
 		}
 		require.NoError(b, err)
-		err = store.AddClaim(context.TODO(), &etherman.Claim{
+		err = store.AddClaim(ctx, &etherman.Claim{
 			Index:              deposit.DepositCount,
 			OriginalNetwork:    deposit.OriginalNetwork,
 			Amount:             deposit.Amount,
@@ -126,10 +126,10 @@ func initServer(b *testing.B, bench benchmark) *bridgectrl.BridgeController {
 			BlockID:            id,
 		}, dbTx)
 		require.NoError(b, err)
-		require.NoError(b, store.Commit(context.TODO(), dbTx))
+		require.NoError(b, store.Commit(ctx, dbTx))
 	}
 
-	require.NoError(b, store.UpdateDepositsStatusForTesting(context.TODO(), nil))
+	require.NoError(b, store.UpdateDepositsStatusForTesting(ctx, nil))
 
 	return bt
 }
@@ -143,7 +143,7 @@ func addDeposit(b *testing.B, bench benchmark) {
 	var deposits []*etherman.Deposit
 	for i := 0; i < bench.initSize; i++ {
 		deposit := randDeposit(r, uint32(i), 0, 0) // nolint:gosec
-		depositID, err := store.AddDeposit(context.TODO(), deposit, nil)
+		depositID, err := store.AddDeposit(ctx, deposit, nil)
 		require.NoError(b, err)
 		deposit.Id = depositID
 		deposits = append(deposits, deposit)
@@ -153,7 +153,7 @@ func addDeposit(b *testing.B, bench benchmark) {
 		dbTx, err := store.BeginDBTransaction(context.Background())
 		require.NoError(b, err)
 		require.NoError(b, bt.AddDeposit(ctx, deposits[i], dbTx))
-		require.NoError(b, store.Commit(context.TODO(), dbTx))
+		require.NoError(b, store.Commit(ctx, dbTx))
 	}
 }
 

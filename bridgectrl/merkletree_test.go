@@ -169,7 +169,7 @@ func TestMTGetProof(t *testing.T) {
 					BlockNumber: uint64(li + 1), // nolint:gosec
 					BlockHash:   common.HexToHash("0x29e885edaf8e4b51e1d2e05f9da28161d2fb4f6b1d53827d9b80a23cf2d7d9fc"),
 				}
-				blockID, err := testStore.AddBlock(context.TODO(), block, nil)
+				blockID, err := testStore.AddBlock(ctx, block, nil)
 				require.NoError(t, err)
 				deposit := &etherman.Deposit{
 					OriginalNetwork:    leaf.OriginalNetwork,

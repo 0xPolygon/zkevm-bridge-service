@@ -32,7 +32,7 @@ func TestMessageTransferL1toL2(t *testing.T) {
 		t.Skip()
 	}
 	log.Infof("Starting test bridge_message L1 -> L2")
-	ctx := context.TODO()
+	ctx := context.Background()
 	testData, err := NewBridge2e2TestData(ctx, nil)
 	require.NoError(t, err)
 	balances, err := getcurrentBalance(ctx, testData)
@@ -67,7 +67,7 @@ func TestMessageTransferL2toL1(t *testing.T) {
 		t.Skip()
 	}
 	log.Infof("Starting test bridge_message L2 -> L1")
-	ctx := context.TODO()
+	ctx := context.Background()
 	testData, err := NewBridge2e2TestData(ctx, nil)
 	require.NoError(t, err)
 	log.Infof("MSG [L2->L1]  deploying contract to L1 to recieve message")

@@ -686,6 +686,21 @@ func (s *ClientSynchronizer) resetState(blockNumber uint64) error {
 		log.Errorf("networkID: %d, error resetting ReorgMT the state. Error: %v", s.networkID, err)
 		return s.rollback(blockNumber, err, dbTx)
 	}
+
+	// Read orphan depositBackups and process them
+	depositsToRestore, err := s.storage.GetAndDeleteOrphanDepositBackups(s.ctx, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error getting orphan deposit backups. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
+	for _, deposit := range depositsToRestore {
+		err := s.processDeposit(*deposit, deposit.BlockID, dbTx)
+		if err != nil {
+			log.Errorf("networkID: %d, error processing orphan deposit: %+v Error: %s", s.networkID, deposit, err.Error())
+			return s.rollback(blockNumber, err, dbTx)
+		}
+	}
+
 	err = s.storage.Commit(s.ctx, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error committing the resetted state. Error: %v", s.networkID, err)
@@ -915,6 +930,12 @@ func (s *ClientSynchronizer) processRemoveL2GlobalExitRoot(ger etherman.GlobalEx
 func (s *ClientSynchronizer) processBackwardLETSovereign(backwardLET etherman.BackwardLET, blockID, blockNumber uint64, dbTx interface{}) error {
 	backwardLET.BlockID = blockID
 	log.Debugf("networkID: %d, Full BackwardLET event: %+v", s.networkID, backwardLET)
+	// Store the backwardLET event in the db
+	backwardLETID, err := s.storage.AddBackwardLET(s.ctx, &backwardLET, dbTx)
+	if err != nil {
+		log.Errorf("networkID: %d, error adding BackwardLET to the state. Error: %v", s.networkID, err)
+		return s.rollback(blockNumber, err, dbTx)
+	}
 	// First check the initial state of the MT
 	depositCnt, err := s.storage.GetNumberDeposits(s.ctx, s.networkID, blockNumber, dbTx)
 	if err != nil {
@@ -934,8 +955,8 @@ func (s *ClientSynchronizer) processBackwardLETSovereign(backwardLET etherman.Ba
 		return s.rollback(blockNumber, err, dbTx)
 	}
 	// MT entries are deleted in cascade when invalid deposits are deleted.
-	// Remove the deposits that are no longer valid (deposit_cnt >= backwardLET.NewDepositCount)
-	err = s.storage.ResetDeposits(s.ctx, backwardLET.NewDepositCount, s.networkID, dbTx)
+	// Remove the deposits that are no longer valid (deposit_cnt >= backwardLET.NewDepositCount) and save them in another db table
+	err = s.storage.ResetDeposits(s.ctx, backwardLET.NewDepositCount, s.networkID, backwardLETID, dbTx)
 	if err != nil {
 		log.Errorf("networkID: %d, error reseting deposits in processBackwardLETSovereign. Error: %v", s.networkID, err)
 		return s.rollback(blockNumber, err, dbTx)
@@ -962,12 +983,6 @@ func (s *ClientSynchronizer) processBackwardLETSovereign(backwardLET etherman.Ba
 		err := fmt.Errorf("networkID: %d, error processing BackwardLET. NewRoot or NewDepositCount do not match with the current state after reseting the state. Current localExitTreeRoot: %s, BackwardLET.NewRoot: %s, Current depositCnt: %d, BackwardLET.NewDepositCount: %d",
 			s.networkID, localExitTreeRoot.String(), backwardLET.NewRoot.String(), depositCnt, backwardLET.NewDepositCount)
 		log.Error(err)
-		return s.rollback(blockNumber, err, dbTx)
-	}
-	// Store the backwardLET event in the db
-	err = s.storage.AddBackwardLET(s.ctx, &backwardLET, dbTx)
-	if err != nil {
-		log.Errorf("networkID: %d, error adding BackwardLET to the state. Error: %v", s.networkID, err)
 		return s.rollback(blockNumber, err, dbTx)
 	}
 	return nil

@@ -922,22 +922,47 @@ func (p *PostgresStorage) GetSyncStatus(ctx context.Context, dbTx interface{}) (
 }
 
 // ResetDeposits resets the state to a depositCount.
-func (p *PostgresStorage) ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, dbTx interface{}) error {
+func (p *PostgresStorage) ResetDeposits(ctx context.Context, depositCount uint32, networkID uint32, backwardLETID uint64, dbTx interface{}) error {
 	if networkID == 0 {
 		return errors.New("cannot reset L1 deposits")
 	}
-	const resetSQL = "DELETE FROM sync.deposit WHERE deposit_cnt >= $1 AND network_id = $2"
+	// Store the deposits in other table and remove from deposit table
+	// Using CTE to ensure deposits are returned in ascending order by deposit_cnt
+	const resetSQL = `
+		WITH deleted_deposits AS (
+			DELETE FROM sync.deposit
+			WHERE deposit_cnt >= $1 AND network_id = $2
+			RETURNING id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, network_id, tx_hash, metadata, ready_for_claim
+		)
+		SELECT id, leaf_type, orig_net, orig_addr, amount, dest_net, dest_addr, deposit_cnt, block_id, network_id, tx_hash, metadata, ready_for_claim
+		FROM deleted_deposits
+		ORDER BY deposit_cnt ASC`
 	e := p.getExecQuerier(dbTx)
-	_, err := e.Exec(ctx, resetSQL, depositCount, networkID)
-	return err
+	rows, err := e.Query(ctx, resetSQL, depositCount, networkID)
+    if err != nil {
+        return err
+    }
+    defer rows.Close()
+	deposits, err := parseDeposits(rows, false)
+	if err != nil {
+		return err
+	}
+	const addDepositSQL = "INSERT INTO sync.deposit_backup (leaf_type, network_id, orig_net, orig_addr, amount, dest_net, dest_addr, block_id, deposit_cnt, tx_hash, metadata, ready_for_claim, backward_let_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)"
+	for _, deposit := range deposits {
+		_, err = e.Exec(ctx, addDepositSQL, deposit.LeafType, deposit.NetworkID, deposit.OriginalNetwork, deposit.OriginalAddress, deposit.Amount.String(), deposit.DestinationNetwork, deposit.DestinationAddress, deposit.BlockID, deposit.DepositCount, deposit.TxHash, deposit.Metadata, deposit.ReadyForClaim, backwardLETID)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // AddBackwardLET adds a new BackwardLET event to the db.
-func (p *PostgresStorage) AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) error {
-	const addExitRootSQL = "INSERT INTO sync.backward_let(block_id, previous_deposit_cnt, previous_root, new_deposit_cnt, new_root) VALUES ($1, $2, $3, $4, $5)"
-	e := p.getExecQuerier(dbTx)
-	_, err := e.Exec(ctx, addExitRootSQL, backwardLET.BlockID, backwardLET.PreviousDepositCount, backwardLET.PreviousRoot, backwardLET.NewDepositCount, backwardLET.NewRoot)
-	return err
+func (p *PostgresStorage) AddBackwardLET(ctx context.Context, backwardLET *etherman.BackwardLET, dbTx interface{}) (uint64, error) {
+	const addExitRootSQL = "INSERT INTO sync.backward_let(block_id, previous_deposit_cnt, previous_root, new_deposit_cnt, new_root) VALUES ($1, $2, $3, $4, $5) RETURNING id"
+	var id uint64
+	err := p.getExecQuerier(dbTx).QueryRow(ctx, addExitRootSQL, backwardLET.BlockID, backwardLET.PreviousDepositCount, backwardLET.PreviousRoot, backwardLET.NewDepositCount, backwardLET.NewRoot).Scan(&id)
+	return id, err
 }
 
 // AddForwardLET adds a new ForwardLET event to the db.
@@ -981,6 +1006,37 @@ func (p *PostgresStorage) GetLastComputedRoot(ctx context.Context, networkID uin
 		return common.Hash{}, fmt.Errorf("error getting the root from db: %v", err)
 	}
 	return root, nil
+}
+
+// GetAndDeleteOrphanDepositBackups finds and deletes deposit_backup records whose backward_let_id
+// does not exist in the backward_let table, returning the deleted deposits.
+// This uses a single optimized DELETE query with RETURNING clause and LEFT JOIN for better performance.
+func (p *PostgresStorage) GetAndDeleteOrphanDepositBackups(ctx context.Context, dbTx interface{}) ([]*etherman.Deposit, error) {
+	// Single query that deletes orphan deposits and returns them in one operation
+	// Using LEFT JOIN with NULL check is often faster than NOT EXISTS for this use case
+	const deleteAndReturnOrphanDepositsSQL = `
+		DELETE FROM sync.deposit_backup AS db
+		USING (
+			SELECT db2.id
+			FROM sync.deposit_backup AS db2
+			LEFT JOIN sync.backward_let AS bl ON bl.id = db2.backward_let_id
+			WHERE bl.id IS NULL
+			ORDER BY db2.deposit_cnt ASC
+		) AS orphans
+		WHERE db.id = orphans.id
+		RETURNING db.id, db.leaf_type, db.orig_net, db.orig_addr, db.amount, db.dest_net,
+		          db.dest_addr, db.deposit_cnt, db.block_id, db.network_id, db.tx_hash,
+		          db.metadata, db.ready_for_claim`
+
+	e := p.getExecQuerier(dbTx)
+	rows, err := e.Query(ctx, deleteAndReturnOrphanDepositsSQL)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Parse and return the deleted deposits
+	return parseDeposits(rows, false)
 }
 
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.
