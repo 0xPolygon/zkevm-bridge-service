@@ -55,7 +55,7 @@ func (m migrationTest0023) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 		{"sync", "block", "idx_block_num_network_id"},
 
 		// sync.exit_root indexes
-		{"sync", "exit_root", "idx_exit_root_allowed_blockid_network"},
+		{"sync", "exit_root", "idx_exit_root_allowed_block_id_network"},
 		{"sync", "exit_root", "idx_exit_root_network_allowed_id_desc"},
 		{"sync", "exit_root", "idx_exit_root_ger_lookup"},
 		{"sync", "exit_root", "idx_exit_root_l2_ger"},
@@ -194,7 +194,7 @@ func (m migrationTest0023) RunAssertsAfterMigrationDown(t *testing.T, db *sql.DB
 		{"sync", "deposit", "idx_deposit_network_id_deposit_cnt"},
 		{"sync", "claim", "idx_claim_mainnet_network"},
 		{"sync", "block", "idx_block_network_id_block_num_desc"},
-		{"sync", "exit_root", "idx_exit_root_allowed_blockid_network"},
+		{"sync", "exit_root", "idx_exit_root_allowed_block_id_network"},
 		{"mt", "root", "idx_root_deposit_id_network"},
 		{"mt", "rollup_exit", "idx_rollup_exit_root_rollup_id"},
 		{"sync", "monitored_txs", "idx_monitored_txs_deposit_id"},

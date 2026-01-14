@@ -102,7 +102,7 @@ ON sync.block(block_num, network_id);
 
 -- Index for GetLatestL1SyncedExitRoot query
 -- WHERE allowed = true AND block_id > 0 AND network_id = 0 ORDER BY id DESC
-CREATE INDEX IF NOT EXISTS idx_exit_root_allowed_blockid_network
+CREATE INDEX IF NOT EXISTS idx_exit_root_allowed_block_id_network
 ON sync.exit_root(allowed, block_id, network_id, id DESC)
 WHERE allowed = true AND block_id > 0;
 
@@ -146,7 +146,9 @@ ON sync.exit_root(global_exit_root, network_id);
 -- ============================================================================
 
 -- Index for GetTokenWrapped query: WHERE orig_net = $1 AND orig_token_addr = $2
--- Primary key already exists but adding for WHERE clause performance
+-- Note: Primary key is (network_id, orig_net, orig_token_addr) per migration 0006
+-- This index complements the primary key for queries that filter by orig_net and
+-- orig_token_addr without network_id, which the PK cannot efficiently support
 CREATE INDEX IF NOT EXISTS idx_token_wrapped_orig_net_addr
 ON sync.token_wrapped(orig_net, orig_token_addr);
 
@@ -329,7 +331,7 @@ DROP INDEX IF EXISTS sync.idx_claim_global_index_network;
 DROP INDEX IF EXISTS sync.idx_block_network_id_block_num_desc;
 DROP INDEX IF EXISTS sync.idx_block_num_network_id;
 
-DROP INDEX IF EXISTS sync.idx_exit_root_allowed_blockid_network;
+DROP INDEX IF EXISTS sync.idx_exit_root_allowed_block_id_network;
 DROP INDEX IF EXISTS sync.idx_exit_root_network_allowed_id_desc;
 DROP INDEX IF EXISTS sync.idx_exit_root_ger_lookup;
 DROP INDEX IF EXISTS sync.idx_exit_root_l2_ger;
