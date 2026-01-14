@@ -529,6 +529,11 @@ func TestReorg(t *testing.T) {
 			Once()
 
 		m.Storage.
+			On("GetAndDeleteOrphanDepositBackups", ctx, m.DbTx).
+			Return([]*etherman.Deposit{}, nil).
+			Once()
+
+		m.Storage.
 			On("Commit", ctx, m.DbTx).
 			Return(nil).
 			Once()
@@ -756,6 +761,11 @@ func TestLatestSyncedBlockEmpty(t *testing.T) {
 			Once()
 
 		m.Storage.
+			On("GetAndDeleteOrphanDepositBackups", ctx, m.DbTx).
+			Return([]*etherman.Deposit{}, nil).
+			Once()
+
+		m.Storage.
 			On("Commit", ctx, m.DbTx).
 			Return(nil).
 			Once()
@@ -909,6 +919,11 @@ func TestRegularReorg(t *testing.T) {
 		m.BridgeCtrl.
 			On("ReorgMT", ctx, depositCnt, networkID, m.DbTx).
 			Return(nil).
+			Once()
+
+		m.Storage.
+			On("GetAndDeleteOrphanDepositBackups", ctx, m.DbTx).
+			Return([]*etherman.Deposit{}, nil).
 			Once()
 
 		m.Storage.
@@ -1145,6 +1160,11 @@ func TestLatestSyncedBlockEmptyWithExtraReorg(t *testing.T) {
 			Once()
 
 		m.Storage.
+			On("GetAndDeleteOrphanDepositBackups", ctx, m.DbTx).
+			Return([]*etherman.Deposit{}, nil).
+			Once()
+
+		m.Storage.
 			On("Commit", ctx, m.DbTx).
 			Return(nil).
 			Once()
@@ -1341,6 +1361,11 @@ func TestCallFromEmptyBlockAndReorg(t *testing.T) {
 		m.BridgeCtrl.
 			On("ReorgMT", ctx, depositCnt, networkID, m.DbTx).
 			Return(nil).
+			Once()
+
+		m.Storage.
+			On("GetAndDeleteOrphanDepositBackups", ctx, m.DbTx).
+			Return([]*etherman.Deposit{}, nil).
 			Once()
 
 		m.Storage.
