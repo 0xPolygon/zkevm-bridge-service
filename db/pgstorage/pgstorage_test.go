@@ -690,7 +690,7 @@ func TestGetAndDeleteOrphanDepositBackups(t *testing.T) {
 			expectedAmounts[amountStr] = true
 		}
 		assert.Equal(t, uint32(1), dep.NetworkID, "NetworkID should be 1")
-		assert.Equal(t, uint32(i)+2, dep.DepositCount, "BlockID should be different")
+		assert.Equal(t, uint32(i)+2, dep.DepositCount, "BlockID should be different") // nolint:gosec
 		assert.Equal(t, uint32(0), dep.DestinationNetwork, "DestinationNetwork should be 0")
 	}
 
