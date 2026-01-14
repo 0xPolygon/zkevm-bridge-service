@@ -19,6 +19,11 @@ CREATE TABLE IF NOT EXISTS sync.deposit_backup
     PRIMARY KEY (id)
 );
 
+-- Add index on backward_let_id for faster orphan lookups and JOIN operations
+CREATE INDEX IF NOT EXISTS idx_deposit_backup_backward_let_id
+ON sync.deposit_backup(backward_let_id);
+
 -- +migrate Down
 
+DROP INDEX IF EXISTS sync.idx_deposit_backup_backward_let_id;
 DROP TABLE IF EXISTS sync.deposit_backup;

@@ -1000,6 +1000,36 @@ func (p *PostgresStorage) GetLastComputedRoot(ctx context.Context, networkID uin
 	return root, nil
 }
 
+// GetAndDeleteOrphanDepositBackups finds and deletes deposit_backup records whose backward_let_id
+// does not exist in the backward_let table, returning the deleted deposits.
+// This uses a single optimized DELETE query with RETURNING clause and LEFT JOIN for better performance.
+func (p *PostgresStorage) GetAndDeleteOrphanDepositBackups(ctx context.Context, dbTx interface{}) ([]*etherman.Deposit, error) {
+	// Single query that deletes orphan deposits and returns them in one operation
+	// Using LEFT JOIN with NULL check is often faster than NOT EXISTS for this use case
+	const deleteAndReturnOrphanDepositsSQL = `
+		DELETE FROM sync.deposit_backup AS db
+		USING (
+			SELECT db2.id
+			FROM sync.deposit_backup AS db2
+			LEFT JOIN sync.backward_let AS bl ON bl.id = db2.backward_let_id
+			WHERE bl.id IS NULL
+		) AS orphans
+		WHERE db.id = orphans.id
+		RETURNING db.id, db.leaf_type, db.orig_net, db.orig_addr, db.amount, db.dest_net,
+		          db.dest_addr, db.deposit_cnt, db.block_id, db.network_id, db.tx_hash,
+		          db.metadata, db.ready_for_claim`
+
+	e := p.getExecQuerier(dbTx)
+	rows, err := e.Query(ctx, deleteAndReturnOrphanDepositsSQL)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Parse and return the deleted deposits
+	return parseDeposits(rows, false)
+}
+
 // UpdateDepositsStatusForTesting updates the ready_for_claim status of all deposits for testing.
 func (p *PostgresStorage) UpdateDepositsStatusForTesting(ctx context.Context, dbTx interface{}) error {
 	const updateDepositsStatusSQL = "UPDATE sync.deposit SET ready_for_claim = true;"

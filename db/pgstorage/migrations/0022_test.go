@@ -44,13 +44,38 @@ func (m migrationTest0022) RunAssertsAfterMigrationUp(t *testing.T, db *sql.DB) 
 	assert.Equal(t, int64(5), depositCnt)
 	assert.Equal(t, true, readyForClaim)
 	assert.Equal(t, int64(1), backwardLetID)
+
+	// Verify the index was created
+	var indexExists bool
+	checkIndex := `SELECT EXISTS (
+		SELECT 1 FROM pg_indexes
+		WHERE schemaname = 'sync'
+		AND tablename = 'deposit_backup'
+		AND indexname = 'idx_deposit_backup_backward_let_id'
+	)`
+	err = db.QueryRow(checkIndex).Scan(&indexExists)
+	assert.NoError(t, err)
+	assert.True(t, indexExists, "Index idx_deposit_backup_backward_let_id should exist")
 }
 
 func (m migrationTest0022) RunAssertsAfterMigrationDown(t *testing.T, db *sql.DB) {
+	// Verify the table was dropped
 	var count uint32
 	selectCount := "SELECT count(*) FROM sync.deposit_backup"
 	err := db.QueryRow(selectCount).Scan(&count)
 	assert.Error(t, err)
+
+	// Verify the index was also removed
+	var indexExists bool
+	checkIndex := `SELECT EXISTS (
+		SELECT 1 FROM pg_indexes
+		WHERE schemaname = 'sync'
+		AND tablename = 'deposit_backup'
+		AND indexname = 'idx_deposit_backup_backward_let_id'
+	)`
+	err = db.QueryRow(checkIndex).Scan(&indexExists)
+	assert.NoError(t, err)
+	assert.False(t, indexExists, "Index idx_deposit_backup_backward_let_id should not exist after migration down")
 }
 
 func TestMigration0022(t *testing.T) {
