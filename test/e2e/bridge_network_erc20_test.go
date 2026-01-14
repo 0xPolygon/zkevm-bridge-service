@@ -24,7 +24,7 @@ func TestERC20TransferL1toL2(t *testing.T) {
 		t.Skip()
 	}
 	log.Infof("Starting test ERC20 L1 -> L2")
-	ctx := context.TODO()
+	ctx := context.Background()
 	testData, err := NewBridge2e2TestData(ctx, nil)
 	require.NoError(t, err)
 	balances, err := getcurrentBalance(ctx, testData)
@@ -59,7 +59,7 @@ func TestERC20TransferL2toL1(t *testing.T) {
 	}
 	log.Infof("Starting test ERC20 L2->L1")
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	testData, err := NewBridge2e2TestData(ctx, nil)
 	require.NoError(t, err)
 	balances, err := getcurrentBalance(ctx, testData)
