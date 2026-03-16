@@ -85,7 +85,7 @@ Stop the service. The exact procedure depends on your infrastructure.
 ### Step 3 — Back up the bridge database (recommended)
 Make a backup using `pg_dump`:
 ```bash
-pg_dump -h  -U  -d  \
+pg_dump -h <DB_HOST> -U <DB_USER> -d <DB_NAME> \
   -F c -f bridge_db_backup_before_rollback_$(date +%Y%m%d_%H%M%S).dump
 ```
 
