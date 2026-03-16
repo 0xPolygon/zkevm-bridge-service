@@ -2,7 +2,7 @@
 
 ## Overview
 
-This runbook describes the recovery procedure for the `mismatched deposit count` error in `zkevm-bridge-service`. When this error occurs, the bridge service stops syncing and gets stuck in a loop, making deposits unavailable for claim.
+This runbook describes the recovery procedure for the `mismatched deposit count` error in `zkevm-bridge-service`. When this error occurs, the bridge service stops syncing and gets stuck in a loop, making deposits unavailable to claim.
 
 ## 1. Error Signature
 
@@ -30,15 +30,18 @@ Key fields to extract from the error log:
 
 ## 2. Recovery Options
 
-There are 3 possible fixes:
-- If **networkID** is 0, updating the L1 RPC to a different provider may fix the problem: edit the config file to set the new endpoint
-```toml
-[Etherman]
-# Replace with a different, reliable L1 RPC endpoint
-L1URL = "https://"
-```
-- **Path A**: This is the faster solution because it only requires resyncing a few blocks, not all of them.
-- **Path B**: This is the most reliable solution, but it has the drawback of also being the slowest (it requires a full sync).
+There are three possible fixes:
+
+> **Note — L1 RPC switch (applies to any path)**
+> If `networkID` is `0`, switching to a different L1 RPC provider may be enough to fix the problem. Edit the config file to set the new endpoint before resyncing:
+> ```toml
+> [Etherman]
+> # Replace with a different, reliable L1 RPC endpoint
+> L1URL = "https://<NEW_RPC_ENDPOINT>"
+> ```
+
+- **Path A**: The faster solution — it only requires resyncing a few blocks, not all of them.
+- **Path B**: The most reliable solution, but also the slowest — it requires a full resync from genesis.
 
 
 > ⚠️ **Important**
@@ -52,7 +55,7 @@ Use this path when a full resync is not practical due to large DB size or long s
 
 
 > ⚠️ **Prerequisites**
-> - If the gap is large (e.g., 80+ deposits), use Path B instead — the DB state is too corrupted for surgical repair.
+> - If the gap is large (e.g., 80+ deposits), use Path B instead — the database state is too inconsistent for a surgical repair.
 > - Always back up the database before executing any `DELETE` statement.
 
 ### Step 1 — Identify the NetworkID and choose a rollback point
@@ -82,7 +85,7 @@ This gives the following values for the example:
 ### Step 2 — Stop the bridge service
 Stop the service. The exact procedure depends on your infrastructure.
 
-### Step 3 — Back up the bridge database (recommended)
+### Step 3 — Back up the bridge database
 Make a backup using `pg_dump`:
 ```bash
 pg_dump -h <DB_HOST> -U <DB_USER> -d <DB_NAME> \
@@ -135,14 +138,20 @@ Start the bridge service. It will re-sync only the deleted blocks — a much sho
 This is the most reliable recovery method, but it has the drawback of also being the slowest.
 
 ### Step 1 — Stop the bridge service
+Stop the service. The exact procedure depends on your infrastructure.
 
-### Step 2 — Back up the existing database (recommended)
+### Step 2 — Back up the existing database
+Make a backup using `pg_dump`:
+```bash
+pg_dump -h <DB_HOST> -U <DB_USER> -d <DB_NAME> \
+  -F c -f bridge_db_backup_before_resync_$(date +%Y%m%d_%H%M%S).dump
+```
 
 ### Step 3 — Delete the bridge database
 Drop and recreate the bridge database to force a clean resync from genesis.
 ```bash
-psql -h  -U  -c "DROP DATABASE ;"
-psql -h  -U  -c "CREATE DATABASE ;"
+psql -h <DB_HOST> -U <DB_USER> -c "DROP DATABASE <DB_NAME>;"
+psql -h <DB_HOST> -U <DB_USER> -c "CREATE DATABASE <DB_NAME>;"
 ```
 
 ### Step 4 — Restart the bridge service
@@ -156,7 +165,7 @@ Confirm the service is syncing cleanly without errors.
 ## 5. Known Scenarios & Notes
 
 ### Error persists after resync with the same L1 RPC
-If the error reappears on a different block after resync, the L1 RPC is consistently returning bad data. Switch to a completely different RPC provider and resync again. Multiple teams reported the error resolving only after changing the RPC.
+If the error reappears on a different block after resync, the L1 RPC is consistently returning bad data. Switch to a completely different RPC provider and resync again. This has been confirmed by multiple operators: the error only resolved after switching to a different RPC provider.
 
 ### Large gap between actual and expected deposit count
 Gaps of 80+ (e.g., expected: 41838, got: 41918) indicate the DB state is significantly corrupted and surgical rollback is insufficient. Use Path B (full resync).
@@ -186,5 +195,5 @@ If the error persists after completing the fix, escalate to the team with the fo
 |---|---|
 | **Recommended image** | `hermeznetwork/zkevm-bridge-service:v0.6.2` |
 | **Min. supported version** | v0.6.2 (v0.5.x is deprecated) |
-| **Public runbook for Running L2 Trusted Environment** | `github.com/agglayer/runbooks/blob/main/operations/run-l2-trusted-environment.md` |
+| **Public runbook for Running L2 Trusted Environment** | [agglayer/runbooks — run-l2-trusted-environment.md](https://github.com/agglayer/runbooks/blob/main/operations/run-l2-trusted-environment.md) |
 | **Bridge API health check** | `<BRIDGE_URL>/bridges/<WALLET_ADDRESS>` |
