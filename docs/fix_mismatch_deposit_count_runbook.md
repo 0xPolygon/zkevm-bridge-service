@@ -140,7 +140,7 @@ This is the most reliable recovery method, but it has the drawback of also being
 
 ### Step 3 — Delete the bridge database
 Drop and recreate the bridge database to force a clean resync from genesis.
-```sql
+```bash
 psql -h  -U  -c "DROP DATABASE ;"
 psql -h  -U  -c "CREATE DATABASE ;"
 ```
