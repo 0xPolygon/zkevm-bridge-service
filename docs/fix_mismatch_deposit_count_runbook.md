@@ -30,7 +30,7 @@ Key fields to extract from the error log:
 
 ## 2. Recovery Options
 
-There are three possible fixes:
+There are two recovery paths:
 
 > **Note — L1 RPC switch (applies to any path)**
 > If `networkID` is `0`, switching to a different L1 RPC provider may be enough to fix the problem. Edit the config file to set the new endpoint before resyncing:
