@@ -97,8 +97,8 @@ pg_dump -h <DB_HOST> -U <DB_USER> -d <DB_NAME> \
 Run this query to confirm the last clean block ID before the rollback point:
 ```sql
 SELECT id FROM sync.block
-WHERE network_id = $NetworkID
-AND block_num < $Rollback_Block
+WHERE network_id = <NETWORK_ID>
+AND block_num < <ROLLBACK_BLOCK>
 ORDER BY block_num DESC
 LIMIT 1;
 
@@ -111,8 +111,8 @@ Save this value for reference.
 ### Step 5 — Delete offending block data
 ```sql
 DELETE FROM sync.block
-WHERE block_num >= $Rollback_Block
-AND network_id = $NetworkID;
+WHERE block_num >= <ROLLBACK_BLOCK>
+AND network_id = <NETWORK_ID>;
 
 -- Example:
 DELETE FROM sync.block WHERE block_num >= 24553985 AND network_id = 0;
@@ -120,7 +120,7 @@ DELETE FROM sync.block WHERE block_num >= 24553985 AND network_id = 0;
 
 > ⚠️ **Critical**
 > - Double-check the `WHERE` clause before executing.
-> - Double-check that `network_id = $NetworkID` is correct.
+> - Double-check that `network_id = <NETWORK_ID>` is correct.
 > - Verify the row count returned by the `DELETE`.
 
 ### Step 6 — Restart the bridge service
