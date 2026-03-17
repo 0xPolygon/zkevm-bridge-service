@@ -8,12 +8,17 @@ This runbook describes the recovery procedure for the `mismatched deposit count`
 
 The bridge service logs the following error pattern (`...` stands for anything):
 ```json
-{"level":"error", "caller":"synchronizer/synchronizer.go:...",
- "msg":"networkID: ..., failed to store new deposit in the bridge tree,
- BlockNumber: , ... err: mismatched deposit count: ..., expected: ..."}
+{
+  "level":"error", 
+  "caller":"synchronizer/synchronizer.go:...",
+  "msg":"networkID: ..., failed to store new deposit in the bridge tree,BlockNumber: , ... err: mismatched deposit count: ..., expected: ..."
+ }
 
-{"level":"warn", "caller":"synchronizer/synchronizer.go:...",
- "msg":"networkID: ..., error syncing blocks: mismatched deposit count: ..., expected: ..."}
+{
+  "level":"warn", 
+  "caller":"synchronizer/synchronizer.go:...",
+  "msg":"networkID: ..., error syncing blocks: mismatched deposit count: ..., expected: ..."
+}
 ```
 
 Key fields to extract from the error log:
@@ -150,7 +155,7 @@ pg_dump -h <DB_HOST> -U <DB_USER> -d <DB_NAME> \
 ### Step 3 — Delete the bridge database
 Drop and recreate the bridge database to force a clean resync from genesis.
 ```bash
-psql -h <DB_HOST> -U <DB_USER> -c "DROP DATABASE <DB_NAME>;"
+psql -h <DB_HOST> -U <DB_USER> -c "DROP DATABASE IF EXISTS <DB_NAME>;"
 psql -h <DB_HOST> -U <DB_USER> -c "CREATE DATABASE <DB_NAME>;"
 ```
 
@@ -193,7 +198,7 @@ If the error persists after completing the fix, escalate to the team with the fo
 
 | Resource | Details |
 |---|---|
-| **Recommended image** | `hermeznetwork/zkevm-bridge-service:v0.6.2` |
+| **Recommended image** | [ghcr.io/0xpolygon/zkevm-bridge-service:v0.6.2](https://github.com/0xPolygon/zkevm-bridge-service/pkgs/container/zkevm-bridge-service/531534703?tag=v0.6.2) |
 | **Min. supported version** | v0.6.2 (v0.5.x is deprecated) |
 | **Public runbook for Running L2 Trusted Environment** | [agglayer/runbooks — run-l2-trusted-environment.md](https://github.com/agglayer/runbooks/blob/main/operations/run-l2-trusted-environment.md) |
 | **Bridge API health check** | `<BRIDGE_URL>/bridges/<WALLET_ADDRESS>` |
