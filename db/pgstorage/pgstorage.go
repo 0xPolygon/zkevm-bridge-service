@@ -129,7 +129,7 @@ func (p *PostgresStorage) AddDeposit(ctx context.Context, deposit *etherman.Depo
 
 // AddClaim adds new claim to the storage.
 func (p *PostgresStorage) AddClaim(ctx context.Context, claim *etherman.Claim, dbTx interface{}) error {
-	const addClaimSQL = "INSERT INTO sync.claim (network_id, index, orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag, global_index) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)"
+	const addClaimSQL = "INSERT INTO sync.claim (network_id, index, orig_net, orig_addr, amount, dest_addr, block_id, tx_hash, rollup_index, mainnet_flag, global_index) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) ON CONFLICT (index, rollup_index, network_id, mainnet_flag) DO NOTHING"
 	e := p.getExecQuerier(dbTx)
 	_, err := e.Exec(ctx, addClaimSQL, claim.NetworkID, claim.Index, claim.OriginalNetwork, claim.OriginalAddress, claim.Amount.String(), claim.DestinationAddress, claim.BlockID, claim.TxHash, claim.RollupIndex, claim.MainnetFlag, claim.GlobalIndex)
 	return err
