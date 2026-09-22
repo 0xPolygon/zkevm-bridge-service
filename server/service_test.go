@@ -312,3 +312,70 @@ func TestGetProofByGERRejectsDepositNotInTreeRollup(t *testing.T) {
 		require.ErrorContains(t, err, "is not included in the exit root")
 	})
 }
+
+func TestGetClaimProofForCompressedRejectsDepositNotInTree(t *testing.T) {
+	ctx := context.Background()
+	ger := common.HexToHash("0x2468")
+
+	deposits := make([]*etherman.Deposit, 4)
+	for i := range deposits {
+		deposits[i] = newTestDeposit(i)
+		deposits[i].ReadyForClaim = true
+	}
+
+	tree := newInMemoryExitTree()
+	for i := 0; i < 3; i++ {
+		tree.addLeaf(bridgectrl.HashDeposit(deposits[i]))
+	}
+	root := common.BytesToHash(tree.root[:])
+	sut := newSutWithExitTree(t, tree, deposits, ger, 0)
+
+	t.Run("included deposit returns a valid compressed proof", func(t *testing.T) {
+		_, proof, _, err := sut.GetClaimProofForCompressed(ctx, ger, 2, 0, nil)
+		require.NoError(t, err)
+		require.Len(t, proof, testTreeHeight)
+		require.Equal(t, root, computeRootFromProof(bridgectrl.HashDeposit(deposits[2]), 2, proof))
+	})
+
+	t.Run("off-by-one deposit is rejected", func(t *testing.T) {
+		_, proof, _, err := sut.GetClaimProofForCompressed(ctx, ger, 3, 0, nil)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "is not included in the exit root")
+		require.Nil(t, proof)
+	})
+}
+
+func TestGetClaimProofForCompressedRejectsDepositNotInTreeRollup(t *testing.T) {
+	ctx := context.Background()
+	ger := common.HexToHash("0x1357")
+	const networkID = uint32(1)
+
+	deposits := make([]*etherman.Deposit, 4)
+	for i := range deposits {
+		deposits[i] = newTestDeposit(i)
+		deposits[i].ReadyForClaim = true
+		deposits[i].NetworkID = networkID
+		deposits[i].DestinationNetwork = 0
+	}
+
+	tree := newInMemoryExitTree()
+	for i := 0; i < 3; i++ {
+		tree.addLeaf(bridgectrl.HashDeposit(deposits[i]))
+	}
+	ler := common.BytesToHash(tree.root[:])
+	sut := newSutWithExitTree(t, tree, deposits, ger, networkID)
+
+	t.Run("included deposit returns a valid compressed proof", func(t *testing.T) {
+		_, proof, rollupProof, err := sut.GetClaimProofForCompressed(ctx, ger, 2, networkID, nil)
+		require.NoError(t, err)
+		require.Len(t, proof, testTreeHeight)
+		require.Len(t, rollupProof, testTreeHeight)
+		require.Equal(t, ler, computeRootFromProof(bridgectrl.HashDeposit(deposits[2]), 2, proof))
+	})
+
+	t.Run("off-by-one deposit is rejected", func(t *testing.T) {
+		_, _, _, err := sut.GetClaimProofForCompressed(ctx, ger, 3, networkID, nil)
+		require.Error(t, err)
+		require.ErrorContains(t, err, "is not included in the exit root")
+	})
+}

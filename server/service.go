@@ -301,6 +301,10 @@ func (s *bridgeService) GetClaimProofForCompressed(ctx context.Context, ger comm
 		rollupLeaf        common.Hash
 	)
 	if networkID == 0 { // Mainnet
+		if err := s.checkDepositIncludedInRoot(ctx, depositCnt, networkID, globalExitRoot.ExitRoots[0], dbTx); err != nil {
+			log.Errorf("deposit not included in root. Error: %v", err)
+			return nil, nil, nil, err
+		}
 		merkleProof, err = s.getProof(ctx, depositCnt, globalExitRoot.ExitRoots[0], dbTx)
 		if err != nil {
 			log.Error("error getting merkleProof. Error: ", err)
@@ -312,6 +316,10 @@ func (s *bridgeService) GetClaimProofForCompressed(ctx context.Context, ger comm
 		if err != nil {
 			log.Error("error getting rollupProof. Error: ", err)
 			return nil, nil, nil, fmt.Errorf("getting the rollup proof failed, error: %v, network: %d", err, networkID)
+		}
+		if err := s.checkDepositIncludedInRoot(ctx, depositCnt, networkID, rollupLeaf, dbTx); err != nil {
+			log.Errorf("deposit not included in root. Error: %v", err)
+			return nil, nil, nil, err
 		}
 		merkleProof, err = s.getProof(ctx, depositCnt, rollupLeaf, dbTx)
 		if err != nil {
