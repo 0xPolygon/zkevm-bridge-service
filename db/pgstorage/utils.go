@@ -40,6 +40,14 @@ func ResetDB(cfg Config) error {
 	if err != nil {
 		return err
 	}
+	_, err = db.Exec("DROP SCHEMA IF EXISTS syncv2 CASCADE;")
+	if err != nil {
+		return err
+	}
+	_, err = db.Exec("DROP SCHEMA IF EXISTS mtv2 CASCADE;")
+	if err != nil {
+		return err
+	}
 	_, err = db.Exec("DROP TABLE IF EXISTS public.gorp_migrations;")
 	if err != nil {
 		return err

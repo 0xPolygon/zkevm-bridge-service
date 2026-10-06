@@ -67,6 +67,19 @@ func (s *healthChecker) Watch(req *grpc_health_v1.HealthCheckRequest, server grp
 	})
 }
 
+// List returns the health statuses of all the services the server supports.
+// The health checker only tracks the overall server health, so it always
+// reports SERVING regardless of the requested service.
+func (s *healthChecker) List(ctx context.Context, req *grpc_health_v1.HealthListRequest) (*grpc_health_v1.HealthListResponse, error) {
+	return &grpc_health_v1.HealthListResponse{
+		Statuses: map[string]*grpc_health_v1.HealthCheckResponse{
+			"": {
+				Status: grpc_health_v1.HealthCheckResponse_SERVING,
+			},
+		},
+	}, nil
+}
+
 func runGRPCServer(ctx context.Context, bridgeServer pb.BridgeServiceServer, port string) error {
 	listen, err := net.Listen("tcp", ":"+port)
 	if err != nil {
